@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Skill(phaser-gamedev)",
+      "Skill(playwright-skill)",
+      "Bash(npm install @anthropic-ai/claude-agent-sdk)",
+      "Bash(node agents/game-team.mjs)",
+      "Bash(node agents/game-team.mjs:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx vite:*)",
+      "Bash(npx cap:*)",
+      "Bash(git add:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git tag:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ],
+    "additionalDirectories": [
+      "/Users/j6/.claude"
+    ]
+  }
+}

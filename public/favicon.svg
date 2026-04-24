@@ -1,0 +1,17 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="fSpark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#FB7185"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#fBg)"/>
+  <!-- 4-pointed star / spark -->
+  <path d="M32 12 L 37 27 L 52 32 L 37 37 L 32 52 L 27 37 L 12 32 L 27 27 Z" fill="url(#fSpark)"/>
+  <!-- lime accent dot -->
+  <circle cx="48" cy="16" r="3" fill="#D9F99D"/>
+</svg>

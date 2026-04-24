@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+.env
+.env.app
+.env.local
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/launch.json
+
+# backups / junk
+*.zip
+docs 2/
+.vite/
