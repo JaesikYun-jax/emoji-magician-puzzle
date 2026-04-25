@@ -12,30 +12,45 @@
 
 import { appRouter } from '../../router/AppRouter';
 import { generateLogicSequence, calcLogicStars } from '../../systems/logic/patternJudge';
-import type { LogicSequence } from '../../systems/logic/patternJudge';
+import type { ShapeSequence, ShapeKey } from '../../systems/logic/patternJudge';
 import type { LogicLevelConfig } from '../../systems/logic/patternJudge';
 import { saveService } from '../../services/SaveService';
 import { confirmExit } from '../../utils/confirmExit';
 
-// 패턴 생성기가 반환하는 숫자를 도형 키로 매핑 (모듈로 처리로 범위 초과 허용)
-const SHAPE_KEYS = ['tri', 'cir', 'sqr', 'dia'];
-
-function toShapeKey(n: number): string {
-  return SHAPE_KEYS[((n - 1) % SHAPE_KEYS.length + SHAPE_KEYS.length) % SHAPE_KEYS.length];
-}
+/**
+ * 도형 렌더링.
+ *  - 색상은 호출자가 'fg' (색을 입힐지) 또는 'mono' (단색) 모드를 선택.
+ *  - 'fg' 모드: 도형별 고유 파스텔 색상으로 시각 차별성 강화 (sqr ↔ dia 혼동 방지).
+ *  - 'mono' 모드: 강조된 색(예: 정답 표시 시).
+ */
+const SHAPE_PALETTE: Record<string, string> = {
+  tri: '#FCA5A5', // 살구색 / coral — 삼각형
+  cir: '#7DD3FC', // 하늘색 — 원
+  sqr: '#86EFAC', // 민트 — 정사각형
+  dia: '#FCD34D', // 노란색 — 마름모
+};
 
 function renderShape(kind: string, size: number, color: string): string {
+  // color === 'auto' → 도형별 고유 색을 사용 (시각 차별성 강화)
+  const fill = color === 'auto' ? (SHAPE_PALETTE[kind] || '#fff') : color;
+  // 외곽선: 흰 도형엔 진한 색, 그 외엔 동일 색의 어두운 톤이 아닌 흰색 stroke로 깔끔하게.
+  const stroke = color === 'auto' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.4)';
+  const sw = Math.max(1.5, size / 22); // 크기 비례 외곽선
+
   switch (kind) {
     case 'tri':
-      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><path d="M20 6 L35 32 L5 32 Z" fill="${color}"/></svg>`;
+      // 위쪽이 더 뾰족한 정삼각형
+      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><path d="M20 5 L36 33 L4 33 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/></svg>`;
     case 'cir':
-      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><circle cx="20" cy="20" r="14" fill="${color}"/></svg>`;
+      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><circle cx="20" cy="20" r="15" fill="${fill}" stroke="${stroke}" stroke-width="${sw}"/></svg>`;
     case 'sqr':
-      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><rect x="6" y="6" width="28" height="28" rx="4" fill="${color}"/></svg>`;
+      // 모서리 0 — 분명히 정사각형 (마름모와 구분 강화)
+      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><rect x="6" y="6" width="28" height="28" rx="0" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/></svg>`;
     case 'dia':
-      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><path d="M20 4 L36 20 L20 36 L4 20 Z" fill="${color}"/></svg>`;
+      // 마름모 — 4꼭짓점 + 분명한 회전감
+      return `<svg viewBox="0 0 40 40" width="${size}" height="${size}"><path d="M20 3 L37 20 L20 37 L3 20 Z" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round"/></svg>`;
     default:
-      return `<span style="font-size:${size * 0.6}px;color:${color};font-weight:800;">${kind}</span>`;
+      return `<span style="font-size:${size * 0.6}px;color:${fill};font-weight:800;">${kind}</span>`;
   }
 }
 
@@ -87,7 +102,7 @@ export class LogicGame {
   private timerId: ReturnType<typeof setInterval> | null = null;
   private timeRemaining = 0;
   private timeUsed = 0;
-  private currentSeq: LogicSequence | null = null;
+  private currentSeq: ShapeSequence | null = null;
   private selectedChoiceIndex = -1;
 
   private timerTextEl!: HTMLElement;
@@ -96,6 +111,7 @@ export class LogicGame {
   private tilesEl!: HTMLElement;
   private choicesEl!: HTMLElement;
   private confirmBtnEl!: HTMLButtonElement;
+  private hintTextEl!: HTMLElement;
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
@@ -232,7 +248,7 @@ export class LogicGame {
       backdrop-filter: blur(16px);
       border: 1.5px solid rgba(255,255,255,0.28);
       border-radius: 26px;
-      padding: 20px 18px;
+      padding: 18px 14px;
       width: calc(100vw - 44px);
       max-width: 420px;
       box-sizing: border-box;
@@ -244,14 +260,14 @@ export class LogicGame {
     const cardHeader = document.createElement('div');
     cardHeader.style.cssText = `
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     `;
     const chipEl = document.createElement('span');
     chipEl.textContent = '다음에 올 모양은?';
     chipEl.style.cssText = `
-      background: rgba(255,255,255,0.18); color: #fff;
-      border-radius: 999px; padding: 4px 12px;
-      font-size: 12px; font-weight: 700;
+      background: rgba(255,255,255,0.22); color: #fff;
+      border-radius: 999px; padding: 6px 14px;
+      font-size: 17px; font-weight: 900; letter-spacing: -0.01em;
     `;
     const diffEl = document.createElement('span');
     diffEl.textContent = '규칙찾기';
@@ -260,23 +276,23 @@ export class LogicGame {
     cardHeader.appendChild(diffEl);
     card.appendChild(cardHeader);
 
-    // 9열 그리드 수열
+    // 타일 그리드 (열 수는 _renderTiles에서 동적 설정)
     this.tilesEl = document.createElement('div');
     this.tilesEl.style.cssText = `
       display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      gap: 6px;
+      gap: 8px;
+      justify-content: center;
     `;
     card.appendChild(this.tilesEl);
 
     // 힌트 텍스트
-    const hintTextEl = document.createElement('div');
-    hintTextEl.style.cssText = `
+    this.hintTextEl = document.createElement('div');
+    this.hintTextEl.style.cssText = `
       margin-top: 14px; font-size: 12px;
       color: rgba(255,255,255,0.7); text-align: center;
     `;
-    hintTextEl.innerHTML = `반복되는 <b style="color:#FDE68A;">규칙</b>을 찾아봐요`;
-    card.appendChild(hintTextEl);
+    this.hintTextEl.innerHTML = `반복되는 <b style="color:#FDE68A;">규칙</b>을 찾아봐요`;
+    card.appendChild(this.hintTextEl);
 
     this.el.appendChild(card);
 
@@ -289,7 +305,6 @@ export class LogicGame {
     this.choicesEl = document.createElement('div');
     this.choicesEl.style.cssText = `
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
     `;
     choicesWrap.appendChild(this.choicesEl);
@@ -363,14 +378,27 @@ export class LogicGame {
     this.selectedChoiceIndex = -1;
 
     this._renderTiles(seq);
+    this.hintTextEl.innerHTML = `<b style="color:#FDE68A;">힌트:</b> ${seq.hint}`;
     this._renderChoices(seq);
     this._updateHUD();
     this._updateConfirmBtn();
   }
 
-  private _renderTiles(seq: LogicSequence): void {
+  private _renderTiles(seq: ShapeSequence): void {
     this.tilesEl.innerHTML = '';
     const len = seq.tiles.length;
+
+    // 가시성 우선: 한 행 최대 5칸. 그 이상이면 줄바꿈하여 타일을 키움.
+    // 5 타일: 5×1, 7 타일: 4×2 (4+3), 9 타일: 5×2 (5+4)
+    let cols: number;
+    if (len <= 5) cols = len;
+    else if (len <= 7) cols = 4;
+    else cols = 5;
+    this.tilesEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+    // 셀 크기에 비례하여 도형 크기 결정 — 한 행 칸 수에 따라
+    // (cols=5 → 도형 36, cols=4 → 도형 44)
+    const shapeSize = cols >= 5 ? 36 : 44;
 
     seq.tiles.forEach((value, i) => {
       const cell = document.createElement('div');
@@ -379,51 +407,56 @@ export class LogicGame {
       if (isBlank) {
         cell.style.cssText = `
           aspect-ratio: 1/1;
-          background: rgba(253,230,138,0.14);
-          border: 1.5px dashed #FDE68A;
-          border-radius: 10px;
+          background: rgba(253,230,138,0.18);
+          border: 2px dashed #FDE68A;
+          border-radius: 12px;
           display: grid; place-items: center;
           animation: lg-fall-in 300ms ease calc(${i} * 80ms) both,
                      lg-blank-pulse 1.4s ease-in-out ${len * 80}ms infinite;
         `;
-        cell.innerHTML = `<span style="font-size:1.1rem;font-weight:900;color:#FDE68A;">?</span>`;
+        cell.innerHTML = `<span style="font-size:1.6rem;font-weight:900;color:#FDE68A;">?</span>`;
       } else {
-        const shapeKey = toShapeKey(value);
+        const shapeKey = value as ShapeKey;
         cell.style.cssText = `
           aspect-ratio: 1/1;
           background: rgba(255,255,255,0.10);
-          border: 1px solid rgba(255,255,255,0.18);
-          border-radius: 10px;
+          border: 1px solid rgba(255,255,255,0.20);
+          border-radius: 12px;
           display: grid; place-items: center;
           animation: lg-fall-in 300ms ease calc(${i} * 80ms) both;
         `;
-        cell.innerHTML = renderShape(shapeKey, 22, '#fff');
+        // 'auto' → 도형별 고유 파스텔 색 (시각 차별성 강화)
+        cell.innerHTML = renderShape(shapeKey, shapeSize, 'auto');
       }
 
       this.tilesEl.appendChild(cell);
     });
   }
 
-  private _renderChoices(seq: LogicSequence): void {
+  private _renderChoices(seq: ShapeSequence): void {
     this.choicesEl.innerHTML = '';
-    // 디자인 기준 3개 표시
-    const displayCount = Math.min(seq.choices.length, 3);
+    const displayCount = seq.choices.length;
+    this.choicesEl.style.gridTemplateColumns = `repeat(${displayCount}, 1fr)`;
 
     for (let idx = 0; idx < displayCount; idx++) {
-      const choice = seq.choices[idx] as number;
+      const shapeKey = seq.choices[idx];
       const label = CHOICE_LABELS[idx];
-      const shapeKey = toShapeKey(choice);
 
       const btn = document.createElement('button');
       btn.className = 'lg-choice-btn';
       btn.dataset.idx = String(idx);
       btn.style.cssText = `
-        aspect-ratio: 1/1;
+        height: 60px;
+        width: 100%;
         background: rgba(255,255,255,0.12);
         border: 1.5px solid rgba(255,255,255,0.30);
         backdrop-filter: blur(10px);
-        border-radius: 22px;
-        display: grid; place-items: center;
+        border-radius: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         position: relative;
         cursor: pointer;
@@ -434,16 +467,17 @@ export class LogicGame {
       const labelEl = document.createElement('span');
       labelEl.textContent = label;
       labelEl.style.cssText = `
-        position: absolute; top: 8px; left: 10px;
-        font-weight: 800; font-size: 11px;
-        color: rgba(255,255,255,0.7);
-        letter-spacing: 0.1em;
+        position: absolute; top: 5px; left: 8px;
+        font-weight: 800; font-size: 10px;
+        color: rgba(255,255,255,0.65);
+        letter-spacing: 0.05em;
         pointer-events: none;
       `;
       btn.appendChild(labelEl);
 
       const shapeWrap = document.createElement('div');
-      shapeWrap.innerHTML = renderShape(shapeKey, 56, '#fff');
+      // 보기에서도 도형 고유 색을 사용 → 타일과 보기에서 같은 모양은 같은 색으로 보여 매칭 직관성↑
+      shapeWrap.innerHTML = renderShape(shapeKey, 32, 'auto');
       shapeWrap.style.cssText = `pointer-events: none; display: grid; place-items: center;`;
       btn.appendChild(shapeWrap);
 
@@ -469,7 +503,7 @@ export class LogicGame {
       const shapeWrap = btn.querySelector('div') as HTMLElement | null;
       const labelEl = btn.querySelector('span') as HTMLElement | null;
       const isSelected = idx === selectedIdx;
-      const choice = this.currentSeq!.choices[idx] as number;
+      const shapeKey = this.currentSeq!.choices[idx] as ShapeKey;
 
       if (isSelected) {
         btn.style.background = 'linear-gradient(135deg,#FDE68A,#F59E0B)';
@@ -477,14 +511,15 @@ export class LogicGame {
         btn.style.boxShadow = '0 0 0 3px #fff, 0 8px 18px rgba(251,191,36,0.55)';
         btn.style.transform = 'scale(1.04)';
         if (labelEl) labelEl.style.color = '#4338CA';
-        if (shapeWrap) shapeWrap.innerHTML = renderShape(toShapeKey(choice), 56, '#4338CA');
+        // 선택 시 강조: 진한 인디고 단색으로 도형을 그려 보드 색과 충돌 회피
+        if (shapeWrap) shapeWrap.innerHTML = renderShape(shapeKey, 32, '#312E81');
       } else {
         btn.style.background = 'rgba(255,255,255,0.12)';
         btn.style.border = '1.5px solid rgba(255,255,255,0.30)';
         btn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
         btn.style.transform = 'none';
-        if (labelEl) labelEl.style.color = 'rgba(255,255,255,0.7)';
-        if (shapeWrap) shapeWrap.innerHTML = renderShape(toShapeKey(choice), 56, '#fff');
+        if (labelEl) labelEl.style.color = 'rgba(255,255,255,0.65)';
+        if (shapeWrap) shapeWrap.innerHTML = renderShape(shapeKey, 32, 'auto');
       }
     });
   }
@@ -546,14 +581,7 @@ export class LogicGame {
 
   private _showHint(): void {
     if (!this.currentSeq) return;
-    const hints: Record<string, string> = {
-      arithmetic: '각 도형이 일정하게 반복돼요. 차이를 세어봐요!',
-      geometric:  '도형이 배수로 늘어나요. 비율을 찾아봐요!',
-      fibonacci:  '앞 두 항의 합이 다음 항이에요.',
-      square:     '1, 4, 9, 16... 제곱수 패턴이에요.',
-      alternating:'짝수 번째와 홀수 번째 자리를 따로 봐요!',
-    };
-    this._showToast(hints[this.currentSeq.patternType] ?? '패턴을 자세히 살펴봐요!');
+    this._showToast(this.currentSeq.hint);
   }
 
   private _showToast(msg: string): void {
@@ -606,10 +634,12 @@ export class LogicGame {
         this._stopTimer();
         this.timeRemaining = 0;
         this._renderTimer();
-        if (!this.isAnswering) {
-          this.currentRound = this.levelConfig?.totalRounds ?? this.currentRound;
-          this._showResult();
+        // isAnswering 중이더라도 결과를 즉시 표시 (setTimeout 콜백이 새 라운드를 시작하지 않도록 플래그 해제)
+        if (this.isAnswering) {
+          this.isAnswering = false;
         }
+        this.currentRound = this.levelConfig?.totalRounds ?? this.currentRound;
+        this._showResult();
       }
     }, 100);
   }
@@ -649,7 +679,7 @@ export class LogicGame {
     // 총 클리어 횟수 기반 칭찬 메시지
     const praiseText = isCleared
       ? (clearCount === 1 ? '첫 번째 클리어! 🎉'
-        : clearCount >= 10 ? '한붓 그리기 마스터! 🏆'
+        : clearCount >= 10 ? '논리 마스터 🧩'
         : clearCount >= 5  ? '실력자네요! 🔥'
         : '잘했어요! 👍')
       : '😅 다시 도전!';

@@ -100,17 +100,6 @@ export const ko = {
   'subject.comingSoonMsg': '준비중입니다',
   'subject.korean.detail': '받아쓰기, 낱말 잇기 등<br>재미있는 국어 게임이 곧 찾아옵니다!',
 
-  'math.operation.addition': '덧셈',
-  'math.operation.subtraction': '뺄셈',
-  'math.operation.multiplication': '곱셈',
-  'math.digit.single': '1자리',
-  'math.digit.double': '2자리',
-  'math.digit.triple': '3자리',
-  'math.orderError': '순서가 반대예요!',
-  'math.levelClear': '🎊 클리어!',
-  'math.movesLeft': '남은 이동',
-  'math.moves': '이동',
-
   'english.category.beginner': '입문',
   'english.category.elementary': '기초',
   'english.category.intermediate': '중급',
@@ -214,6 +203,7 @@ export const ko = {
   'patFind.result.score': '{correct} / {total} 정답',
   'patFind.result.retry': '🔄 다시 하기',
   'patFind.result.menu': '🏠 메뉴로',
+  'patFind.prompt': '? 에 들어갈 수를 고르세요',
   'patFind.timeOver': '⏰ 시간 초과!',
   'patFind.pattern.arithmetic': '등차수열',
   'patFind.pattern.geometric': '등비수열',
@@ -296,6 +286,22 @@ export const ko = {
   'arithmetic.result.fail': '다시 도전해봐요!',
   'arithmetic.result.correct': '{n}개 맞췄어요',
 
+  // 어순 맞추기 게임 (SentenceOrderingGame)
+  'english.order.chipLabel.SV':    '1형식 · 주어+동사',
+  'english.order.chipLabel.SVC':   '2형식 · 주어+be+보어',
+  'english.order.chipLabel.SVO':   '3형식 · 주어+동사+목적어',
+  'english.order.tapHint':         '단어를 순서대로 탭하세요',
+  'english.order.correct':         '정답이에요! ✨',
+  'english.order.wrong':           '다시 해봐요!',
+  'english.order.finalScore':      '어순 결과',
+  'english.order.homeBtn':         '영어 메뉴로 돌아가기',
+  'english.order.retryBtn':        '다시 도전하기',
+  'english.order.resultMsg.great': '완벽한 어순 감각이에요!',
+  'english.order.resultMsg.good':  '잘했어요! 조금만 더 연습해요.',
+  'english.order.resultMsg.keep':  '계속 연습하면 잘할 수 있어요!',
+  'english.order.scoreComplete':   '{total}문제 완료',
+  'english.order.mistakes':        '실수 {n}번',
+
   // 영어 게임 인라인 문구 (EnglishGame)
   'english.game.chipLabel': '뜻을 맞춰봐',
   'english.game.replayBtn': '🔊 다시 듣기',
@@ -306,6 +312,88 @@ export const ko = {
   'english.game.homeBtn': '영어 메뉴로 돌아가기',
   'english.game.retryBtn': '다시 도전하기',
 
+  // ── 온보딩 (프로필 생성) ────────────────────────────────────────────────────
+  'onboarding.title': '시작해 볼까요?',
+  'onboarding.nickname.label': '아이를 뭐라고 부를까요?',
+  'onboarding.nickname.placeholder': '닉네임을 입력해 주세요 (1~10자)',
+  'onboarding.age.label': '아이의 나이·학년을 알려주세요',
+  'onboarding.age.daycare': '어린이집',
+  'onboarding.age.kindergarten': '유치원',
+  'onboarding.age.g1': '초1',
+  'onboarding.age.g2': '초2',
+  'onboarding.age.g3': '초3',
+  'onboarding.age.g4': '초4',
+  'onboarding.age.g5': '초5',
+  'onboarding.age.g6': '초6',
+  'onboarding.start': '시작하기',
+  'onboarding.nickname.error': '닉네임을 1~10자로 입력해 주세요!',
+  'onboarding.age.error': '학년을 선택해 주세요!',
+
+  // ── Home B (키즈 홈) ────────────────────────────────────────────────────────
+  'home.greeting': '{name} 어린이, 환영해요! 👋',
+  'home.todayMission': '오늘의 미션',
+  'home.todayMission.placeholder': '오늘도 한 판 해볼까요? 🎮',
+  'home.subjectProgress': 'Lv.{lv} · ★{stars}',
+  'home.comingSoon': '곧 오픈!',
+  'home.subjectStart': '시작하기 →',
+
+  // 공통 메뉴
+  'menu.todayStudy': '오늘의 학습 시작하기',
+  'menu.playThisOnly': '이 게임만 하기 →',
+  'menu.placement.title': '진단 완료!',
+
+  // 수리 메뉴
+  'math.menu.infoTitle': '수리 문제 풀기',
+  'math.menu.infoSub': '식 채우기·패턴 찾기·산수 퀴즈',
+
+  // 영어 메뉴
+  'english.menu.infoTitle': '영어 단어 학습',
+  'english.menu.infoSub': '입문부터 고급까지, 단계별 플래시카드',
+
+  // 논리 메뉴
+  'logic.menu.infoTitle': '논리 퀴즈',
+  'logic.menu.infoSub': '규칙과 패턴을 추론해 답을 찾아요',
+
+  // 창의 메뉴
+  'creativity.menu.infoTitle': '창의 연상 퀴즈',
+  'creativity.menu.infoSub': '단어를 4개 그룹으로 연결하는 퍼즐',
+
+  // 행렬 추론
+  'matrix.title': '행렬 추론',
+  'matrix.subtitle': '빈 칸에 올 도형을 골라요',
+  'matrix.hint': '행과 열의 규칙을 찾아봐요',
+  'matrix.result.perfect': '🎊 멘사 천재!',
+  'matrix.result.great': '⭐ 훌륭해요!',
+  'matrix.result.good': '👍 잘했어요!',
+  'matrix.result.fail': '😅 다시 도전!',
+  'matrix.result.score': '{correct} / {total} 정답',
+  'matrix.result.retry': '🔄 다시 하기',
+  'matrix.result.menu': '🏠 메뉴로',
+  'matrix.timeOver': '⏰ 시간 초과!',
+  'matrix.correct': '정답이에요! ✨',
+  'matrix.wrong': '아쉬워요...',
+  // 다른 하나 찾기
+  'oddone.title': '다른 하나 찾기',
+  'oddone.subtitle': '나머지와 다른 도형을 골라요',
+  'oddone.hint.color': '색깔이 다른 걸 찾아봐요',
+  'oddone.hint.shape': '모양이 다른 걸 찾아봐요',
+  'oddone.hint.size': '크기가 다른 걸 찾아봐요',
+  'oddone.hint.fill': '채우기가 다른 걸 찾아봐요',
+  'oddone.hint.rotation': '방향이 다른 걸 찾아봐요',
+  'oddone.hint.chirality': '잘 살펴보면 하나가 달라요',
+  'oddone.hint.compound': '무엇이 다른지 찾아봐요',
+  'oddone.result.perfect': '🎊 완벽한 눈썰미!',
+  'oddone.result.great': '⭐ 예리해요!',
+  'oddone.result.good': '👍 잘했어요!',
+  'oddone.result.fail': '😅 다시 도전!',
+  'oddone.result.score': '{correct} / {total} 정답',
+  'oddone.result.retry': '🔄 다시 하기',
+  'oddone.result.menu': '🏠 메뉴로',
+  'oddone.timeOver': '⏰ 시간 초과!',
+  'oddone.correct': '맞았어요! ✨',
+  'oddone.wrong': '아쉬워요...',
+  'oddone.noTimer': '천천히 생각해봐요 🧐',
+
   // 국어 게임 인라인 문구 (KoreanGame)
   'korean.game.chipLabel': '소리를 만들어 봐',
   'korean.game.finalScore': '국어 결과',
@@ -314,4 +402,49 @@ export const ko = {
   'korean.game.resultMsg.keep': '더 연습해봐요! 💪',
   'korean.game.retryBtn': '다시 하기',
   'korean.game.backBtn': '국어 메뉴로',
+
+  // ── 탐험가 랭크 (XP 기반, xpEngine.computeRank) ──────────────────────────────
+  'rank.explorer.1': '골목 탐험가',
+  'rank.explorer.2': '공원 탐험가',
+  'rank.explorer.3': '숲 탐험가',
+  'rank.explorer.4': '산악 탐험가',
+  'rank.explorer.5': '동굴 탐험가',
+  'rank.explorer.6': '사막 탐험가',
+  'rank.explorer.7': '해양 탐험가',
+  'rank.explorer.8': '극지 탐험가',
+  'rank.explorer.9': '하늘 탐험가',
+  'rank.explorer.10': '우주 탐험가',
+
+  // ── 색상 계급 랭크 (창의 전용, CREATIVITY_RANKS) ─────────────────────────────
+  'rank.color.1':  '아이언 III',
+  'rank.color.2':  '아이언 II',
+  'rank.color.3':  '아이언 I',
+  'rank.color.4':  '브론즈 III',
+  'rank.color.5':  '브론즈 II',
+  'rank.color.6':  '브론즈 I',
+  'rank.color.7':  '실버 III',
+  'rank.color.8':  '실버 II',
+  'rank.color.9':  '실버 I',
+  'rank.color.10': '골드 III',
+  'rank.color.11': '골드 II',
+  'rank.color.12': '골드 I',
+  'rank.color.13': '에메랄드 III',
+  'rank.color.14': '에메랄드 II',
+  'rank.color.15': '에메랄드 I',
+  'rank.color.16': '사파이어 III',
+  'rank.color.17': '사파이어 II',
+  'rank.color.18': '사파이어 I',
+  'rank.color.19': '다이아 III',
+  'rank.color.20': '다이아 II',
+  'rank.color.21': '다이아 I',
+  'rank.color.22': '마스터',
+
+  // ── 창의 뱃지 (CREATIVITY_BADGES) ─────────────────────────────────────────────
+  'badge.creativity.1': '첫 발걸음',
+  'badge.creativity.2': '열정 불꽃',
+  'badge.creativity.3': '연습의 빛',
+  'badge.creativity.4': '별빛 탐험가',
+  'badge.creativity.5': '파도 정복자',
+  'badge.creativity.6': '다이아 의지',
+  'badge.creativity.7': '마스터의 왕관',
 };

@@ -11,6 +11,7 @@
 import type { SaveData } from '../game-data/subjectConfig';
 import { MATH_THEMES } from '../game-data/mathThemes';
 import { createDefaultGamificationState } from '../systems/gamification/types';
+import { computeLevel } from '../systems/progression/xpEngine';
 
 /**
  * v1 SaveData 를 v2 로 마이그레이션한다.
@@ -64,6 +65,8 @@ export function migrateV2toV3(raw: SaveData): SaveData {
         lastPlayedAt: new Date().toISOString(),
         earnedBadgeThresholds: [],
         recentPuzzleIds: [],
+        rankScore: 0,
+        maxDifficultyTier: 0,
       },
     },
   };
@@ -80,6 +83,8 @@ export function migrateV3toV4(raw: SaveData): SaveData {
       lastPlayedAt: new Date().toISOString(),
       earnedBadgeThresholds: [],
       recentPuzzleIds: [],
+      rankScore: 0,
+      maxDifficultyTier: 0,
     };
   }
   // recentPuzzleIds 하위 호환: meta가 존재하지만 필드가 없을 경우
@@ -91,6 +96,89 @@ export function migrateV3toV4(raw: SaveData): SaveData {
     version: 4,
     creativity,
   };
+}
+
+/** v4 → v5: 아이 프로필 필드 추가 (기존 유저는 profile: null) */
+export function migrateV4toV5(raw: SaveData): SaveData {
+  return {
+    ...raw,
+    version: 5,
+    profile: raw.profile ?? null,
+  };
+}
+
+/** v5 → v6: 각 분야에 SubjectProgressData 초기화 (기존 levelProgress 데이터에서 XP 추정) */
+export function migrateV5toV6(raw: SaveData): SaveData {
+  const data = { ...raw };
+
+  // math
+  if (!data.math.progress) {
+    const mathStars = Object.values(data.math?.levelProgress ?? {}).reduce((s, lp) => s + (lp.stars ?? 0), 0);
+    const mathXp = Math.round(mathStars * 5);
+    data.math = {
+      ...data.math,
+      progress: {
+        xp: mathXp,
+        level: computeLevel(mathXp),
+        totalClears: Object.values(data.math?.levelProgress ?? {}).reduce((s, lp) => s + (lp.playCount ?? 0), 0),
+        streak: 0,
+        bestStreak: 0,
+        placementDone: false,
+      },
+    };
+  }
+
+  // english: 레벨 테스트 결과가 있으면 placementDone = true
+  if (!data.english.progress) {
+    const englishStars = Object.values(data.english?.levelProgress ?? {}).reduce((s, lp) => s + (lp.stars ?? 0), 0);
+    const englishXp = Math.round(englishStars * 5);
+    data.english = {
+      ...data.english,
+      progress: {
+        xp: englishXp,
+        level: computeLevel(englishXp),
+        totalClears: Object.values(data.english?.levelProgress ?? {}).reduce((s, lp) => s + (lp.playCount ?? 0), 0),
+        streak: 0,
+        bestStreak: 0,
+        placementDone: !!data.english?.levelTestResult,
+      },
+    };
+  }
+
+  // logic
+  if (data.logic && !data.logic.progress) {
+    const logicXp = Math.round((data.logic.clearCount ?? 0) * 10);
+    data.logic = {
+      ...data.logic,
+      progress: {
+        xp: logicXp,
+        level: computeLevel(logicXp),
+        totalClears: data.logic.clearCount ?? 0,
+        streak: data.logic.streak ?? 0,
+        bestStreak: data.logic.streak ?? 0,
+        placementDone: (data.logic.clearCount ?? 0) > 0,
+      },
+    };
+  }
+
+  // creativity
+  if (data.creativity && !data.creativity.progress) {
+    const creativityTotalClears = data.creativity.meta?.totalClears ?? data.creativity.totalClears ?? 0;
+    const creativityXp = Math.round(creativityTotalClears * 10);
+    data.creativity = {
+      ...data.creativity,
+      progress: {
+        xp: creativityXp,
+        level: computeLevel(creativityXp),
+        totalClears: creativityTotalClears,
+        streak: data.creativity.meta?.currentStreak ?? data.creativity.streak ?? 0,
+        bestStreak: data.creativity.meta?.bestStreak ?? 0,
+        placementDone: creativityTotalClears > 0,
+      },
+    };
+  }
+
+  return { ...data, version: 6 };
 }
 
 /**
@@ -110,6 +198,14 @@ export function runMigrations(raw: SaveData, targetVersion: number): SaveData {
 
   if (data.version < 4 && targetVersion >= 4) {
     data = migrateV3toV4(data);
+  }
+
+  if (data.version < 5 && targetVersion >= 5) {
+    data = migrateV4toV5(data);
+  }
+
+  if (data.version < 6 && targetVersion >= 6) {
+    data = migrateV5toV6(data);
   }
 
   return data;

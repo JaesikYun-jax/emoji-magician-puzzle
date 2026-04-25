@@ -11,10 +11,14 @@ export class MathQuizGame {
   private el: HTMLElement;
   private hudEl!: HTMLElement;
   private cardEl!: HTMLElement;
+  private timerTrackEl!: HTMLElement;
+  private timerFillEl!: HTMLElement;
+  private choicesEl!: HTMLElement;
   private currentQuestion: NewMathQuestion | null = null;
   private isAnswering = false;
   private timerId: ReturnType<typeof setInterval> | null = null;
   private timeRemaining = 0;
+  private totalTimerMs = 0;
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
@@ -25,8 +29,7 @@ export class MathQuizGame {
       inset: 0;
       background: linear-gradient(135deg, #0369A1, #0EA5E9);
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+      overflow: hidden;
       z-index: 10;
     `;
     container.appendChild(this.el);
@@ -57,20 +60,17 @@ export class MathQuizGame {
   }
 
   private buildUI(): void {
-    // HUD
+    // HUD — 플렉스 흐름 안에 배치 (position: fixed 제거)
     this.hudEl = document.createElement('div');
     this.hudEl.className = 'quiz-hud';
     this.hudEl.style.cssText = `
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 64px;
-      padding: 0 16px;
-      background: rgba(0,0,0,0.25);
+      flex-shrink: 0;
+      padding: calc(env(safe-area-inset-top, 0px) + 44px) 16px 12px;
+      background: rgba(0,0,0,0.20);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      z-index: 100;
     `;
 
     const homeBtn = document.createElement('button');
@@ -96,21 +96,51 @@ export class MathQuizGame {
 
     this.el.appendChild(this.hudEl);
 
-    // 문제 카드
+    // 타이머 진행바 (타이머 있을 때만 display: '' 로 표시)
+    this.timerTrackEl = document.createElement('div');
+    this.timerTrackEl.style.cssText = `
+      flex-shrink: 0;
+      height: 4px;
+      background: rgba(255,255,255,0.15);
+      position: relative;
+      display: none;
+    `;
+    this.timerFillEl = document.createElement('div');
+    this.timerFillEl.style.cssText = `
+      position: absolute; inset: 0 auto 0 0;
+      width: 100%;
+      background: #FDE68A;
+      transition: background 300ms;
+    `;
+    this.timerTrackEl.appendChild(this.timerFillEl);
+    this.el.appendChild(this.timerTrackEl);
+
+    // 문제 카드 — 문제 텍스트만 (선택지 제외)
     this.cardEl = document.createElement('div');
     this.cardEl.className = 'quiz-card';
     this.cardEl.style.cssText = `
+      flex-shrink: 0;
       background: rgba(255,255,255,0.18);
       backdrop-filter: blur(20px) saturate(180%);
       border: 1px solid rgba(255,255,255,0.25);
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(3,105,161,0.45);
       padding: 32px 24px;
-      width: min(calc(100vw - 32px), 360px);
-      max-width: 380px;
-      margin-top: 80px;
+      margin: 12px 20px;
     `;
     this.el.appendChild(this.cardEl);
+
+    // 선택지 영역 — 2×2 그리드
+    this.choicesEl = document.createElement('div');
+    this.choicesEl.style.cssText = `
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 4px 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+      align-content: start;
+    `;
+    this.el.appendChild(this.choicesEl);
   }
 
   show(): void {
@@ -144,6 +174,7 @@ export class MathQuizGame {
 
   private renderQuestion(q: NewMathQuestion, timeLimitMs: number | null): void {
     this.cardEl.innerHTML = '';
+    this.choicesEl.innerHTML = '';
 
     const qText = document.createElement('div');
     qText.className = 'quiz-question';
@@ -153,10 +184,14 @@ export class MathQuizGame {
       font-weight: 900;
       color: #ffffff;
       text-align: center;
-      margin-bottom: 32px;
       animation: question-enter 250ms ease-out;
     `;
     this.cardEl.appendChild(qText);
+
+    // 타이머가 없으면 진행바 숨김
+    if (!timeLimitMs) {
+      this.timerTrackEl.style.display = 'none';
+    }
 
     q.choices.forEach((choice, idx) => {
       const btn = document.createElement('button');
@@ -167,7 +202,6 @@ export class MathQuizGame {
         display: block;
         width: 100%;
         height: 60px;
-        margin-bottom: 12px;
         background: rgba(255,255,255,0.12);
         border: 1.5px solid rgba(255,255,255,0.25);
         border-radius: 16px;
@@ -179,20 +213,8 @@ export class MathQuizGame {
         touch-action: manipulation;
       `;
       btn.addEventListener('pointerdown', () => this.onChoiceSelect(idx));
-      this.cardEl.appendChild(btn);
+      this.choicesEl.appendChild(btn);
     });
-
-    if (timeLimitMs) {
-      const timerEl = document.createElement('div');
-      timerEl.id = 'quiz-timer-display';
-      timerEl.style.cssText = `
-        text-align: center;
-        color: rgba(255,255,255,0.8);
-        font-size: 1rem;
-        margin-top: 8px;
-      `;
-      this.cardEl.appendChild(timerEl);
-    }
   }
 
   private onChoiceSelect(choiceIndex: number): void {
@@ -210,7 +232,7 @@ export class MathQuizGame {
 
     this.checkRuleProgression(newStatus);
 
-    const buttons = Array.from(this.cardEl.querySelectorAll('.quiz-choice-btn')) as HTMLButtonElement[];
+    const buttons = Array.from(this.choicesEl.querySelectorAll('.quiz-choice-btn')) as HTMLButtonElement[];
     buttons.forEach((btn, idx) => {
       btn.style.pointerEvents = 'none';
       if (idx === q.correctIndex) {
@@ -251,7 +273,7 @@ export class MathQuizGame {
     const notify = document.createElement('div');
     notify.style.cssText = `
       position: fixed;
-      top: 80px;
+      top: 30%;
       left: 50%;
       transform: translateX(-50%);
       background: ${streak >= 10 ? 'rgba(239,68,68,0.9)' : 'rgba(251,191,36,0.9)'};
@@ -306,19 +328,22 @@ export class MathQuizGame {
   }
 
   private startTimer(ms: number): void {
+    this.totalTimerMs = ms;
     this.timeRemaining = ms;
+    this.timerTrackEl.style.display = '';
+    this.timerFillEl.style.width = '100%';
+    this.timerFillEl.style.background = '#FDE68A';
+
     this.timerId = setInterval(() => {
       this.timeRemaining -= 100;
-      const display = document.getElementById('quiz-timer-display');
-      if (display) {
-        const secs = Math.ceil(this.timeRemaining / 1000);
-        display.textContent = `⏱ ${secs}초`;
-        if (secs <= 3) display.style.color = '#EF4444';
-      }
+      const ratio = Math.max(0, this.timeRemaining / this.totalTimerMs);
+      this.timerFillEl.style.width = `${ratio * 100}%`;
+      this.timerFillEl.style.background = ratio > 0.4 ? '#FDE68A' : '#EF4444';
+
       if (this.timeRemaining <= 0) {
         this.stopTimer();
         if (!this.isAnswering) {
-          // 시간 초과 → 오답 처리 (정답 인덱스가 아닌 -1 전달)
+          // 시간 초과 → 오답 처리
           this.onChoiceSelect(-1);
         }
       }
@@ -330,5 +355,6 @@ export class MathQuizGame {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+    this.timerTrackEl.style.display = 'none';
   }
 }

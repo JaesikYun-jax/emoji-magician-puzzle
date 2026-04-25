@@ -1,10 +1,48 @@
-import type { AppRouter } from '../router/AppRouter';
-import type { MathOperation } from '../game-data/subjectConfig';
-import { MATH_LEVELS } from '../game-data/mathLevels';
-import { EQ_FILL_LEVELS } from '../game-data/equationFillLevels';
-import { PATTERN_FINDER_LEVELS } from '../game-data/patternFinderLevels';
+import type { AppRouter, ScreenId } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
 import { t } from '../i18n';
+import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
+import { buildSubjectProgress } from '../systems/progression/xpEngine';
+import { PlacementTest } from './PlacementTest';
+import type { PlacementQuestion } from './PlacementTest';
+
+const MATH_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
+  {
+    id: 'mp1',
+    questionText: '3 + 5 = ?',
+    choices: ['6', '7', '8', '9'],
+    correctIndex: 2,
+    emoji: '🔢',
+  },
+  {
+    id: 'mp2',
+    questionText: '12 - 7 = ?',
+    choices: ['4', '5', '6', '3'],
+    correctIndex: 1,
+    emoji: '➖',
+  },
+  {
+    id: 'mp3',
+    questionText: '4 × 3 = ?',
+    choices: ['10', '12', '14', '16'],
+    correctIndex: 1,
+    emoji: '✖️',
+  },
+  {
+    id: 'mp4',
+    questionText: '2, 4, 6, 8, __ 다음은?',
+    choices: ['9', '10', '11', '12'],
+    correctIndex: 1,
+    emoji: '🔷',
+  },
+  {
+    id: 'mp5',
+    questionText: '□ + 6 = 13, □는?',
+    choices: ['5', '6', '7', '8'],
+    correctIndex: 2,
+    emoji: '❓',
+  },
+];
 
 const MATH_MENU_STYLE = `
 #math-menu {
@@ -13,8 +51,8 @@ const MATH_MENU_STYLE = `
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(217,249,157,0.12), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(253,230,138,0.10), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 0% 0%, rgba(125,211,252,0.12), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(14,165,233,0.10), transparent 60%),
     linear-gradient(165deg, #0C4A6E 0%, #0369A1 55%, #0EA5E9 100%);
   z-index: 20;
   font-family: 'Plus Jakarta Sans', 'Pretendard Variable', 'Apple SD Gothic Neo', sans-serif;
@@ -32,6 +70,25 @@ const MATH_MENU_STYLE = `
 }
 #math-menu > * { position: relative; z-index: 1; }
 
+#math-menu .mm-decor {
+  position: absolute;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 800;
+  color: rgba(255,255,255,0.06);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  animation: mm-drift 14s ease-in-out infinite;
+}
+#math-menu .mm-decor--1 { top: 18%; left: -10px; font-size: 180px; animation-delay: 0s; }
+#math-menu .mm-decor--2 { bottom: 10%; right: -20px; font-size: 220px; animation-delay: 3s; animation-duration: 18s; }
+
+@keyframes mm-drift {
+  0%, 100% { transform: translate(0,0) rotate(0); }
+  50%       { transform: translate(8px,-16px) rotate(4deg); }
+}
+
 #math-menu .mm-header {
   display: flex;
   align-items: center;
@@ -39,17 +96,13 @@ const MATH_MENU_STYLE = `
   gap: 14px;
 }
 #math-menu .mm-back-btn {
-  width: 42px;
-  height: 42px;
+  width: 42px; height: 42px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.18);
   color: #fff;
   cursor: pointer;
   border-radius: 14px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: transform 150ms, background 150ms;
@@ -59,7 +112,7 @@ const MATH_MENU_STYLE = `
 
 #math-menu .mm-title-wrap { display: flex; flex-direction: column; gap: 2px; }
 #math-menu .mm-eyebrow {
-  color: #D9F99D;
+  color: #BAE6FD;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.2em;
@@ -74,21 +127,137 @@ const MATH_MENU_STYLE = `
   letter-spacing: -0.02em;
 }
 
-#math-menu .mm-tabs {
+#math-menu .sm-xp-row {
+  padding: 0 24px 12px;
   display: flex;
+  flex-direction: column;
   gap: 6px;
-  padding: 0 16px 8px;
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  scrollbar-width: none;
 }
-#math-menu .mm-tabs::-webkit-scrollbar { display: none; }
-#math-menu .mm-tab {
+
+#math-menu .sm-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 24px 24px;
+  gap: 16px;
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
+}
+
+#math-menu .sm-info-card {
+  position: relative;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 28px;
+  padding: 28px 24px;
+  text-align: center;
+  width: 100%;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow: hidden;
+  transition: transform 300ms, border-color 300ms;
+}
+#math-menu .sm-info-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: #0EA5E9;
+  filter: blur(50px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+#math-menu .sm-info-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(125,211,252,0.4);
+}
+
+#math-menu .sm-info-mark {
+  width: 72px; height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #7DD3FC, #0369A1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 12px 32px rgba(3,105,161,0.35);
+  position: relative;
+  z-index: 1;
+}
+
+#math-menu .sm-info-title {
+  font-family: 'Fraunces', 'Pretendard Variable', serif;
+  font-variation-settings: 'opsz' 144, 'SOFT' 60;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  display: block;
+  letter-spacing: -0.03em;
+  position: relative;
+  z-index: 1;
+}
+#math-menu .sm-info-title em {
+  font-style: italic;
+  font-weight: 300;
+  color: #7DD3FC;
+}
+
+#math-menu .sm-info-sub {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+  position: relative;
+  z-index: 1;
+}
+
+#math-menu .sm-info-stats {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed rgba(255,255,255,0.18);
+  position: relative;
+  z-index: 1;
+}
+#math-menu .sm-info-stat { text-align: center; }
+#math-menu .sm-info-stat-num {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #7DD3FC;
+  display: block;
+  letter-spacing: -0.02em;
+}
+#math-menu .sm-info-stat-label {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-top: 2px;
+  display: block;
+}
+
+#math-menu .sm-tabs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+#math-menu .sm-tabs::-webkit-scrollbar { display: none; }
+#math-menu .sm-tab {
   padding: 10px 16px;
   border: 1px solid rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.04);
   backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-family: 'Plus Jakarta Sans', 'Pretendard Variable', sans-serif;
   font-size: 0.82rem;
   font-weight: 600;
@@ -99,180 +268,77 @@ const MATH_MENU_STYLE = `
   white-space: nowrap;
   flex-shrink: 0;
 }
-#math-menu .mm-tab:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
-#math-menu .mm-tab.active {
+#math-menu .sm-tab:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
+#math-menu .sm-tab.active {
   color: #0C4A6E;
-  background: #D9F99D;
-  border-color: #D9F99D;
-  box-shadow: 0 6px 20px rgba(217, 249, 157, 0.35);
+  background: #7DD3FC;
+  border-color: #7DD3FC;
+  box-shadow: 0 6px 20px rgba(125,211,252,0.35);
 }
 
-#math-menu .mm-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 20px 16px 32px;
-  overflow-y: auto;
-  align-content: start;
-  max-width: 560px;
-  margin: 0 auto;
+#math-menu .sm-tab-detail { width: 100%; }
+
+#math-menu .sm-start-btn {
   width: 100%;
-}
-
-#math-menu .mm-cell {
-  aspect-ratio: 1;
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.14);
-  display: flex;
-  flex-direction: column;
+  padding: 20px 24px;
+  border-radius: 999px;
+  border: none;
+  font-family: 'Plus Jakarta Sans', 'Pretendard Variable', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: #FAF7F2;
+  color: #0C4A6E;
+  cursor: pointer;
+  box-shadow:
+    0 2px 0 rgba(0,0,0,0.05),
+    0 12px 36px rgba(125,211,252,0.4),
+    inset 0 -2px 0 rgba(0,0,0,0.08);
+  transition: transform 150ms, box-shadow 150ms;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-weight: 700;
-  transition: transform 250ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 250ms, border-color 250ms;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  position: relative;
-  overflow: hidden;
+  gap: 12px;
 }
-#math-menu .mm-cell:active { transform: scale(0.94); }
-
-#math-menu .mm-cell.unlocked {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(3, 105, 161, 0.35);
-}
-#math-menu .mm-cell.unlocked:hover {
-  transform: translateY(-3px);
-  border-color: rgba(217, 249, 157, 0.45);
-  background: rgba(255,255,255,0.12);
-  box-shadow: 0 8px 28px rgba(217, 249, 157, 0.25);
-}
-#math-menu .mm-cell.locked {
-  background: rgba(0,0,0,0.2);
-  color: rgba(255,255,255,0.25);
-  cursor: default;
-  border-color: rgba(255,255,255,0.06);
-}
-#math-menu .mm-cell .mm-lv {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-size: 0.78rem;
-  margin-bottom: 4px;
-  opacity: 0.72;
-  letter-spacing: -0.01em;
-}
-#math-menu .mm-cell .mm-stars {
-  font-size: 0.9rem;
-  letter-spacing: 2px;
-  color: #FDE68A;
-  text-shadow: 0 0 8px rgba(253, 230, 138, 0.35);
-}
-#math-menu .mm-cell .mm-lock { font-size: 1.1rem; opacity: 0.6; }
-
-#math-menu .lt-banner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 8px 16px;
-  padding: 16px 20px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(253, 230, 138, 0.18), rgba(251, 113, 133, 0.18));
-  border: 1px solid rgba(253, 230, 138, 0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
-  text-align: left;
-  width: calc(100% - 32px);
-  max-width: 528px;
-  margin-inline: auto;
-  transition: transform 250ms, border-color 250ms, box-shadow 250ms;
-  position: relative;
-  overflow: hidden;
-}
-#math-menu .lt-banner:hover {
+#math-menu .sm-start-btn:hover {
   transform: translateY(-2px);
-  border-color: rgba(253, 230, 138, 0.6);
-  box-shadow: 0 12px 36px rgba(253, 230, 138, 0.25);
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.05),
+    0 16px 48px rgba(125,211,252,0.55),
+    inset 0 -2px 0 rgba(0,0,0,0.08);
 }
-#math-menu .lt-banner:active { transform: scale(0.98); }
-#math-menu .lt-banner-icon {
-  width: 44px; height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #FDE68A, #FB7185);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(251, 113, 133, 0.4);
-}
-#math-menu .lt-banner-text { flex: 1; }
-#math-menu .lt-banner-title {
-  display: block;
-  font-family: 'Fraunces', 'Pretendard Variable', serif;
-  font-variation-settings: 'opsz' 72;
-  font-size: 1rem; font-weight: 700; color: #fff;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-#math-menu .lt-banner-sub {
-  display: block; font-size: 0.78rem;
-  color: rgba(255,255,255,0.75); margin-top: 3px;
-}
-#math-menu .lt-banner-arrow {
+#math-menu .sm-start-btn:active { transform: scale(0.96) translateY(0); }
+#math-menu .sm-start-btn__arrow {
   width: 32px; height: 32px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; flex-shrink: 0;
-  transition: transform 200ms, background 200ms;
+  background: #0C4A6E;
+  color: #7DD3FC;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 200ms;
 }
-#math-menu .lt-banner:hover .lt-banner-arrow {
-  transform: translateX(3px);
-  background: rgba(217, 249, 157, 0.25);
-  color: #D9F99D;
-}
-
-@keyframes mm-cell-pulse {
-  0%, 100% { box-shadow: 0 4px 18px rgba(3,105,161,0.35); }
-  50% { box-shadow: 0 4px 32px rgba(253,230,138,0.8), 0 0 0 4px rgba(253,230,138,0.4); }
-}
-#math-menu .mm-cell-highlight { animation: mm-cell-pulse 800ms ease-in-out 3; }
+#math-menu .sm-start-btn:hover .sm-start-btn__arrow { transform: translateX(3px); }
 
 @media (prefers-reduced-motion: reduce) {
-  #math-menu .mm-cell, #math-menu .lt-banner { transition: none; }
+  #math-menu .sm-info-card, #math-menu .sm-start-btn, #math-menu .mm-decor { transition: none; animation: none; }
 }
 `;
 
-type MathTab = MathOperation | 'eq-fill' | 'pat-find';
-
-const TAB_LABELS: Record<MathTab, () => string> = {
-  addition:       () => t('math.operation.addition'),
-  subtraction:    () => t('math.operation.subtraction'),
-  multiplication: () => t('math.operation.multiplication'),
-  'eq-fill':      () => t('math.eqFill.tabLabel'),
-  'pat-find':     () => t('patFind.tabLabel'),
-};
-
-const TABS: MathTab[] = ['addition', 'subtraction', 'multiplication', 'eq-fill', 'pat-find'];
-
 export class MathMenu {
   private el: HTMLElement | null = null;
-  private activeTab: MathTab = 'addition';
-  private unlockedIds: Set<string> = new Set(['math-add-single-1']);
+  private activeGameTab: string | null = null;
+  private _forcedOverrides: Map<string, string> = new Map();
+  private _settingsOpen: boolean = false;
 
-  constructor(private container: HTMLElement, private router: AppRouter, private saveService?: SaveService) {}
-
-  setUnlocked(ids: string[]): void {
-    this.unlockedIds = new Set(ids);
-  }
+  constructor(
+    private container: HTMLElement,
+    private router: AppRouter,
+    private saveService?: SaveService,
+  ) {}
 
   show(): void {
     this.hide();
-    if (this.saveService) {
-      this.unlockedIds = new Set(this.saveService.getUnlockedMathIds());
-    }
 
     if (!document.getElementById('math-menu-style')) {
       const style = document.createElement('style');
@@ -281,9 +347,24 @@ export class MathMenu {
       document.head.appendChild(style);
     }
 
+    const rawProgress = this.saveService?.getSubjectProgress('math');
+    const progress = buildSubjectProgress({
+      subjectId: 'math',
+      xp: rawProgress?.xp ?? 0,
+      totalClears: rawProgress?.totalClears ?? 0,
+      streak: rawProgress?.streak ?? 0,
+      bestStreak: rawProgress?.bestStreak ?? 0,
+    });
+
+    const accentColor = '#7DD3FC';
+    const pct = progress.levelProgressPercent;
+
     const el = document.createElement('div');
     el.id = 'math-menu';
     el.innerHTML = `
+      <span class="mm-decor mm-decor--1" aria-hidden="true">∑</span>
+      <span class="mm-decor mm-decor--2" aria-hidden="true">π</span>
+
       <div class="mm-header">
         <button class="mm-back-btn" aria-label="back">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -293,194 +374,217 @@ export class MathMenu {
           <span class="mm-title">${t('subject.math')}</span>
         </div>
       </div>
-      <div class="mm-tabs">
-        ${TABS.map((tab) => `
-          <button class="mm-tab ${tab === this.activeTab ? 'active' : ''}" data-tab="${tab}">
-            ${TAB_LABELS[tab]()}
-          </button>
-        `).join('')}
+
+      <div class="sm-xp-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:${accentColor};letter-spacing:0.1em;text-transform:uppercase;">
+            Lv.${progress.level} · ${progress.rank}
+          </span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.55);">
+            ${progress.xpToNextLevel > 0 ? `+${progress.xpToNextLevel} XP to next` : 'MAX LEVEL'}
+          </span>
+        </div>
+        <div style="height:5px;background:rgba(255,255,255,0.15);border-radius:99px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${accentColor};border-radius:99px;transition:width 0.8s cubic-bezier(0.22,0.61,0.36,1);"></div>
+        </div>
       </div>
-      <button class="lt-banner" id="mm-arith-banner">
-        <span class="lt-banner-icon">🍉</span>
-        <div class="lt-banner-text">
-          <span class="lt-banner-title">과일 셈하기</span>
-          <span class="lt-banner-sub">이미지로 익히는 직관적 수연산</span>
+
+      <div class="sm-content">
+        <div class="sm-info-card">
+          <div class="sm-info-mark" aria-hidden="true">🔢</div>
+          <span class="sm-info-title">수리 <em>문제 풀기</em></span>
+          <span class="sm-info-sub">숫자와 규칙으로 탐구하는 수학 여행<br/>단계별 문제로 실력을 키워요</span>
+          <div class="sm-info-stats">
+            <div class="sm-info-stat">
+              <span class="sm-info-stat-num">${progress.xpInCurrentLevel} XP</span>
+              <span class="sm-info-stat-label">이번 레벨</span>
+            </div>
+            <div class="sm-info-stat">
+              <span class="sm-info-stat-num">Lv.${progress.level}</span>
+              <span class="sm-info-stat-label">현재 레벨</span>
+            </div>
+          </div>
         </div>
-        <span class="lt-banner-arrow">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </button>
-      <button class="lt-banner" id="mm-lt-banner">
-        <span class="lt-banner-icon">🧪</span>
-        <div class="lt-banner-text">
-          <span class="lt-banner-title">내 레벨 찾기</span>
-          <span class="lt-banner-sub">5문제로 딱 맞는 레벨을 찾아줄게요</span>
-        </div>
-        <span class="lt-banner-arrow">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </button>
-      <div class="mm-grid" id="mm-grid"></div>
+
+        <div class="sm-tabs"></div>
+        <div class="sm-tab-detail"></div>
+
+        <button class="sm-start-btn" id="mm-start-btn">
+          <span>오늘의 학습 시작하기</span>
+          <span class="sm-start-btn__arrow" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </button>
+      </div>
     `;
 
-    el.querySelector('.mm-back-btn')!.addEventListener('click', () => {
+    el.querySelector('.mm-back-btn')!.addEventListener('pointerdown', () => {
       this.router.back();
     });
 
-    el.querySelector('#mm-lt-banner')!.addEventListener('click', () => {
-      this.router.navigate({ to: 'level-test-math', subject: 'math' });
-    });
-
-    el.querySelector('#mm-arith-banner')!.addEventListener('click', () => {
-      this.router.navigate({ to: 'arithmetic-menu', subject: 'math' });
-    });
-
-    el.querySelectorAll('.mm-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        this.activeTab = (tab as HTMLElement).dataset['tab'] as MathTab;
-        el.querySelectorAll('.mm-tab').forEach((t) => t.classList.remove('active'));
-        tab.classList.add('active');
-        this.renderGrid(el.querySelector('#mm-grid') as HTMLElement);
-      });
+    el.querySelector('#mm-start-btn')!.addEventListener('pointerdown', () => {
+      if (this.saveService && !this.saveService.isPlacementDone('math')) {
+        const placement = new PlacementTest(this.container, this.router, this.saveService);
+        placement.show({
+          subjectId: 'math',
+          subjectLabelKo: '수리',
+          subjectLabelEn: 'Math',
+          questions: MATH_PLACEMENT_QUESTIONS,
+          gradientCss: 'linear-gradient(165deg, #0C4A6E, #0369A1, #0EA5E9)',
+          onComplete: (_score) => {
+            placement.hide();
+            this.router.navigate({ to: 'game-eq-fill', subject: 'math' });
+          },
+          onBack: () => { placement.hide(); },
+        });
+      } else {
+        this.router.navigate({ to: 'game-eq-fill', subject: 'math' });
+      }
     });
 
     this.container.appendChild(el);
     this.el = el;
 
-    this.renderGrid(el.querySelector('#mm-grid') as HTMLElement);
-
-    const state = this.router.getState();
-    if (state.highlightLevelId) {
-      const highlightId = state.highlightLevelId;
-      setTimeout(() => {
-        const cell = el.querySelector(`[data-levelid="${highlightId}"]`);
-        if (cell) cell.classList.add('mm-cell-highlight');
-      }, 100);
-    }
+    this._renderGameTabs(el, 'math');
   }
 
-  private renderGrid(grid: HTMLElement): void {
-    // ── 규칙 찾기 탭 ──────────────────────────────────────────────────────────
-    if (this.activeTab === 'pat-find') {
-      const unlockedPatIds = this._computePatFindUnlocked();
-      grid.innerHTML = PATTERN_FINDER_LEVELS.map((lv) => {
-        const unlocked = unlockedPatIds.has(lv.id);
-        const progress = this.saveService?.getMathProgress(lv.id);
-        const stars    = progress?.stars ?? 0;
-        const starStr  = unlocked ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
-        return `
-          <button
-            class="mm-cell ${unlocked ? 'unlocked' : 'locked'}"
-            data-levelid="${lv.id}"
-            ${unlocked ? '' : 'disabled'}
-          >
-            <span class="mm-lv">Lv ${lv.levelIndex}</span>
-            ${unlocked
-              ? `<span class="mm-stars">${starStr}</span>`
-              : `<span class="mm-lock">&#128274;</span>`
-            }
-          </button>
-        `;
-      }).join('');
+  private _renderGameTabs(el: HTMLElement, subjectId: string): void {
+    const games = getGamesBySubject(subjectId);
+    const tabsEl = el.querySelector('.sm-tabs') as HTMLElement;
 
-      grid.querySelectorAll('.mm-cell.unlocked').forEach((cell) => {
-        cell.addEventListener('click', () => {
-          const levelId = (cell as HTMLElement).dataset['levelid']!;
-          this.router.navigate({ to: 'game-pattern-finder', subject: 'math', levelId });
-        });
-      });
-      return;
-    }
+    tabsEl.innerHTML = games.map(g => `
+      <button class="sm-tab ${this.activeGameTab === g.id ? 'active' : ''}" data-game-id="${g.id}">
+        ${g.icon} ${g.labelKo}
+      </button>
+    `).join('');
 
-    // ── 심화(등식 완성) 탭 ─────────────────────────────────────────────────
-    if (this.activeTab === 'eq-fill') {
-      // 첫 레벨은 항상 잠금 해제, 이후는 이전 레벨 클리어 시 해제
-      // (저장 데이터 없으면 eq-fill-1 만 해제)
-      const unlockedEqIds = this._computeEqFillUnlocked();
-      grid.innerHTML = EQ_FILL_LEVELS.map((lv) => {
-        const unlocked = unlockedEqIds.has(lv.id);
-        const progress = this.saveService?.getMathProgress(lv.id);
-        const stars    = progress?.stars ?? 0;
-        const starStr  = unlocked ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
-        return `
-          <button
-            class="mm-cell ${unlocked ? 'unlocked' : 'locked'}"
-            data-levelid="${lv.id}"
-            ${unlocked ? '' : 'disabled'}
-          >
-            <span class="mm-lv">Lv ${lv.levelIndex}</span>
-            ${unlocked
-              ? `<span class="mm-stars">${starStr}</span>`
-              : `<span class="mm-lock">&#128274;</span>`
-            }
-          </button>
-        `;
-      }).join('');
-
-      grid.querySelectorAll('.mm-cell.unlocked').forEach((cell) => {
-        cell.addEventListener('click', () => {
-          const levelId = (cell as HTMLElement).dataset['levelid']!;
-          this.router.navigate({ to: 'game-eq-fill', subject: 'math', levelId });
-        });
-      });
-      return;
-    }
-
-    // ── 일반 수학 탭 (덧셈/뺄셈/곱셈) ────────────────────────────────────
-    const levels = MATH_LEVELS.filter((l) => l.operation === this.activeTab);
-    grid.innerHTML = levels
-      .map((lv) => {
-        const unlocked = this.unlockedIds.has(lv.id);
-        const progress = this.saveService?.getMathProgress(lv.id);
-        const stars = progress?.stars ?? 0;
-        const starStr = unlocked ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '';
-        return `
-          <button
-            class="mm-cell ${unlocked ? 'unlocked' : 'locked'}"
-            data-levelid="${lv.id}"
-            ${unlocked ? '' : 'disabled'}
-          >
-            <span class="mm-lv">Lv ${lv.levelIndex}</span>
-            ${unlocked
-              ? `<span class="mm-stars">${starStr}</span>`
-              : `<span class="mm-lock">&#128274;</span>`
-            }
-          </button>
-        `;
-      })
-      .join('');
-
-    grid.querySelectorAll('.mm-cell.unlocked').forEach((cell) => {
-      cell.addEventListener('click', () => {
-        const levelId = (cell as HTMLElement).dataset['levelid']!;
-        this.router.navigate({ to: 'level-intro', subject: 'math', levelId });
+    tabsEl.querySelectorAll('.sm-tab').forEach(btn => {
+      btn.addEventListener('pointerdown', () => {
+        this.activeGameTab = (btn as HTMLElement).dataset['gameId'] ?? null;
+        this._settingsOpen = false;
+        this._renderGameTabs(el, subjectId);
+        this._renderTabDetail(el, subjectId);
       });
     });
+
+    this._renderTabDetail(el, subjectId);
   }
 
-  /** eq-fill 잠금 해제 레벨 계산: Lv1 + 이전 레벨 클리어된 것들 */
-  private _computeEqFillUnlocked(): Set<string> {
-    const unlocked = new Set<string>(['eq-fill-1']);
-    for (let i = 1; i < EQ_FILL_LEVELS.length; i++) {
-      const prevId = EQ_FILL_LEVELS[i - 1]!.id;
-      const prevProgress = this.saveService?.getMathProgress(prevId);
-      if (prevProgress && prevProgress.stars >= 1) {
-        unlocked.add(EQ_FILL_LEVELS[i]!.id);
-      }
+  private _renderTabDetail(el: HTMLElement, subjectId: string): void {
+    const tabDetailEl = el.querySelector('.sm-tab-detail') as HTMLElement;
+    if (!this.activeGameTab) {
+      tabDetailEl.innerHTML = '';
+      return;
     }
-    return unlocked;
-  }
+    const game = getGameById(this.activeGameTab);
+    if (!game) return;
 
-  private _computePatFindUnlocked(): Set<string> {
-    const unlocked = new Set<string>(['pat-find-1']);
-    for (let i = 1; i < PATTERN_FINDER_LEVELS.length; i++) {
-      const prevId = PATTERN_FINDER_LEVELS[i - 1]!.id;
-      const prevProgress = this.saveService?.getMathProgress(prevId);
-      if (prevProgress && prevProgress.stars >= 1) {
-        unlocked.add(PATTERN_FINDER_LEVELS[i]!.id);
+    const ds = game.difficultySettings;
+    const forcedId = ds ? (this._forcedOverrides.get(game.id) ?? null) : null;
+    const forcedOption = forcedId && ds ? ds.options.find(o => o.id === forcedId) ?? null : null;
+    const settingsOpen = this._settingsOpen;
+
+    const settingsBtnHtml = ds ? `
+      <button class="sm-settings-btn" style="
+        background:${settingsOpen ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)'};
+        border:1px solid rgba(255,255,255,0.3);border-radius:8px;
+        padding:5px 8px;cursor:pointer;color:#fff;font-size:15px;line-height:1;
+        flex-shrink:0;transition:background 150ms;
+      " title="난이도 설정">⚙️</button>
+    ` : '';
+
+    const settingsPanelHtml = (ds && settingsOpen) ? `
+      <div class="sm-settings-panel" style="
+        background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.12);
+        border-radius:12px;padding:10px 12px;
+      ">
+        <div style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;
+          text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+          ${ds.panelLabel}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${ds.options.map(opt => `
+            <button class="sm-diff-opt" data-opt-id="${opt.id}" style="
+              background:${forcedId === opt.id ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.08)'};
+              border:1px solid ${forcedId === opt.id ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'};
+              border-radius:8px;padding:5px 10px;color:#fff;
+              font-size:12px;font-weight:${forcedId === opt.id ? '700' : '400'};
+              cursor:pointer;transition:all 120ms;
+            ">${opt.label}</button>
+          `).join('')}
+        </div>
+        ${forcedId ? `
+          <div style="margin-top:6px;color:rgba(255,255,255,0.5);font-size:11px;">
+            ✓ ${forcedOption?.label ?? ''} 으로 고정됨 &nbsp;
+            <button class="sm-diff-reset" style="
+              background:none;border:none;color:rgba(255,255,255,0.5);
+              font-size:11px;cursor:pointer;text-decoration:underline;padding:0;
+            ">초기화</button>
+          </div>
+        ` : ''}
+      </div>
+    ` : '';
+
+    const soloLabel = forcedOption
+      ? `이 게임만 하기 (${forcedOption.label}) →`
+      : '이 게임만 하기 →';
+
+    tabDetailEl.innerHTML = `
+      <div style="
+        background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+        border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;
+      ">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:28px;">${game.icon}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="color:#fff;font-weight:700;font-size:15px;">${game.labelKo}</div>
+            <div style="color:rgba(255,255,255,0.65);font-size:13px;margin-top:2px;">${game.descriptionKo}</div>
+          </div>
+          ${settingsBtnHtml}
+        </div>
+        ${settingsPanelHtml}
+        <button class="sm-solo-btn" data-route="${game.routeId}" style="
+          background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+          border-radius:12px;color:#fff;font-size:14px;font-weight:700;
+          padding:10px 16px;cursor:pointer;text-align:center;
+        ">${soloLabel}</button>
+      </div>
+    `;
+
+    tabDetailEl.querySelector('.sm-settings-btn')?.addEventListener('pointerdown', () => {
+      this._settingsOpen = !this._settingsOpen;
+      this._renderTabDetail(el, subjectId);
+    });
+
+    tabDetailEl.querySelectorAll('.sm-diff-opt').forEach(btn => {
+      btn.addEventListener('pointerdown', () => {
+        const optId = (btn as HTMLElement).dataset['optId']!;
+        if (this._forcedOverrides.get(game.id) === optId) {
+          this._forcedOverrides.delete(game.id);
+        } else {
+          this._forcedOverrides.set(game.id, optId);
+        }
+        this._renderTabDetail(el, subjectId);
+      });
+    });
+
+    tabDetailEl.querySelector('.sm-diff-reset')?.addEventListener('pointerdown', () => {
+      this._forcedOverrides.delete(game.id);
+      this._renderTabDetail(el, subjectId);
+    });
+
+    tabDetailEl.querySelector('.sm-solo-btn')?.addEventListener('pointerdown', () => {
+      const forced = ds ? (this._forcedOverrides.get(game.id) ?? null) : null;
+      if (forced && ds) {
+        if (ds.paramKey === 'difficulty') {
+          this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'math', difficulty: forced as 'easy' | 'normal' | 'hard' });
+        } else {
+          this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'math', levelId: forced });
+        }
+      } else {
+        this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'math' });
       }
-    }
-    return unlocked;
+    });
   }
 
   hide(): void {

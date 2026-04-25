@@ -21,7 +21,10 @@ import {
   WALL_PUZZLES_TIER1,
   WALL_PUZZLES_TIER2,
   WALL_PUZZLES_TIER3,
+  WALL_PUZZLES_TIER3_BLOCKED,
   WALL_PUZZLES_TIER4,
+  WALL_PUZZLES_TIER4_HARD,
+  WALL_PUZZLES_TIER5,
 } from '../../game-data/wallPuzzles';
 
 // ────────────────────────────────────────────────
@@ -146,7 +149,12 @@ describe('문제은행 선택 - wallPuzzleSelector', () => {
     it('31 clears → tier 3', () => expect(getTierForClears(31)).toBe(3));
     it('55 clears → tier 3', () => expect(getTierForClears(55)).toBe(3));
     it('56 clears → tier 4', () => expect(getTierForClears(56)).toBe(4));
-    it('100 clears → tier 4', () => expect(getTierForClears(100)).toBe(4));
+    it('100 clears → tier 5', () => expect(getTierForClears(100)).toBe(5));
+    it('90 clears → tier 5', () => expect(getTierForClears(90)).toBe(5));
+    it('89 clears → tier 4', () => expect(getTierForClears(89)).toBe(4));
+    it('streak 3, 5 clears → tier 2 (5+8=13)', () => expect(getTierForClears(5, 3)).toBe(2));
+    it('streak 6, 10 clears → tier 2 (10+18=28)', () => expect(getTierForClears(10, 6)).toBe(2));
+    it('streak 10, 20 clears → tier 4 (20+33=53)', () => expect(getTierForClears(20, 10)).toBe(3));
   });
 
   describe('selectWallPuzzle', () => {
@@ -244,13 +252,21 @@ describe('문제은행 데이터 유효성 - wallPuzzles', () => {
       });
     });
 
-    it('ALL_WALL_PUZZLES = tier1 + tier2 + tier3 + tier4 합산', () => {
+    it('ALL_WALL_PUZZLES = 모든 tier 배열 합산', () => {
       const expected =
         WALL_PUZZLES_TIER1.length +
         WALL_PUZZLES_TIER2.length +
         WALL_PUZZLES_TIER3.length +
-        WALL_PUZZLES_TIER4.length;
+        WALL_PUZZLES_TIER3_BLOCKED.length +
+        WALL_PUZZLES_TIER4.length +
+        WALL_PUZZLES_TIER4_HARD.length +
+        WALL_PUZZLES_TIER5.length;
       expect(ALL_WALL_PUZZLES.length).toBe(expected);
+    });
+
+    it('tier 5 퍼즐이 존재함', () => {
+      const t5 = ALL_WALL_PUZZLES.filter(p => p.tier === 5);
+      expect(t5.length).toBeGreaterThan(0);
     });
   });
 

@@ -47,9 +47,9 @@ describe('SubjectSelect — Sabak card grid', () => {
     expect(creative.querySelector('.ss-card__badge')?.textContent).toBe('NEW');
   });
 
-  it('clicking math navigates to arithmetic-menu', () => {
+  it('clicking math navigates to math-menu', () => {
     container.querySelector<HTMLButtonElement>('.ss-card[data-subject="math"]')!.click();
-    expect(router._nav).toHaveBeenCalledWith({ to: 'arithmetic-menu', subject: 'math' });
+    expect(router._nav).toHaveBeenCalledWith({ to: 'math-menu', subject: 'math' });
   });
 
   it('clicking english navigates to english-menu', () => {

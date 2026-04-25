@@ -1,17 +1,8 @@
-/**
- * englishGameEngine.test.ts
- *
- * 대상 모듈: src/systems/english/englishGameEngine.ts (구현 예정)
- *
- * englishGameEngine.ts 가 존재하지 않으면 이 파일 전체가 import 오류로 실패한다.
- * 구현 후 `npx vitest run src/systems/__tests__/englishGameEngine.test.ts` 로 실행.
- */
 import { describe, it, expect } from 'vitest';
-import { buildQuizSession, pickWrongOptions } from '../english/englishGameEngine';
+import { buildQuizSession, buildQuestion, pickWrongOptions } from '../english/englishGameEngine';
 import { ENGLISH_WORDS } from '../../game-data/englishWords';
 import type { WordEntry } from '../../game-data/english/index';
 
-// ── 헬퍼: 최소 단어 세트 생성 ──────────────────────────────────────────────
 function makeWords(n: number): WordEntry[] {
   return Array.from({ length: n }, (_, i) => ({
     id: `test-${i}`,
@@ -23,38 +14,97 @@ function makeWords(n: number): WordEntry[] {
   }));
 }
 
-// ── buildQuizSession ────────────────────────────────────────────────────────
+// ── buildQuestion ──────────────────────────────────────────────────────────
+describe('buildQuestion', () => {
+  it('en-to-ko: choices가 한국어 뜻 배열이고 correctIdx가 word.korean을 가리킨다', () => {
+    const words = makeWords(10);
+    const q = buildQuestion(words[0], 'en-to-ko', words);
+    expect(q.questionType).toBe('en-to-ko');
+    expect(q.choices[q.correctIdx]).toBe(words[0].korean);
+  });
+
+  it('ko-to-en: choices가 영어 단어 배열이고 correctIdx가 word.english를 가리킨다', () => {
+    const words = makeWords(10);
+    const q = buildQuestion(words[0], 'ko-to-en', words);
+    expect(q.questionType).toBe('ko-to-en');
+    expect(q.choices[q.correctIdx]).toBe(words[0].english);
+  });
+
+  it('correctIdx가 choices 범위 내', () => {
+    const words = makeWords(10);
+    const q1 = buildQuestion(words[0], 'en-to-ko', words);
+    const q2 = buildQuestion(words[0], 'ko-to-en', words);
+    expect(q1.correctIdx).toBeGreaterThanOrEqual(0);
+    expect(q1.correctIdx).toBeLessThan(q1.choices.length);
+    expect(q2.correctIdx).toBeGreaterThanOrEqual(0);
+    expect(q2.correctIdx).toBeLessThan(q2.choices.length);
+  });
+});
+
+// ── buildQuizSession ───────────────────────────────────────────────────────
 describe('buildQuizSession', () => {
   it('count개 문제를 반환한다', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
+    expect(session.questions.length).toBe(10);
+    expect(session.totalCount).toBe(10);
+  });
+
+  it('count=5 세션도 5문제 반환', () => {
     const words = makeWords(10);
     const session = buildQuizSession(words, 5);
     expect(session.questions.length).toBe(5);
     expect(session.totalCount).toBe(5);
   });
 
-  it('각 문제의 choices 길이가 min(4, words.length) 이상', () => {
-    const words = makeWords(10);
-    const session = buildQuizSession(words, 5);
-    const minChoices = Math.min(4, words.length);
+  it('모든 문제에 questionType 필드가 존재한다', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
     for (const q of session.questions) {
-      expect(q.choices.length).toBeGreaterThanOrEqual(minChoices);
+      expect(q.questionType === 'en-to-ko' || q.questionType === 'ko-to-en').toBe(true);
     }
   });
 
-  it('각 문제의 correctIdx가 choices 배열 범위 내', () => {
-    const words = makeWords(10);
-    const session = buildQuizSession(words, 5);
+  it('en-to-ko 문제: choices[correctIdx] === word.korean', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
+    for (const q of session.questions) {
+      if (q.questionType === 'en-to-ko') {
+        expect(q.choices[q.correctIdx]).toBe(q.word.korean);
+      }
+    }
+  });
+
+  it('ko-to-en 문제: choices[correctIdx] === word.english', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
+    for (const q of session.questions) {
+      if (q.questionType === 'ko-to-en') {
+        expect(q.choices[q.correctIdx]).toBe(q.word.english);
+      }
+    }
+  });
+
+  it('correctIdx가 choices 배열 범위 내', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
     for (const q of session.questions) {
       expect(q.correctIdx).toBeGreaterThanOrEqual(0);
       expect(q.correctIdx).toBeLessThan(q.choices.length);
     }
   });
 
-  it('choices[correctIdx]가 해당 word.korean과 일치', () => {
-    const words = makeWords(10);
-    const session = buildQuizSession(words, 5);
-    for (const q of session.questions) {
-      expect(q.choices[q.correctIdx]).toBe(q.word.korean);
+  it('페어: 10문제에서 같은 word.id가 en-to-ko와 ko-to-en 양방향으로 존재한다', () => {
+    const words = makeWords(15);
+    const session = buildQuizSession(words, 10);
+    const wordIds = session.questions.map(q => q.word.id);
+    const duplicateId = wordIds.find(id => wordIds.indexOf(id) !== wordIds.lastIndexOf(id));
+    expect(duplicateId).toBeDefined();
+    if (duplicateId) {
+      const pair = session.questions.filter(q => q.word.id === duplicateId);
+      const types = pair.map(q => q.questionType);
+      expect(types).toContain('en-to-ko');
+      expect(types).toContain('ko-to-en');
     }
   });
 
@@ -65,16 +115,17 @@ describe('buildQuizSession', () => {
     expect(session.questions.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('count가 words.length보다 크면 words 전체를 사용하고 에러 없음', () => {
+  it('count가 words.length보다 크면 words 기반으로 생성하고 에러 없음', () => {
     const words = makeWords(5);
     expect(() => buildQuizSession(words, 20)).not.toThrow();
     const session = buildQuizSession(words, 20);
-    // words.length(5)를 초과할 수 없다
-    expect(session.questions.length).toBeLessThanOrEqual(words.length);
+    // 페어 포함이면 words.length + 1까지 허용
+    expect(session.questions.length).toBeLessThanOrEqual(words.length + 1);
+    expect(session.questions.length).toBeGreaterThan(0);
   });
 });
 
-// ── pickWrongOptions ────────────────────────────────────────────────────────
+// ── pickWrongOptions ───────────────────────────────────────────────────────
 describe('pickWrongOptions', () => {
   it('반환 배열에 correct가 포함되지 않는다', () => {
     const correct = makeWords(1)[0];
@@ -100,7 +151,7 @@ describe('pickWrongOptions', () => {
   });
 });
 
-// ── 실제 ENGLISH_WORDS 통합 테스트 ─────────────────────────────────────────
+// ── 실제 ENGLISH_WORDS 통합 테스트 ────────────────────────────────────────
 describe('buildQuizSession — 실제 ENGLISH_WORDS 사용', () => {
   it('ENGLISH_WORDS로 buildQuizSession(words, 10) — 10문제 생성', () => {
     const session = buildQuizSession(ENGLISH_WORDS, 10);
@@ -117,5 +168,20 @@ describe('buildQuizSession — 실제 ENGLISH_WORDS 사용', () => {
         expect(choice.length).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('양방향 문제가 모두 포함된다 (en-to-ko와 ko-to-en)', () => {
+    // 여러 번 실행하여 양방향이 나오는지 확인
+    let hasEnToKo = false;
+    let hasKoToEn = false;
+    for (let i = 0; i < 5; i++) {
+      const session = buildQuizSession(ENGLISH_WORDS, 10);
+      for (const q of session.questions) {
+        if (q.questionType === 'en-to-ko') hasEnToKo = true;
+        if (q.questionType === 'ko-to-en') hasKoToEn = true;
+      }
+    }
+    expect(hasEnToKo).toBe(true);
+    expect(hasKoToEn).toBe(true);
   });
 });

@@ -1,16 +1,23 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { BrandHome } from '../BrandHome';
+import type { SaveService } from '../../services/SaveService';
 import { createRouterStub, mountContainer, cleanup } from './_stubs';
+
+function createSaveServiceStub(hasProfile = false): SaveService {
+  return { hasProfile: vi.fn(() => hasProfile) } as unknown as SaveService;
+}
 
 describe('BrandHome — Sabak HomeA', () => {
   let container: HTMLElement;
   let router: ReturnType<typeof createRouterStub>;
+  let saveService: SaveService;
   let home: BrandHome;
 
   beforeEach(() => {
     container = mountContainer();
     router = createRouterStub();
-    home = new BrandHome(container, router);
+    saveService = createSaveServiceStub(false); // no profile by default
+    home = new BrandHome(container, router, saveService);
     home.show();
   });
 
@@ -84,16 +91,27 @@ describe('BrandHome — Sabak HomeA', () => {
     expect(bursts.length).toBeGreaterThanOrEqual(14); // level-1 default
   });
 
-  it('hero CTA navigates to subject-select', () => {
+  it('hero CTA navigates to profile-setup when no profile exists', () => {
     const cta = container.querySelector<HTMLButtonElement>('.bh-hero__cta')!;
     cta.click();
-    expect(router._nav).toHaveBeenCalledWith({ to: 'subject-select' });
+    expect(router._nav).toHaveBeenCalledWith({ to: 'profile-setup' });
   });
 
-  it('final footer CTA also navigates to subject-select', () => {
+  it('hero CTA navigates to home-b when profile exists', () => {
+    home.hide();
+    const svWithProfile = createSaveServiceStub(true);
+    const home2 = new BrandHome(container, router, svWithProfile);
+    home2.show();
+    const cta = container.querySelector<HTMLButtonElement>('.bh-hero__cta')!;
+    cta.click();
+    expect(router._nav).toHaveBeenCalledWith({ to: 'home-b' });
+    home2.hide();
+  });
+
+  it('final footer CTA also navigates to profile-setup when no profile', () => {
     const footerCta = container.querySelector<HTMLButtonElement>('.bh-final__cta')!;
     footerCta.click();
-    expect(router._nav).toHaveBeenCalledWith({ to: 'subject-select' });
+    expect(router._nav).toHaveBeenCalledWith({ to: 'profile-setup' });
   });
 
   it('orb click stops propagation (does not trigger mascot tap)', () => {

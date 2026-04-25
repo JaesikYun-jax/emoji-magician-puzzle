@@ -7,6 +7,8 @@ export interface CreativityLevelConfig {
   walls?: Array<{ x: number; y: number; dir: 'r' | 'd' }>;  // dir:'r' = (x,y)↔(x+1,y) 이동 불가, dir:'d' = (x,y)↔(x,y+1) 이동 불가
   timeLimit: number;    // 초
   starThresholds: [number, number, number]; // [1star, 2star, 3star] 사용 시간 상한 (초)
+  startCell?: { x: number; y: number };   // 시작점 강제 (없으면 자유)
+  endCell?: { x: number; y: number };     // 끝점 강제 (없으면 자유)
 }
 
 export const CREATIVITY_LEVELS: CreativityLevelConfig[] = [
@@ -113,38 +115,89 @@ export function getCreativityLevelForPlayer(playerLevel: number): CreativityLeve
 
 /** 뱃지 정의 */
 export const CREATIVITY_BADGES = [
-  { threshold: 1,  emoji: '🌱', name: '첫 발걸음' },
-  { threshold: 3,  emoji: '🔥', name: '연속의 시작' },
-  { threshold: 5,  emoji: '⚡', name: '번개 손가락' },
-  { threshold: 10, emoji: '🏅', name: '두 자릿수 마법사' },
-  { threshold: 15, emoji: '🌟', name: '빛나는 경로' },
-  { threshold: 20, emoji: '🏆', name: '챔피언' },
-  { threshold: 30, emoji: '👑', name: '달인의 경지' },
-  { threshold: 50, emoji: '🧙', name: '이모지 마법사' },
+  { threshold: 1,   emoji: '🌱', name: '첫 발걸음' },
+  { threshold: 5,   emoji: '🔥', name: '열정 불꽃' },
+  { threshold: 15,  emoji: '⚡', name: '연습의 빛' },
+  { threshold: 30,  emoji: '💫', name: '별빛 탐험가' },
+  { threshold: 60,  emoji: '🌊', name: '파도 정복자' },
+  { threshold: 100, emoji: '💎', name: '다이아 의지' },
+  { threshold: 150, emoji: '👑', name: '마스터의 왕관' },
 ] as const;
 
-/** 랭크 정의 */
-export const CREATIVITY_RANKS = [
-  { minClears: 0,  level: 1,  title: '마법사 지망생', emoji: '✏️', nextThreshold: 1 },
-  { minClears: 1,  level: 2,  title: '마법사 수련생', emoji: '🪄', nextThreshold: 3 },
-  { minClears: 3,  level: 3,  title: '마법사 견습생', emoji: '🌱', nextThreshold: 6 },
-  { minClears: 6,  level: 4,  title: '마법사 입문자', emoji: '🔮', nextThreshold: 10 },
-  { minClears: 10, level: 5,  title: '마법사 중급자', emoji: '⚡', nextThreshold: 15 },
-  { minClears: 15, level: 6,  title: '마법사 숙련자', emoji: '🌟', nextThreshold: 20 },
-  { minClears: 20, level: 7,  title: '마법사 고수',   emoji: '🏅', nextThreshold: 30 },
-  { minClears: 30, level: 8,  title: '마법사 달인',   emoji: '🏆', nextThreshold: 50 },
-  { minClears: 50, level: 9,  title: '마법 기사',     emoji: '👑', nextThreshold: 80 },
-  { minClears: 80, level: 10, title: '이모지 마법사', emoji: '🧙', nextThreshold: null },
-] as const;
+/** 색상 계급 랭크 정의 */
+export interface CreativityRankDef {
+  minScore: number;
+  level: number;
+  tier: string;
+  title: string;
+  emoji: string;
+  color: string;
+  nextThreshold: number | null;
+  difficultyGate?: number;
+}
 
-export type CreativityRank = typeof CREATIVITY_RANKS[number];
+export const CREATIVITY_RANKS: CreativityRankDef[] = [
+  // ── 아이언 (Iron, #78716C) ─────────────────────────────────
+  { minScore: 0,   level: 1,  tier: 'iron',     title: '아이언 III', emoji: '⚙️', color: '#78716C', nextThreshold: 3 },
+  { minScore: 3,   level: 2,  tier: 'iron',     title: '아이언 II',  emoji: '⚙️', color: '#78716C', nextThreshold: 7 },
+  { minScore: 7,   level: 3,  tier: 'iron',     title: '아이언 I',   emoji: '⚙️', color: '#78716C', nextThreshold: 12 },
+  // ── 브론즈 (Bronze, #B45309) ───────────────────────────────
+  { minScore: 12,  level: 4,  tier: 'bronze',   title: '브론즈 III', emoji: '🥉', color: '#B45309', nextThreshold: 19 },
+  { minScore: 19,  level: 5,  tier: 'bronze',   title: '브론즈 II',  emoji: '🥉', color: '#B45309', nextThreshold: 28 },
+  { minScore: 28,  level: 6,  tier: 'bronze',   title: '브론즈 I',   emoji: '🥉', color: '#B45309', nextThreshold: 40,  difficultyGate: 2 },
+  // ── 실버 (Silver, #9CA3AF) ────────────────────────────────
+  { minScore: 40,  level: 7,  tier: 'silver',   title: '실버 III',   emoji: '🥈', color: '#9CA3AF', nextThreshold: 55 },
+  { minScore: 55,  level: 8,  tier: 'silver',   title: '실버 II',    emoji: '🥈', color: '#9CA3AF', nextThreshold: 73 },
+  { minScore: 73,  level: 9,  tier: 'silver',   title: '실버 I',     emoji: '🥈', color: '#9CA3AF', nextThreshold: 95 },
+  // ── 골드 (Gold, #D97706) ─────────────────────────────────
+  { minScore: 95,  level: 10, tier: 'gold',     title: '골드 III',   emoji: '🥇', color: '#D97706', nextThreshold: 120 },
+  { minScore: 120, level: 11, tier: 'gold',     title: '골드 II',    emoji: '🥇', color: '#D97706', nextThreshold: 150 },
+  { minScore: 150, level: 12, tier: 'gold',     title: '골드 I',     emoji: '🥇', color: '#D97706', nextThreshold: 185, difficultyGate: 3 },
+  // ── 에메랄드 (Emerald, #059669) ───────────────────────────
+  { minScore: 185, level: 13, tier: 'emerald',  title: '에메랄드 III', emoji: '💚', color: '#059669', nextThreshold: 225 },
+  { minScore: 225, level: 14, tier: 'emerald',  title: '에메랄드 II',  emoji: '💚', color: '#059669', nextThreshold: 270 },
+  { minScore: 270, level: 15, tier: 'emerald',  title: '에메랄드 I',   emoji: '💚', color: '#059669', nextThreshold: 320 },
+  // ── 사파이어 (Sapphire, #2563EB) ─────────────────────────
+  { minScore: 320, level: 16, tier: 'sapphire', title: '사파이어 III', emoji: '💙', color: '#2563EB', nextThreshold: 376 },
+  { minScore: 376, level: 17, tier: 'sapphire', title: '사파이어 II',  emoji: '💙', color: '#2563EB', nextThreshold: 438 },
+  { minScore: 438, level: 18, tier: 'sapphire', title: '사파이어 I',   emoji: '💙', color: '#2563EB', nextThreshold: 506, difficultyGate: 4 },
+  // ── 다이아몬드 (Diamond, #7C3AED) ────────────────────────
+  { minScore: 506, level: 19, tier: 'diamond',  title: '다이아 III',  emoji: '💎', color: '#7C3AED', nextThreshold: 580, difficultyGate: 5 },
+  { minScore: 580, level: 20, tier: 'diamond',  title: '다이아 II',   emoji: '💎', color: '#7C3AED', nextThreshold: 660 },
+  { minScore: 660, level: 21, tier: 'diamond',  title: '다이아 I',    emoji: '💎', color: '#7C3AED', nextThreshold: 746 },
+  // ── 마스터 ────────────────────────────────────────────────
+  { minScore: 746, level: 22, tier: 'master',   title: '마스터',      emoji: '🏆', color: '#DC2626', nextThreshold: null, difficultyGate: 5 },
+];
 
-/** totalClears를 기반으로 현재 랭크를 반환 */
-export function getCreativityRank(totalClears: number): typeof CREATIVITY_RANKS[number] {
-  let rank: typeof CREATIVITY_RANKS[number] = CREATIVITY_RANKS[0];
+export type CreativityRank = CreativityRankDef;
+
+/** 격자 크기로 난이도 티어 계산 (1=3×3, 2=4×3, 3=4×4, 4=5×4, 5=5×5/6×4) */
+export function computeDifficultyTier(cols: number, rows: number): number {
+  const cells = cols * rows;
+  if (cells <= 9) return 1;
+  if (cells <= 12) return 2;
+  if (cells <= 16) return 3;
+  if (cells <= 20) return 4;
+  return 5;
+}
+
+/** 격자 크기로 난이도 가중치 점수 계산 */
+export function computeDifficultyPoints(cols: number, rows: number): number {
+  const tier = computeDifficultyTier(cols, rows);
+  const pts: Record<number, number> = { 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0 };
+  return pts[tier] ?? 1.0;
+}
+
+/**
+ * rankScore와 maxDifficultyTier를 기반으로 현재 랭크를 반환.
+ * difficultyGate가 있는 랭크는 maxDifficultyTier가 gate 미충족 시 해당 랭크에 멈춤.
+ */
+export function getCreativityRank(rankScore: number, maxDifficultyTier = 0): CreativityRankDef {
+  let rank: CreativityRankDef = CREATIVITY_RANKS[0];
   for (const r of CREATIVITY_RANKS) {
-    if (totalClears >= r.minClears) rank = r;
-    else break;
+    if (rankScore < r.minScore) break;
+    if (r.difficultyGate && maxDifficultyTier < r.difficultyGate) break;
+    rank = r;
   }
   return rank;
 }

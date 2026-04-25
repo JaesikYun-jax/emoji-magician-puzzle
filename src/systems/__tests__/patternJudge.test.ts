@@ -3,150 +3,186 @@ import {
   generateLogicSequence,
   judgeLogicAnswer,
   calcLogicStars,
+  getPatternMeta,
   type LogicGenParams,
+  type ShapeKey,
+  type ShapePatternType,
 } from '../logic/patternJudge';
 
-describe('generateLogicSequence', () => {
-  it('arithmetic: tiles 마지막이 null, choices에 정답 포함, correctIndex가 올바름', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 4,
-      choiceCount: 4,
-      maxValue: 1000,
-    };
-    const seq = generateLogicSequence(params);
+const SHAPE_KEYS: ShapeKey[] = ['tri', 'cir', 'sqr', 'dia'];
+const ALL_TYPES: ShapePatternType[] = [
+  'ab', 'abc', 'abcd', 'aabb', 'aaab', 'abba', 'aabbcc', 'abccba',
+];
 
-    // 마지막 tile이 null
-    expect(seq.tiles[seq.tiles.length - 1]).toBeNull();
+/**
+ * 한 패턴이 모호하지 않게 풀리는지 검증하는 헬퍼.
+ * 가시 타일들로부터 사이클(period)이 추론되면, 정답 위치의 도형이 사이클 규칙과 일치해야 함.
+ */
+function inferAndCheckUnambiguous(seq: ReturnType<typeof generateLogicSequence>, period: number): boolean {
+  const tiles = seq.tiles.filter((t): t is ShapeKey => t !== null);
+  const blankPos = seq.tiles.findIndex(t => t === null);
+  // 가시 타일이 한 사이클 이상 — 즉 첫 사이클 = tiles[0..period-1] 가 정해짐
+  if (tiles.length < period) return false;
 
-    // choices에 정답 포함
-    const answer = seq.choices[seq.correctIndex];
-    expect(seq.choices).toContain(answer);
+  // 모든 가시 위치에서 cycle[i % period] === tiles[i] 가 성립해야 함
+  const cycle = tiles.slice(0, period);
+  for (let i = period; i < tiles.length; i++) {
+    if (tiles[i] !== cycle[i % period]) return false;
+  }
+  // 정답 위치의 도형 (= choices[correctIndex]) 가 cycle 규칙대로인지
+  const expectedAnswer = cycle[blankPos % period];
+  return seq.choices[seq.correctIndex] === expectedAnswer;
+}
 
-    // correctIndex가 실제 정답을 가리킴: 등차수열에서 null 전 두 값의 차가 일정해야 함
-    const nonNullTiles = seq.tiles.filter((t): t is number => t !== null);
-    const diff = nonNullTiles[1] - nonNullTiles[0];
-    const expectedAnswer = nonNullTiles[nonNullTiles.length - 1] + diff;
-    expect(answer).toBe(expectedAnswer);
-  });
-
-  it('fibonacci: tiles[2] === tiles[0] + tiles[1] 패턴 확인', () => {
-    const params: LogicGenParams = {
-      types: ['fibonacci'],
-      sequenceLength: 5,
-      choiceCount: 4,
-      maxValue: 10000,
-    };
-    // 피보나치가 maxValue를 넘으면 arithmetic으로 폴백할 수 있으므로 여러 번 시도
-    let fibFound = false;
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const seq = generateLogicSequence(params);
-      if (seq.patternType === 'fibonacci') {
-        const nonNull = seq.tiles.filter((t): t is number => t !== null);
-        expect(nonNull.length).toBeGreaterThanOrEqual(3);
-        expect(nonNull[2]).toBe(nonNull[0] + nonNull[1]);
-        fibFound = true;
-        break;
+describe('generateLogicSequence — 공통 불변량', () => {
+  it('보기는 항상 3개이고 모두 다름 (모든 패턴 타입)', () => {
+    for (const type of ALL_TYPES) {
+      for (let trial = 0; trial < 30; trial++) {
+        const seq = generateLogicSequence({ types: [type] });
+        expect(seq.choices).toHaveLength(3);
+        expect(new Set(seq.choices).size).toBe(3);
       }
     }
-    // 피보나치 패턴이 최소 한 번은 생성되어야 함
-    expect(fibFound).toBe(true);
   });
 
-  it('choiceCount=4: choices 길이가 4', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 4,
-      choiceCount: 4,
-      maxValue: 1000,
-    };
-    const seq = generateLogicSequence(params);
-    expect(seq.choices).toHaveLength(4);
+  it('정답이 보기 안에 포함됨 + 유효한 ShapeKey', () => {
+    for (const type of ALL_TYPES) {
+      for (let trial = 0; trial < 20; trial++) {
+        const seq = generateLogicSequence({ types: [type] });
+        expect(seq.choices[seq.correctIndex]).toBeDefined();
+        expect(SHAPE_KEYS).toContain(seq.choices[seq.correctIndex]);
+      }
+    }
   });
 
-  it('choiceCount=3: choices 길이가 3', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 4,
-      choiceCount: 3,
-      maxValue: 1000,
-    };
-    const seq = generateLogicSequence(params);
+  it('마지막 타일은 항상 null (?)', () => {
+    for (const type of ALL_TYPES) {
+      const seq = generateLogicSequence({ types: [type] });
+      expect(seq.tiles[seq.tiles.length - 1]).toBeNull();
+      // null은 정확히 1개
+      expect(seq.tiles.filter(t => t === null)).toHaveLength(1);
+    }
+  });
+
+  it('hint 문자열이 비어있지 않음', () => {
+    for (const type of ALL_TYPES) {
+      const seq = generateLogicSequence({ types: [type] });
+      expect(seq.hint.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('빈 types 배열이 들어와도 폴백으로 동작', () => {
+    const seq = generateLogicSequence({ types: [] });
+    expect(seq.tiles.length).toBeGreaterThan(0);
     expect(seq.choices).toHaveLength(3);
   });
+});
 
-  it('geometric: null이 아닌 tiles 값들이 올바른 등비수열 (폴백 포함)', () => {
-    const params: LogicGenParams = {
-      types: ['geometric'],
-      sequenceLength: 4,
-      choiceCount: 4,
-      maxValue: 10000,
-    };
-    // geometric이 maxValue를 초과하면 arithmetic으로 폴백 가능
-    // geometric 패턴이 생성된 경우에만 비율 검증
-    let checked = false;
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const seq = generateLogicSequence(params);
-      if (seq.patternType === 'geometric') {
-        const nonNull = seq.tiles.filter((t): t is number => t !== null);
-        expect(nonNull.length).toBeGreaterThanOrEqual(2);
-        const ratio = nonNull[1] / nonNull[0];
-        // 비율이 2 또는 3이어야 함
-        expect([2, 3]).toContain(ratio);
-        // 각 항이 등비인지 확인
-        for (let i = 1; i < nonNull.length; i++) {
-          expect(nonNull[i] / nonNull[i - 1]).toBeCloseTo(ratio, 5);
-        }
-        checked = true;
-        break;
+describe('generateLogicSequence — 패턴별 모호성 검증 (각 30회 반복)', () => {
+  for (const type of ALL_TYPES) {
+    it(`${type}: 가시 타일이 사이클을 명확히 드러내고, 정답이 cycle 규칙과 일치`, () => {
+      const meta = getPatternMeta(type);
+      for (let trial = 0; trial < 30; trial++) {
+        const seq = generateLogicSequence({ types: [type] });
+        // 정답이 모호하지 않게 결정되는지 검사
+        expect(inferAndCheckUnambiguous(seq, meta.period)).toBe(true);
       }
-    }
-    // geometric이 전혀 생성되지 않은 경우(모두 폴백)도 테스트 통과 허용
-    // (maxValue 제약으로 인해 항상 폴백될 수 있음)
-    if (!checked) {
-      // 폴백이 arithmetic으로 이루어진 경우 - 정상 동작
-      expect(true).toBe(true);
+    });
+  }
+});
+
+describe('generateLogicSequence — 패턴별 구조 검증', () => {
+  it('ab: ABAB 짝/홀 인덱스 도형이 각각 같음', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['ab'] });
+      const nonNull = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      const even = nonNull.filter((_, i) => i % 2 === 0);
+      const odd = nonNull.filter((_, i) => i % 2 !== 0);
+      expect(new Set(even).size).toBe(1);
+      expect(new Set(odd).size).toBe(1);
+      expect(even[0]).not.toBe(odd[0]);
     }
   });
 
-  it('deterministic correctIndex: choices[correctIndex]가 실제 시퀀스 다음 값', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 5,
-      choiceCount: 4,
-      maxValue: 1000,
-    };
-    for (let i = 0; i < 10; i++) {
-      const seq = generateLogicSequence(params);
-      const answer = seq.choices[seq.correctIndex];
-      const nonNull = seq.tiles.filter((t): t is number => t !== null);
-      const diff = nonNull[1] - nonNull[0];
-      const expectedAnswer = nonNull[nonNull.length - 1] + diff;
-      expect(answer).toBe(expectedAnswer);
+  it('abc: 첫 3개는 모두 다름, 4번째 = 첫 번째', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['abc'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(new Set([nn[0], nn[1], nn[2]]).size).toBe(3);
+      expect(nn[3]).toBe(nn[0]);
+    }
+  });
+
+  it('abcd: 첫 사이클 4개 모두 다름', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['abcd'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(new Set(nn.slice(0, 4)).size).toBe(4);
+      expect(nn[4]).toBe(nn[0]); // 사이클 시작
+    }
+  });
+
+  it('aabb: 같은 도형이 2개씩 짝지어 나옴', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['aabb'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(nn[0]).toBe(nn[1]);
+      expect(nn[2]).toBe(nn[3]);
+      expect(nn[0]).not.toBe(nn[2]);
+    }
+  });
+
+  it('aaab: 첫 3개가 같고 4번째가 다름', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['aaab'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(nn[0]).toBe(nn[1]);
+      expect(nn[1]).toBe(nn[2]);
+      expect(nn[3]).not.toBe(nn[0]);
+    }
+  });
+
+  it('abba: 1-2-2-1 대칭 (palindrome)', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['abba'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(nn[0]).toBe(nn[3]); // A...A
+      expect(nn[1]).toBe(nn[2]); // BB
+      expect(nn[0]).not.toBe(nn[1]);
+    }
+  });
+
+  it('aabbcc: 3종 도형이 2개씩 차례로 (1 사이클 = 6칸)', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['aabbcc'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(nn[0]).toBe(nn[1]);
+      expect(nn[2]).toBe(nn[3]);
+      expect(nn[4]).toBe(nn[5]);
+      expect(new Set([nn[0], nn[2], nn[4]]).size).toBe(3);
+    }
+  });
+
+  it('abccba: 회문 (1-2-3-3-2-1)', () => {
+    for (let trial = 0; trial < 10; trial++) {
+      const seq = generateLogicSequence({ types: ['abccba'] });
+      const nn = seq.tiles.filter((t): t is ShapeKey => t !== null);
+      expect(nn[0]).toBe(nn[5]);
+      expect(nn[1]).toBe(nn[4]);
+      expect(nn[2]).toBe(nn[3]);
+      expect(new Set([nn[0], nn[1], nn[2]]).size).toBe(3);
     }
   });
 });
 
 describe('judgeLogicAnswer', () => {
   it('올바른 index -> { correct: true }', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 4,
-      choiceCount: 4,
-      maxValue: 1000,
-    };
-    const seq = generateLogicSequence(params);
+    const seq = generateLogicSequence({ types: ['ab'] });
     expect(judgeLogicAnswer(seq, seq.correctIndex)).toEqual({ correct: true });
   });
 
   it('틀린 index -> { correct: false }', () => {
-    const params: LogicGenParams = {
-      types: ['arithmetic'],
-      sequenceLength: 4,
-      choiceCount: 4,
-      maxValue: 1000,
-    };
-    const seq = generateLogicSequence(params);
+    const seq = generateLogicSequence({ types: ['ab'] });
     const wrongIndex = (seq.correctIndex + 1) % seq.choices.length;
     expect(judgeLogicAnswer(seq, wrongIndex)).toEqual({ correct: false });
   });
@@ -158,16 +194,26 @@ describe('calcLogicStars', () => {
   it('correct=5 -> stars=3', () => {
     expect(calcLogicStars(5, thresholds)).toBe(3);
   });
-
   it('correct=4 -> stars=2', () => {
     expect(calcLogicStars(4, thresholds)).toBe(2);
   });
-
   it('correct=3 -> stars=1', () => {
     expect(calcLogicStars(3, thresholds)).toBe(1);
   });
-
   it('correct=2 -> stars=0', () => {
     expect(calcLogicStars(2, thresholds)).toBe(0);
+  });
+});
+
+describe('getPatternMeta', () => {
+  it('각 패턴의 period/shapeCount/visibleCount 메타가 올바름', () => {
+    expect(getPatternMeta('ab')).toEqual({ period: 2, shapeCount: 2, visibleCount: 4 });
+    expect(getPatternMeta('abc')).toEqual({ period: 3, shapeCount: 3, visibleCount: 6 });
+    expect(getPatternMeta('abcd')).toEqual({ period: 4, shapeCount: 4, visibleCount: 6 });
+    expect(getPatternMeta('aabb')).toEqual({ period: 4, shapeCount: 2, visibleCount: 6 });
+    expect(getPatternMeta('aaab')).toEqual({ period: 4, shapeCount: 2, visibleCount: 6 });
+    expect(getPatternMeta('abba')).toEqual({ period: 4, shapeCount: 2, visibleCount: 6 });
+    expect(getPatternMeta('aabbcc')).toEqual({ period: 6, shapeCount: 3, visibleCount: 6 });
+    expect(getPatternMeta('abccba')).toEqual({ period: 6, shapeCount: 3, visibleCount: 6 });
   });
 });

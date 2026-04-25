@@ -5,6 +5,8 @@ import { LevelIntro } from './components/LevelIntro';
 import { HUD } from './components/HUD';
 import { ResultScreen } from './components/ResultScreen';
 import { BrandHome } from './components/BrandHome';
+import { ProfileSetup } from './components/ProfileSetup';
+import { HomeB } from './components/HomeB';
 import { SubjectSelect } from './components/SubjectSelect';
 import { MathMenu } from './components/MathMenu';
 import { KoreanMenu } from './components/KoreanMenu';
@@ -12,7 +14,6 @@ import { EnglishMenu } from './components/EnglishMenu';
 import { LevelTestMath } from './components/LevelTestMath';
 import { LevelTestEnglish } from './components/LevelTestEnglish';
 import { WatermelonGame } from './components/games/WatermelonGame';
-import { MathGame } from './components/games/MathGame';
 import { MathQuizGame } from './components/games/MathQuizGame';
 import { EquationFillGame } from './components/games/EquationFillGame';
 import { PatternFinderGame } from './components/games/PatternFinderGame';
@@ -24,6 +25,11 @@ import { EnglishGame } from './components/games/EnglishGame';
 import { KoreanGame } from './components/games/KoreanGame';
 import { ArithmeticGame } from './components/games/ArithmeticGame';
 import { ArithmeticMenu } from './components/ArithmeticMenu';
+import { MatrixReasoningGame } from './components/games/MatrixReasoningGame';
+import { OddOneOutGame } from './components/games/OddOneOutGame';
+import { SentenceOrderingGame } from './components/games/SentenceOrderingGame';
+import { getMatrixLevel, getFirstMatrixLevelId } from './game-data/matrixReasoningLevels';
+import { getOddOneOutLevel, getFirstOddLevelId } from './game-data/oddOneOutLevels';
 import { appRouter } from './router/AppRouter';
 import { G1_LEVELS } from './game-data/g1Levels';
 import { getEqFillLevel } from './game-data/equationFillLevels';
@@ -35,7 +41,7 @@ import { saveService, userMathStatusService } from './services/SaveService';
 // ── 1. DOM 루트 ─────────────────────────────────────────────────────────────
 const app = document.getElementById('app') as HTMLElement;
 
-// ── 2. 게임 캔버스 컨테이너 (WatermelonGame / MathGame용) ──────────────────
+// ── 2. 게임 캔버스 컨테이너 (WatermelonGame용) ──────────────────────────────
 const g1Container = document.createElement('div');
 g1Container.id = 'g1-container';
 g1Container.style.cssText = `
@@ -45,16 +51,6 @@ g1Container.style.cssText = `
   z-index: 10;
 `;
 app.appendChild(g1Container);
-
-const mathContainer = document.createElement('div');
-mathContainer.id = 'math-container';
-mathContainer.style.cssText = `
-  position: fixed; inset: 0;
-  display: none; flex-direction: column;
-  background: linear-gradient(160deg, #0369A1 0%, #0EA5E9 60%, #38BDF8 100%);
-  z-index: 10;
-`;
-app.appendChild(mathContainer);
 
 const mathQuizContainer = document.createElement('div');
 mathQuizContainer.id = 'math-quiz-container';
@@ -72,6 +68,14 @@ const logicContainer = document.createElement('div');
 logicContainer.id = 'logic-container';
 app.appendChild(logicContainer);
 
+const matrixContainer = document.createElement('div');
+matrixContainer.id = 'matrix-reasoning-container';
+app.appendChild(matrixContainer);
+
+const oddOneOutContainer = document.createElement('div');
+oddOneOutContainer.id = 'odd-one-out-container';
+app.appendChild(oddOneOutContainer);
+
 const creativityContainer = document.createElement('div');
 creativityContainer.id = 'creativity-container';
 app.appendChild(creativityContainer);
@@ -84,21 +88,29 @@ const koreanContainer = document.createElement('div');
 koreanContainer.id = 'korean-game-container';
 app.appendChild(koreanContainer);
 
+const sentenceOrderContainer = document.createElement('div');
+sentenceOrderContainer.id = 'sentence-order-container';
+app.appendChild(sentenceOrderContainer);
+
 
 // ── 3. 게임 컴포넌트 ─────────────────────────────────────────────────────────
 const watermelonGame = new WatermelonGame(g1Container);
-const mathGame = new MathGame(mathContainer);
 const mathQuizGame = new MathQuizGame(mathQuizContainer);
 const equationFillGame = new EquationFillGame(eqFillContainer);
 const patternFinderGame = new PatternFinderGame(patternFinderContainer);
 const logicGame = new LogicGame(logicContainer);
+const matrixGame = new MatrixReasoningGame(matrixContainer);
+const oddOneOutGame = new OddOneOutGame(oddOneOutContainer);
 const creativityGame = new CreativityGame(creativityContainer);
 const englishGame = new EnglishGame(englishContainer);
 const koreanGame = new KoreanGame(koreanContainer);
 const arithmeticGame = new ArithmeticGame(app);
+const sentenceOrderingGame = new SentenceOrderingGame(sentenceOrderContainer);
 
 // ── 4. UI 레이어 컴포넌트 ────────────────────────────────────────────────────
-const brandHome      = new BrandHome(app, appRouter);
+const brandHome      = new BrandHome(app, appRouter, saveService);
+const profileSetup   = new ProfileSetup(app, appRouter, saveService);
+const homeB          = new HomeB(app, appRouter, saveService);
 const subjectSelect  = new SubjectSelect(app, appRouter);
 const mathMenu       = new MathMenu(app, appRouter, saveService);
 const koreanMenu     = new KoreanMenu(app, appRouter);
@@ -114,19 +126,27 @@ const resultScreen  = new ResultScreen(app, gameBus);
 
 // ── 5. 라우터 등록 ────────────────────────────────────────────────────────────
 appRouter.register('brand-home',         brandHome);
+appRouter.register('profile-setup',      profileSetup);
+appRouter.register('home-b',             homeB);
 appRouter.register('subject-select',     subjectSelect);
 appRouter.register('math-menu',          mathMenu);
 appRouter.register('korean-menu',        koreanMenu);
 appRouter.register('english-menu',       englishMenu);
 appRouter.register('logic-menu',         logicMenu);
 appRouter.register('creativity-menu',    creativityMenu);
+// 진단은 PlacementTest로 이전됨, 레거시 호환용
 appRouter.register('level-test-math',    levelTestMath);
+// 진단은 PlacementTest로 이전됨, 레거시 호환용
 appRouter.register('level-test-english', levelTestEnglish);
 appRouter.register('arithmetic-menu',    arithmeticMenu);
 appRouter.register('game-arithmetic', {
   show() {
     const state = appRouter.getState();
     const lvId = parseInt((state.levelId ?? '1').replace('arithmetic-', ''), 10);
+    // state.difficulty가 있으면 우선 적용 (MathMenu 설정 버튼에서 직접 진입 시)
+    if (state.difficulty) {
+      currentDifficulty = state.difficulty as 'easy' | 'normal' | 'hard';
+    }
     const diff = currentDifficulty;
     arithmeticGame.setBackHandler(() => {
       arithmeticGame.hide();
@@ -150,14 +170,12 @@ let currentDifficulty: 'easy' | 'normal' | 'hard' = 'easy';
 let currentScore = 0;
 let currentPairsLeft = 10;
 let currentTimeRemaining = 60;
-let mathGameActive = false; // game-math show() 재진입 방지용
 
 function showMathMenu(): void {
   hud.hide();
   resultScreen.hide();
   levelIntro.hide();
   watermelonGame.hide();
-  mathGame.hide();
   // back()으로 히스토리 스택의 'math-menu'를 정상 pop하여 복귀.
   // navigate({ replace/skipHistory })를 쓰면 스택에 'math-menu'가 잔류해
   // math-menu → back() → math-menu 루프 버그가 발생한다.
@@ -171,8 +189,6 @@ function launchG1Level(levelId: number): void {
   currentScore = 0;
   currentTimeRemaining = level.timeLimit;
 
-  mathGame.hide();
-  mathContainer.style.display = "none";
   g1Container.style.display = "flex";
   watermelonGame.show();
 
@@ -192,30 +208,6 @@ function launchG1Level(levelId: number): void {
   });
   hud.update(level.timeLimit, 0, level.targetPairs);
   watermelonGame.startLevel(level);
-}
-
-function launchMathLevel(levelId: string): void {
-  currentLevelId = levelId;
-  mathGameActive = true;
-
-  watermelonGame.hide();
-  g1Container.style.display = "none";
-  mathContainer.style.display = "flex";
-  mathGame.show();
-
-  // HUD를 레벨 0으로 표시 (math는 레벨 인덱스 별도 관리)
-  hud.show(0, () => {
-    // HUD 종료 버튼 → math-menu로 복귀
-    mathGameActive = false;
-    mathGame.hide();
-    mathContainer.style.display = 'none';
-    hud.hide();
-    appRouter.navigate({ to: 'math-menu', subject: 'math', skipHistory: true });
-  });
-  hud.update(0, 0, 0);
-
-  saveService.recordMathPlay(levelId);
-  mathGame.startLevel(levelId);
 }
 
 // ── 7. level-intro 화면 ───────────────────────────────────────────────────────
@@ -243,13 +235,6 @@ appRouter.register('level-intro', {
       }
     }
 
-    if (mathLevelId.startsWith('math-')) {
-      currentLevelId = mathLevelId;
-      hud.hide();
-      appRouter.navigate({ to: 'game-math', replace: true });
-      return;
-    }
-
     introFired = true;
     levelIntro.show(1);
   },
@@ -260,26 +245,6 @@ appRouter.register('level-intro', {
     hud.hide();
     watermelonGame.hide();
     g1Container.style.display = "none";
-    mathGameActive = false;
-  },
-});
-
-// ── 8. game-math 화면 ─────────────────────────────────────────────────────────
-appRouter.register('game-math', {
-  show() {
-    const mathLevelId = currentLevelId;
-    if (!mathLevelId || !mathLevelId.startsWith('math-')) {
-      appRouter.navigate({ to: 'math-menu', subject: 'math', replace: true });
-      return;
-    }
-    if (mathGameActive) return; // 이미 게임 진행 중이면 재시작 방지
-    launchMathLevel(mathLevelId);
-  },
-  hide() {
-    mathGame.hide();
-    mathContainer.style.display = "none";
-    mathGameActive = false;
-    hud.hide(); // 게임 중 홈버튼 클릭 시 HUD가 math-menu 위에 잔류하는 버그 수정
   },
 });
 
@@ -344,6 +309,42 @@ appRouter.register('game-logic', {
   hide() {
     logicGame.hide();
   },
+});
+
+// ── 8-h. game-matrix-reasoning 화면 ──────────────────────────────────────────
+appRouter.register('game-matrix-reasoning', {
+  show() {
+    const state = appRouter.getState();
+    const levelId = state.levelId ?? getFirstMatrixLevelId();
+    const cfg = getMatrixLevel(levelId);
+    if (!cfg) {
+      appRouter.navigate({ to: 'logic-menu', subject: 'logic' });
+      return;
+    }
+    matrixGame.show(cfg);
+  },
+  hide() { matrixGame.hide(); },
+});
+
+// ── 8-j. game-sentence-order 화면 ────────────────────────────────────────────
+appRouter.register('game-sentence-order', {
+  show() { sentenceOrderingGame.show(); },
+  hide() { sentenceOrderingGame.hide(); },
+});
+
+// ── 8-i. game-odd-one-out 화면 ───────────────────────────────────────────────
+appRouter.register('game-odd-one-out', {
+  show() {
+    const state = appRouter.getState();
+    const levelId = state.levelId ?? getFirstOddLevelId();
+    const cfg = getOddOneOutLevel(levelId);
+    if (!cfg) {
+      appRouter.navigate({ to: 'logic-menu', subject: 'logic' });
+      return;
+    }
+    oddOneOutGame.show(cfg);
+  },
+  hide() { oddOneOutGame.hide(); },
 });
 
 // ── 8-g. game-creativity 화면 ────────────────────────────────────────────────
@@ -435,47 +436,6 @@ gameBus.on('level:timeover', ({ score, pairsCompleted }) => {
   });
 });
 
-// ── 11. MathGame 이벤트 ────────────────────────────────────────────────────────
-gameBus.on('math:pairCorrect', ({ score, combo, pairsLeft }) => {
-  currentScore = score;
-  currentPairsLeft = pairsLeft;
-  hud.update(currentTimeRemaining, score, pairsLeft, combo);
-});
-
-gameBus.on('math:pairWrong', () => {
-  hud.update(currentTimeRemaining, currentScore, currentPairsLeft, 0);
-});
-
-gameBus.on('math:levelClear', ({ levelId, score, stars }) => {
-  mathGameActive = false;
-  hud.hide();
-  mathGame.hide();
-  mathContainer.style.display = "none";
-  saveService.recordMathClear(levelId, stars, score);
-  resultScreen.show({
-    cleared: true,
-    score,
-    stars,
-    levelId: 0,
-    maxLevelId: 0,
-  });
-});
-
-gameBus.on('math:levelFail', ({ score, pairsCompleted, levelId: _failLevelId }) => {
-  mathGameActive = false;
-  hud.hide();
-  mathGame.hide();
-  mathContainer.style.display = "none";
-  resultScreen.show({
-    cleared: false,
-    score,
-    stars: 0,
-    levelId: 0,
-    pairsCompleted,
-    maxLevelId: 0,
-  });
-});
-
 // ── 11-c. EnglishGame 이벤트 ─────────────────────────────────────────────────
 gameBus.on('english:levelClear', ({ score, stars }) => {
   resultScreen.show({
@@ -519,8 +479,6 @@ gameBus.on('ui:retry', () => {
   resultScreen.hide();
   if (currentLevelId.startsWith('arithmetic-')) {
     appRouter.navigate({ to: 'game-arithmetic', replace: true });
-  } else if (currentLevelId.startsWith('math-') && !currentLevelId.match(/^math-add-single-\d+$/)) {
-    appRouter.navigate({ to: 'game-math', replace: true });
   } else {
     launchG1Level(parseInt(currentLevelId, 10));
   }
@@ -542,7 +500,7 @@ gameBus.on('ui:mainMenu', () => {
 });
 
 // ── 13. 초기 화면 ─────────────────────────────────────────────────────────────
-// replace: true — 앱 최초 진입이므로 brand-home을 히스토리 스택에 push하지 않는다.
+// 항상 brand-home 랜딩부터 시작. CTA 버튼 클릭 시 프로필 유무에 따라 분기.
 appRouter.navigate({ to: 'brand-home', replace: true });
 
 // ── 14. 브라우저/Android 뒤로가기 버튼 처리 ───────────────────────────────────
@@ -551,20 +509,24 @@ window.history.pushState({}, '', '/');
 
 // 게임 진행 중으로 간주할 화면 ID 집합 (뒤로가기 시 confirmExit 표시)
 const GAME_SCREENS = new Set([
-  'game-math', 'game-english', 'game-korean',
+  'game-english', 'game-korean',
   'game-math-quiz', 'math-quiz-game',
   'game-eq-fill', 'game-pattern-finder',
   'game-logic', 'game-creativity',
   'game-arithmetic',
+  'game-matrix-reasoning',
+  'game-odd-one-out',
+  'game-sentence-order',
   'level-intro', // 수박 게임 카운트다운 포함
 ]);
 
 window.addEventListener('popstate', () => {
   const current = appRouter.getState().current;
 
-  // brand-home: 뒤로가기를 허용 → synthetic 항목을 재push하지 않으면
-  // WebView에 남은 히스토리가 없어져 다음 뒤로가기에서 앱이 종료됨
-  if (current === 'brand-home') {
+  // brand-home / home-b / profile-setup: 최상위 화면에서 뒤로가기 허용
+  // synthetic 항목을 재push하지 않으면 WebView에 남은 히스토리가 없어져
+  // 다음 뒤로가기에서 앱이 종료됨 (Android 앱 종료 허용)
+  if (current === 'brand-home' || current === 'home-b' || current === 'profile-setup') {
     return;
   }
 

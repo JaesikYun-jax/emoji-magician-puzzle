@@ -2,6 +2,20 @@ import type { EnglishCategory, EnglishDifficulty } from './english/categories';
 export type { EnglishCategory, EnglishDifficulty };
 
 export type SubjectId = 'math' | 'english' | 'korean' | 'logic' | 'creativity';
+
+// ── 프로필 ──────────────────────────────────────────────────────────────────
+
+export type AgeGroup =
+  | 'daycare'      // 어린이집 (3-5세)
+  | 'kindergarten' // 유치원 (6-7세)
+  | 'g1' | 'g2' | 'g3' | 'g4' | 'g5' | 'g6'; // 초1~초6
+
+export interface ChildProfile {
+  nickname: string;    // 1~10자
+  ageGroup: AgeGroup;
+  avatar?: string;     // 추후 확장
+  createdAt: number;
+}
 export type MathOperation = 'addition' | 'subtraction' | 'multiplication';
 export type DigitLevel = 'single' | 'double' | 'triple';
 export type ConstraintType = 'moves' | 'time';
@@ -70,6 +84,8 @@ export interface CreativityMeta {
   lastPlayedAt: string;
   earnedBadgeThresholds: number[];
   recentPuzzleIds: string[];   // 최근 플레이한 퍼즐 id (최대 20개)
+  rankScore: number;           // 가중치 점수 (랭크 계산용)
+  maxDifficultyTier: number;   // 최고 달성 난이도 티어 (1-5)
 }
 
 export interface LevelTestResult {
@@ -81,6 +97,17 @@ export interface LevelTestResult {
   correctCount: number;
 }
 
+/** 분야별 통합 진행 데이터 (v6+ 저장 형식) */
+export interface SubjectProgressData {
+  xp: number;
+  level: number;
+  totalClears: number;
+  streak: number;
+  bestStreak: number;
+  placementDone: boolean;
+  placementScore?: number;
+}
+
 export interface SaveData {
   /**
    * 저장 데이터 버전.
@@ -88,15 +115,18 @@ export interface SaveData {
    * v2 : gamification 필드 추가, 14일 XP 롤링 윈도우
    * v3 : logic, creativity 필드 추가
    * v4 : creativity 자동 진행 방식 (totalClears, consecutiveClears, currentLevelIdx)
+   * v5 : 아이 프로필 (nickname + ageGroup) 추가
    */
   version: number;
-  math: { levelProgress: Record<string, LevelProgress>; levelTestResult?: LevelTestResult };
-  english: { levelProgress: Record<string, LevelProgress>; levelTestResult?: LevelTestResult };
+  math: { levelProgress: Record<string, LevelProgress>; levelTestResult?: LevelTestResult; progress?: SubjectProgressData };
+  english: { levelProgress: Record<string, LevelProgress>; levelTestResult?: LevelTestResult; progress?: SubjectProgressData };
   settings: { language: 'ko' | 'en'; soundEnabled: boolean; musicEnabled: boolean };
   /** v2+ 에서만 존재. 없으면 마이그레이션 필요. */
   gamification?: import('../systems/gamification/types').GamificationState;
   /** v3+ : 논리 종목 저장 */
-  logic?: { levelProgress: Record<string, LevelProgress>; streak?: number; clearCount?: number };
+  logic?: { levelProgress: Record<string, LevelProgress>; streak?: number; clearCount?: number; progress?: SubjectProgressData };
+  /** v5+ : 아이 프로필 */
+  profile?: ChildProfile | null;
   /** v4+ : 창의 종목 저장 */
   creativity?: {
     levelProgress: Record<string, LevelProgress>;
@@ -106,6 +136,7 @@ export interface SaveData {
     streak?: number;
     consecutiveClears?: number;
     currentLevelIdx?: number;
+    progress?: SubjectProgressData;
   };
 }
 

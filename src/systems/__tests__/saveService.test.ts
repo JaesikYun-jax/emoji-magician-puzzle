@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SaveService } from '../../../src/services/SaveService';
+import { migrateV4toV5 } from '../../../src/services/saveMigrations';
+import type { SaveData, ChildProfile } from '../../../src/game-data/subjectConfig';
 
 // localStorage mock
 let store: Record<string, string> = {};
@@ -211,6 +213,124 @@ describe('SaveService', () => {
       const result = service.getMathLevelTestResult();
       expect(result).not.toBeNull();
       expect(result?.recommendedLevelId).toBe('math-add-nonexistent');
+    });
+  });
+
+  describe('Profile 메서드', () => {
+    const sampleProfile: ChildProfile = {
+      nickname: '라온',
+      ageGroup: 'g2',
+      createdAt: 1713600000000,
+    };
+
+    it('hasProfile() — 프로필이 없으면 false를 반환한다', () => {
+      expect(service.hasProfile()).toBe(false);
+    });
+
+    it('getProfile() — 프로필이 없으면 null을 반환한다', () => {
+      expect(service.getProfile()).toBeNull();
+    });
+
+    it('setProfile() 저장 후 hasProfile()이 true를 반환한다', () => {
+      service.setProfile(sampleProfile);
+      expect(service.hasProfile()).toBe(true);
+    });
+
+    it('setProfile() 저장 후 getProfile()이 동일 데이터를 반환한다', () => {
+      service.setProfile(sampleProfile);
+      const profile = service.getProfile();
+      expect(profile).not.toBeNull();
+      expect(profile?.nickname).toBe('라온');
+      expect(profile?.ageGroup).toBe('g2');
+      expect(profile?.createdAt).toBe(1713600000000);
+    });
+
+    it('setProfile() 데이터가 localStorage에 영속된다', () => {
+      service.setProfile(sampleProfile);
+      // 새 인스턴스로 다시 로드
+      const service2 = new SaveService();
+      expect(service2.hasProfile()).toBe(true);
+      expect(service2.getProfile()?.nickname).toBe('라온');
+    });
+
+    it('setProfile() 을 두 번 호출하면 최신 프로필로 덮어씌워진다', () => {
+      service.setProfile(sampleProfile);
+      const updated: ChildProfile = { ...sampleProfile, nickname: '하늘', ageGroup: 'g3' };
+      service.setProfile(updated);
+      const profile = service.getProfile();
+      expect(profile?.nickname).toBe('하늘');
+      expect(profile?.ageGroup).toBe('g3');
+    });
+
+    it('ageGroup이 daycare인 프로필도 정상 저장·조회된다', () => {
+      const daycareProfile: ChildProfile = { nickname: '콩', ageGroup: 'daycare', createdAt: 1000 };
+      service.setProfile(daycareProfile);
+      expect(service.getProfile()?.ageGroup).toBe('daycare');
+    });
+
+    it('ageGroup이 kindergarten인 프로필도 정상 저장·조회된다', () => {
+      const kgProfile: ChildProfile = { nickname: '달', ageGroup: 'kindergarten', createdAt: 2000 };
+      service.setProfile(kgProfile);
+      expect(service.getProfile()?.ageGroup).toBe('kindergarten');
+    });
+  });
+
+  describe('migrateV4toV5', () => {
+    function makeV4Base(): SaveData {
+      return {
+        version: 4,
+        math: { levelProgress: {} },
+        english: { levelProgress: {} },
+        settings: { language: 'ko', soundEnabled: true, musicEnabled: true },
+        gamification: { lessonProgress: {}, xpByDay: {}, currentStreak: 0, longestStreak: 0, lastActiveDay: null, dailyGoalXp: 50 },
+        logic: { levelProgress: {}, streak: 0, clearCount: 0 },
+        creativity: {
+          levelProgress: {},
+          playerLevel: 1,
+          totalClears: 0,
+          streak: 0,
+          meta: {
+            totalClears: 0,
+            currentStreak: 0,
+            bestStreak: 0,
+            lastPlayedAt: new Date().toISOString(),
+            earnedBadgeThresholds: [],
+            recentPuzzleIds: [],
+            rankScore: 0,
+            maxDifficultyTier: 0,
+          },
+        },
+        profile: undefined as unknown as null,
+      };
+    }
+
+    it('v4 데이터에 profile 필드가 없을 때 profile: null이 주입된다', () => {
+      const v4 = makeV4Base();
+      delete (v4 as unknown as Record<string, unknown>)['profile'];
+      const v5 = migrateV4toV5(v4);
+      expect(v5.version).toBe(5);
+      expect(v5.profile).toBeNull();
+    });
+
+    it('v4 데이터에 profile이 이미 있으면 그 값이 유지된다', () => {
+      const existingProfile: ChildProfile = { nickname: '별', ageGroup: 'g1', createdAt: 9999 };
+      const v4 = { ...makeV4Base(), profile: existingProfile };
+      const v5 = migrateV4toV5(v4);
+      expect(v5.profile).toEqual(existingProfile);
+    });
+
+    it('migrateV4toV5 후 version이 5가 된다', () => {
+      const v4 = makeV4Base();
+      const v5 = migrateV4toV5(v4);
+      expect(v5.version).toBe(5);
+    });
+
+    it('migrateV4toV5는 나머지 필드를 변경하지 않는다', () => {
+      const v4 = makeV4Base();
+      v4.math.levelProgress['math-add-single-1'] = { stars: 3, bestScore: 500, playCount: 2, isUnlocked: true };
+      const v5 = migrateV4toV5(v4);
+      expect(v5.math.levelProgress['math-add-single-1']?.stars).toBe(3);
+      expect(v5.settings.language).toBe('ko');
     });
   });
 });

@@ -1,11 +1,12 @@
-import type { SaveData, LevelProgress, LevelTestResult, CreativityMeta } from '../game-data/subjectConfig';
+import type { SaveData, LevelProgress, LevelTestResult, CreativityMeta, ChildProfile, SubjectProgressData } from '../game-data/subjectConfig';
 import { MATH_LEVELS } from '../game-data/mathLevels';
-import { CREATIVITY_BADGES, getCreativityRank } from '../game-data/creativityLevels';
+import { CREATIVITY_BADGES, getCreativityRank, computeDifficultyPoints, computeDifficultyTier } from '../game-data/creativityLevels';
 import { type UserMathStatus, DEFAULT_STATUS, createDefaultStatus } from '../systems/math/UserMathStatus';
 import {
   type GamificationState,
   createDefaultGamificationState,
 } from '../systems/gamification/types';
+import { computeLevel } from '../systems/progression/xpEngine';
 import { runMigrations } from './saveMigrations';
 
 // ── UserMathStatusService (룰 기반 퀴즈 시스템 전용) ─────────────────────────
@@ -67,8 +68,10 @@ const SAVE_KEY = 'sabakgam-save-v1';
  * v1 → v2 : gamification 필드 추가 (자동 마이그레이션)
  * v2 → v3 : logic, creativity 필드 추가 (자동 마이그레이션)
  * v3 → v4 : creativity 자동 진행 방식 (totalClears, consecutiveClears, currentLevelIdx)
+ * v4 → v5 : 아이 프로필 (nickname + ageGroup) 추가
+ * v5 → v6 : 각 분야에 SubjectProgressData (XP/레벨/진단) 추가
  */
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 6;
 
 function getDefaultUnlockedMathIds(): string[] {
   const ops = ['addition', 'subtraction', 'multiplication'] as const;
@@ -96,6 +99,7 @@ function createDefaultSaveData(): SaveData {
     gamification: createDefaultGamificationState(),
     logic: { levelProgress: logicProgress, streak: 0, clearCount: 0 },
     creativity: { levelProgress: creativityProgress, playerLevel: 1, totalClears: 0, streak: 0 },
+    profile: null,
   };
 }
 
@@ -157,6 +161,12 @@ export class SaveService {
       if (parsed.creativity.playerLevel === undefined) parsed.creativity.playerLevel = 1;
       if (parsed.creativity.totalClears === undefined) parsed.creativity.totalClears = 0;
       if (parsed.creativity.streak === undefined) parsed.creativity.streak = 0;
+      if (parsed.creativity.meta && parsed.creativity.meta.rankScore == null) {
+        parsed.creativity.meta.rankScore = 0;
+      }
+      if (parsed.creativity.meta && parsed.creativity.meta.maxDifficultyTier == null) {
+        parsed.creativity.meta.maxDifficultyTier = 0;
+      }
 
       return parsed;
     } catch {
@@ -412,7 +422,7 @@ export class SaveService {
    * 성공 시 totalClears/currentStreak 증가, 실패 시 streak 리셋.
    * 뱃지/랭크 변화도 함께 계산해서 반환.
    */
-  recordCreativityClearV2(cleared: boolean): {
+  recordCreativityClearV2(cleared: boolean, cols = 3, rows = 3): {
     meta: CreativityMeta;
     newBadge: { threshold: number; emoji: string; name: string } | null;
     leveledUp: boolean;
@@ -423,11 +433,17 @@ export class SaveService {
     }
     const meta: CreativityMeta = this.data.creativity.meta ?? this._createDefaultCreativityMeta();
     if (!meta.recentPuzzleIds) meta.recentPuzzleIds = [];  // 하위 호환
-    const prevLevel = getCreativityRank(meta.totalClears).level;
+    if (meta.rankScore == null) meta.rankScore = 0;
+    if (meta.maxDifficultyTier == null) meta.maxDifficultyTier = 0;
+    const prevLevel = getCreativityRank(meta.rankScore, meta.maxDifficultyTier).level;
 
     let newBadge: { threshold: number; emoji: string; name: string } | null = null;
     if (cleared) {
       meta.totalClears += 1;
+      const diffPts = computeDifficultyPoints(cols, rows);
+      meta.rankScore = (meta.rankScore ?? 0) + diffPts;
+      const tier = computeDifficultyTier(cols, rows);
+      meta.maxDifficultyTier = Math.max(meta.maxDifficultyTier ?? 0, tier);
       meta.currentStreak += 1;
       if (meta.currentStreak > meta.bestStreak) meta.bestStreak = meta.currentStreak;
 
@@ -444,7 +460,7 @@ export class SaveService {
     this.data.creativity.meta = meta;
     this.save();
 
-    const newLevel = getCreativityRank(meta.totalClears).level;
+    const newLevel = getCreativityRank(meta.rankScore, meta.maxDifficultyTier).level;
     return {
       meta: { ...meta, earnedBadgeThresholds: [...meta.earnedBadgeThresholds] },
       newBadge,
@@ -473,6 +489,21 @@ export class SaveService {
     this.save();
   }
 
+  // ── Profile ────────────────────────────────────────────────────────────────
+
+  hasProfile(): boolean {
+    return this.data.profile != null;
+  }
+
+  getProfile(): ChildProfile | null {
+    return this.data.profile ?? null;
+  }
+
+  setProfile(profile: ChildProfile): void {
+    this.data.profile = profile;
+    this.save();
+  }
+
   private _createDefaultCreativityMeta(): CreativityMeta {
     return {
       totalClears: 0,
@@ -481,7 +512,83 @@ export class SaveService {
       lastPlayedAt: new Date().toISOString(),
       earnedBadgeThresholds: [],
       recentPuzzleIds: [],
+      rankScore: 0,
+      maxDifficultyTier: 0,
     };
+  }
+
+  // ── SubjectProgress (v6) ───────────────────────────────────────────────────
+
+  private _defaultProgress(): SubjectProgressData {
+    return { xp: 0, level: 1, totalClears: 0, streak: 0, bestStreak: 0, placementDone: false };
+  }
+
+  /** 분야의 SubjectProgressData를 가져옴. 없으면 기본값 반환 */
+  getSubjectProgress(subjectId: 'math' | 'english' | 'logic' | 'creativity'): SubjectProgressData {
+    const data = this.data;
+    if (subjectId === 'logic') return data.logic?.progress ?? this._defaultProgress();
+    if (subjectId === 'creativity') return data.creativity?.progress ?? this._defaultProgress();
+    return data[subjectId].progress ?? this._defaultProgress();
+  }
+
+  /** 분야의 SubjectProgressData를 업데이트 */
+  updateSubjectProgress(
+    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    updater: (prev: SubjectProgressData) => SubjectProgressData,
+  ): void {
+    const prev = this.getSubjectProgress(subjectId);
+    const next = updater(prev);
+    if (subjectId === 'math') {
+      this.data.math.progress = next;
+    } else if (subjectId === 'english') {
+      this.data.english.progress = next;
+    } else if (subjectId === 'logic') {
+      if (!this.data.logic) this.data.logic = { levelProgress: {} };
+      this.data.logic.progress = next;
+    } else if (subjectId === 'creativity') {
+      if (!this.data.creativity) this.data.creativity = { levelProgress: {} };
+      this.data.creativity.progress = next;
+    }
+    this.save();
+  }
+
+  /** XP 획득 + 클리어 기록 (게임 종료 시 호출) */
+  recordSubjectClear(
+    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    xpGained: number,
+    isCorrect: boolean,
+  ): SubjectProgressData {
+    let result: SubjectProgressData = this._defaultProgress();
+    this.updateSubjectProgress(subjectId, (prev) => {
+      const newStreak = isCorrect ? prev.streak + 1 : 0;
+      const newXp = isCorrect ? prev.xp + xpGained : prev.xp;
+      const newTotalClears = prev.totalClears + 1;
+      const newBestStreak = Math.max(prev.bestStreak, newStreak);
+      const level = computeLevel(newXp);
+      result = { ...prev, xp: newXp, level, totalClears: newTotalClears, streak: newStreak, bestStreak: newBestStreak };
+      return result;
+    });
+    return result;
+  }
+
+  /** 진단(Placement) 완료 기록 */
+  recordPlacementDone(
+    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    correctCount: number,
+    totalQuestions: number,
+  ): void {
+    this.updateSubjectProgress(subjectId, (prev) => ({
+      ...prev,
+      placementDone: true,
+      placementScore: correctCount,
+      xp: Math.round((correctCount / totalQuestions) * 50),
+      level: Math.round((correctCount / totalQuestions) * 3) + 1,
+    }));
+  }
+
+  /** 진단 완료 여부 */
+  isPlacementDone(subjectId: 'math' | 'english' | 'logic' | 'creativity'): boolean {
+    return this.getSubjectProgress(subjectId).placementDone;
   }
 }
 

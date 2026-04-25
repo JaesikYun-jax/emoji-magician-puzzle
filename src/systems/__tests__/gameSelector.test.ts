@@ -1,6 +1,6 @@
 /**
  * gameSelector.test.ts
- * pickEngine 가중치 분포 검증 + getAdapter 4개 등록 확인.
+ * pickEngine 가중치 분포 검증 + getAdapter 3개 등록 확인.
  *
  * - 시드 rng 주입으로 결정론적 검증
  * - 어댑터 모듈을 직접 import해 자기 등록(side-effect) 유발
@@ -12,7 +12,6 @@ import type { EngineEntry } from '../math/gameSelector';
 import { seededRandom } from '../math/questionGenerator';
 
 // 어댑터 자기 등록 — 이 import가 없으면 getAdapter 조회가 실패한다
-import '../math/adapters/mathTilesAdapter';
 import '../math/adapters/mathQuizAdapter';
 import '../math/adapters/eqFillAdapter';
 import '../math/adapters/patternFinderAdapter';
@@ -60,9 +59,8 @@ describe('pickEngine — 기본 동작', () => {
 
 describe('pickEngine — 가중치 분포 결정성 검증', () => {
   const pool: EngineEntry[] = [
-    { id: 'math-tiles',    weight: 1 },
-    { id: 'math-quiz',     weight: 2 },
-    { id: 'eq-fill',       weight: 3 },
+    { id: 'math-quiz',      weight: 2 },
+    { id: 'eq-fill',        weight: 3 },
     { id: 'pattern-finder', weight: 4 },
   ];
   const TRIALS = 10_000;
@@ -79,10 +77,9 @@ describe('pickEngine — 가중치 분포 결정성 검증', () => {
     expect(run1).toEqual(run2);
   });
 
-  it('총 가중치(10) 기준으로 각 엔진의 출현 비율이 기댓값에 수렴한다 (±5%)', () => {
+  it('총 가중치(9) 기준으로 각 엔진의 출현 비율이 기댓값에 수렴한다 (±5%)', () => {
     const rng = seededRandom(7777);
     const counts: Record<string, number> = {
-      'math-tiles': 0,
       'math-quiz': 0,
       'eq-fill': 0,
       'pattern-finder': 0,
@@ -91,7 +88,7 @@ describe('pickEngine — 가중치 분포 결정성 검증', () => {
       counts[pickEngine(pool, rng)]++;
     }
 
-    const totalWeight = 10;
+    const totalWeight = 9;
     const tolerance = 0.05; // ±5%
 
     pool.forEach(({ id, weight }) => {
@@ -102,16 +99,16 @@ describe('pickEngine — 가중치 분포 결정성 검증', () => {
     });
   });
 
-  it('고가중치 항목(pattern-finder w=4)이 저가중치 항목(math-tiles w=1)보다 많이 선택된다', () => {
+  it('고가중치 항목(pattern-finder w=4)이 저가중치 항목(math-quiz w=2)보다 많이 선택된다', () => {
     const rng = seededRandom(1234);
-    let tilCount = 0;
+    let quizCount = 0;
     let patCount = 0;
     for (let i = 0; i < TRIALS; i++) {
       const id = pickEngine(pool, rng);
-      if (id === 'math-tiles') tilCount++;
+      if (id === 'math-quiz') quizCount++;
       if (id === 'pattern-finder') patCount++;
     }
-    expect(patCount).toBeGreaterThan(tilCount * 2);
+    expect(patCount).toBeGreaterThan(quizCount);
   });
 
   it('단일 풀은 어떤 rng를 주입해도 항상 동일 id를 반환한다', () => {
@@ -140,15 +137,9 @@ describe('pickEngine — 극단 가중치', () => {
   });
 });
 
-// ── getAdapter — 4개 등록 확인 ────────────────────────────────────────────
+// ── getAdapter — 3개 등록 확인 ────────────────────────────────────────────
 
 describe('getAdapter — 레지스트리 등록 확인', () => {
-  it('math-tiles 어댑터가 등록되어 있다', () => {
-    const adapter = getAdapter('math-tiles');
-    expect(adapter).toBeDefined();
-    expect(adapter!.id).toBe('math-tiles');
-  });
-
   it('math-quiz 어댑터가 등록되어 있다', () => {
     const adapter = getAdapter('math-quiz');
     expect(adapter).toBeDefined();
@@ -171,8 +162,8 @@ describe('getAdapter — 레지스트리 등록 확인', () => {
     expect(getAdapter('nonexistent-engine')).toBeUndefined();
   });
 
-  it('4개 어댑터 모두 mount/unmount 메서드를 갖는다', () => {
-    const ids = ['math-tiles', 'math-quiz', 'eq-fill', 'pattern-finder'];
+  it('3개 어댑터 모두 mount/unmount 메서드를 갖는다', () => {
+    const ids = ['math-quiz', 'eq-fill', 'pattern-finder'];
     ids.forEach((id) => {
       const adapter = getAdapter(id);
       expect(adapter).toBeDefined();

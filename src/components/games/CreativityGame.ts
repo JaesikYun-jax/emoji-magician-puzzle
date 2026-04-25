@@ -15,6 +15,7 @@ import {
   cellId,
 } from '../../systems/creativity/hamiltonianPath';
 import type { PathState } from '../../systems/creativity/hamiltonianPath';
+import { CREATIVITY_RANKS } from '../../game-data/creativityLevels';
 import type { CreativityLevelConfig } from '../../game-data/creativityLevels';
 import { selectWallPuzzle } from '../../systems/creativity/wallPuzzleSelector';
 import { saveService } from '../../services/SaveService';
@@ -24,6 +25,10 @@ const CREATIVITY_GAME_STYLES = `
 @keyframes cg-result-in {
   from { opacity: 0; transform: scale(0.85); }
   to   { opacity: 1; transform: scale(1); }
+}
+@keyframes cg-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @keyframes cg-badge-pop {
   0%   { transform: scale(0) rotate(-30deg); opacity: 0; }
@@ -313,6 +318,8 @@ export class CreativityGame {
 
   private _reset(cfg: CreativityLevelConfig): void {
     this.el.querySelectorAll<HTMLElement>('[data-result-overlay]').forEach(el => el.remove());
+    // 기존 rule chips 제거 후 재삽입
+    this.el.querySelectorAll<HTMLElement>('[data-rule-chips]').forEach(el => el.remove());
     this.pathState = createPathState(cfg.cols, cfg.rows, cfg.blocked, cfg.walls);
     this.timeRemaining = cfg.timeLimit;
     this.timeUsed = 0;
@@ -320,6 +327,12 @@ export class CreativityGame {
     this._lastMovedCellId = null;
     this.cellEls.clear();
     this._buildGrid(cfg);
+    // rule chips를 gridEl 바로 앞에 삽입
+    const ruleChips = this._buildRuleChips(cfg);
+    if (ruleChips) {
+      ruleChips.dataset['ruleChips'] = '1';
+      this.gridEl.insertAdjacentElement('beforebegin', ruleChips);
+    }
     this._updateHUD();
     this._stopTimer();
     this._startTimer();
@@ -383,6 +396,17 @@ export class CreativityGame {
         }
 
         if (!isBlocked) {
+          if (cfg.startCell && x === cfg.startCell.x && y === cfg.startCell.y) {
+            cell.classList.add('cg-cell--start');
+            cell.textContent = '⚑';
+          }
+          if (cfg.endCell && x === cfg.endCell.x && y === cfg.endCell.y) {
+            cell.classList.add('cg-cell--end');
+            cell.textContent = '★';
+          }
+        }
+
+        if (!isBlocked) {
           cell.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             // pointer capture를 해제해 pointermove+elementFromPoint가 정확히 동작하도록
@@ -414,13 +438,28 @@ export class CreativityGame {
   }
 
   private _handleCellTouch(x: number, y: number): void {
-    if (!this.pathState) return;
+    if (!this.pathState || !this.levelConfig) return;
     const state = this.pathState;
+    const cfg = this.levelConfig;
     const id = cellId(x, y);
 
     // 동일 셀 재진입 무시 (pointermove 중복 발화 방지)
     if (this._lastMovedCellId === id) return;
     this._lastMovedCellId = id;
+
+    // 시작점 강제: 첫 이동은 반드시 startCell에서 시작해야 함
+    if (state.visited.length === 0 && cfg.startCell) {
+      const startId = cellId(cfg.startCell.x, cfg.startCell.y);
+      if (id !== startId) {
+        const el = this.cellEls.get(id);
+        if (el) {
+          el.style.animation = 'shake 0.3s ease';
+          setTimeout(() => { if (el) el.style.animation = ''; }, 350);
+        }
+        this._showToast('⚑ 초록 칸에서 시작해요!');
+        return;
+      }
+    }
 
     if (state.visitedSet.has(id)) {
       const lastId = state.visited[state.visited.length - 1];
@@ -447,6 +486,15 @@ export class CreativityGame {
     this._updateHUD();
 
     if (result.status === 'complete') {
+      // endCell이 지정된 경우, 마지막 방문 칸이 endCell이어야 클리어
+      if (cfg.endCell) {
+        const lastVisited = result.state.visited[result.state.visited.length - 1];
+        const endId = cellId(cfg.endCell.x, cfg.endCell.y);
+        if (lastVisited !== endId) {
+          this._showEndMismatch();
+          return;
+        }
+      }
       this._stopTimer();
       setTimeout(() => this._showResult(true), 400);
     }
@@ -466,6 +514,7 @@ export class CreativityGame {
     if (!this.pathState || !this.levelConfig) return;
     const state = this.pathState;
     const cfg = this.levelConfig;
+    const remainingCells = state.totalCells - state.visited.length;
 
     this.cellEls.forEach((el, id) => {
       const isBlocked = cfg.blocked.some(b => cellId(b.x, b.y) === id);
@@ -475,9 +524,11 @@ export class CreativityGame {
       const isVisited = visitIdx !== -1;
       const isLast = state.visited[state.visited.length - 1] === id;
 
+      const isStart = !!cfg.startCell && id === cellId(cfg.startCell.x, cfg.startCell.y);
+      const isEnd = !!cfg.endCell && id === cellId(cfg.endCell.x, cfg.endCell.y);
+
       if (isLast) {
         el.style.background = 'rgba(251,146,60,0.85)';
-        // 기본 border 먼저 설정 후 벽 border 덮어쓰기
         el.style.borderTop = '1.5px solid #F97316';
         el.style.borderLeft = '1.5px solid #F97316';
         el.style.borderRight = '1.5px solid #F97316';
@@ -486,6 +537,11 @@ export class CreativityGame {
         this._applyWallBorders(el, id);
         el.textContent = String(visitIdx + 1);
         el.style.color = '#fff';
+        // start/end 클래스: current 상태
+        el.classList.toggle('cg-cell--start', isStart);
+        el.classList.toggle('cg-cell--end', isEnd);
+        if (isStart) { el.classList.remove('visited'); el.classList.add('current'); }
+        if (isEnd) { el.classList.remove('urgent'); el.classList.add('reached'); }
       } else if (isVisited) {
         el.style.background = 'rgba(251,146,60,0.35)';
         el.style.borderTop = '1.5px solid rgba(249,115,22,0.5)';
@@ -496,6 +552,11 @@ export class CreativityGame {
         this._applyWallBorders(el, id);
         el.textContent = String(visitIdx + 1);
         el.style.color = 'rgba(255,255,255,0.85)';
+        // start/end 클래스: visited 상태
+        el.classList.toggle('cg-cell--start', isStart);
+        el.classList.toggle('cg-cell--end', isEnd);
+        if (isStart) { el.classList.remove('current'); el.classList.add('visited'); }
+        if (isEnd) { el.classList.remove('urgent', 'reached'); }
       } else {
         el.style.background = 'rgba(255,255,255,0.10)';
         el.style.borderTop = '1.5px solid rgba(255,255,255,0.20)';
@@ -504,7 +565,25 @@ export class CreativityGame {
         el.style.borderBottom = '1.5px solid rgba(255,255,255,0.20)';
         el.style.boxShadow = '';
         this._applyWallBorders(el, id);
-        el.textContent = '';
+        // 미방문 start/end: 이모지 유지
+        if (isStart) {
+          el.textContent = '⚑';
+          el.classList.add('cg-cell--start');
+          el.classList.remove('visited', 'current');
+        } else if (isEnd) {
+          el.textContent = '★';
+          el.classList.add('cg-cell--end');
+          el.classList.remove('reached');
+          // 마지막 남은 칸이 endCell일 때 urgent
+          if (remainingCells === 1) {
+            el.classList.add('urgent');
+          } else {
+            el.classList.remove('urgent');
+          }
+        } else {
+          el.textContent = '';
+          el.classList.remove('cg-cell--start', 'cg-cell--end');
+        }
       }
     });
   }
@@ -555,7 +634,9 @@ export class CreativityGame {
     if (!this.levelConfig) return;
 
     // 저장 & 통계 가져오기
-    const clearResult = saveService.recordCreativityClearV2(cleared);
+    const cols = this.levelConfig?.cols ?? 3;
+    const rows = this.levelConfig?.rows ?? 3;
+    const clearResult = saveService.recordCreativityClearV2(cleared, cols, rows);
     const { meta, newBadge, leveledUp, newLevel } = clearResult;
 
     const overlay = document.createElement('div');
@@ -670,7 +751,7 @@ export class CreativityGame {
       nextBtn.addEventListener('click', () => {
         overlay.remove();
         const updatedMeta = saveService.getCreativityMeta();
-        const newConfig = selectWallPuzzle(updatedMeta.totalClears, updatedMeta.recentPuzzleIds ?? []);
+        const newConfig = selectWallPuzzle(updatedMeta.totalClears, updatedMeta.recentPuzzleIds ?? [], updatedMeta.currentStreak ?? 0);
         saveService.addRecentCreativityPuzzleId(newConfig.id);
         this.levelConfig = newConfig;
         this._reset(newConfig);
@@ -755,19 +836,7 @@ export class CreativityGame {
   }
 
   private _showLevelUpModal(parentOverlay: HTMLElement, newLevel: number): void {
-    const RANK_DATA = [
-      { level: 1, title: '마법사 지망생', emoji: '✏️' },
-      { level: 2, title: '마법사 수련생', emoji: '🪄' },
-      { level: 3, title: '마법사 견습생', emoji: '🌱' },
-      { level: 4, title: '마법사 입문자', emoji: '🔮' },
-      { level: 5, title: '마법사 중급자', emoji: '⚡' },
-      { level: 6, title: '마법사 숙련자', emoji: '🌟' },
-      { level: 7, title: '마법사 고수',   emoji: '🏅' },
-      { level: 8, title: '마법사 달인',   emoji: '🏆' },
-      { level: 9, title: '마법 기사',     emoji: '👑' },
-      { level: 10, title: '이모지 마법사', emoji: '🧙' },
-    ];
-    const rankInfo = RANK_DATA.find(r => r.level === newLevel) ?? RANK_DATA[0];
+    const rankInfo = CREATIVITY_RANKS.find(r => r.level === newLevel) ?? CREATIVITY_RANKS[0];
 
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -813,6 +882,67 @@ export class CreativityGame {
     panel.appendChild(okBtn);
     modal.appendChild(panel);
     parentOverlay.appendChild(modal);
+  }
+
+  private _buildRuleChips(cfg: CreativityLevelConfig): HTMLElement | null {
+    const hasStart = !!cfg.startCell;
+    const hasEnd = !!cfg.endCell;
+    if (!hasStart && !hasEnd) return null;
+    const wrap = document.createElement('div');
+    wrap.className = 'cg-rule-chips';
+    if (hasStart) {
+      const chip = document.createElement('span');
+      chip.className = 'cg-rule-chip cg-rule-chip--start';
+      chip.textContent = '⚑ 초록 칸에서 시작해요';
+      wrap.appendChild(chip);
+    }
+    if (hasEnd) {
+      const chip = document.createElement('span');
+      chip.className = 'cg-rule-chip cg-rule-chip--end';
+      chip.textContent = '★ 보라 칸에서 끝내요';
+      wrap.appendChild(chip);
+    }
+    return wrap;
+  }
+
+  private _showToast(msg: string): void {
+    const existing = this.el.querySelector('[data-cg-toast]') as HTMLElement | null;
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.dataset['cgToast'] = '1';
+    toast.textContent = msg;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30,0,80,0.92);
+      border: 1px solid rgba(167,139,250,0.5);
+      border-radius: 999px;
+      padding: 10px 20px;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      z-index: 60;
+      white-space: nowrap;
+      pointer-events: none;
+      animation: cg-toast-in 200ms ease-out;
+    `;
+    this.el.appendChild(toast);
+    setTimeout(() => toast.remove(), 2200);
+  }
+
+  private _showEndMismatch(): void {
+    this._showToast('★ 보라 칸에서 끝내야 해요! 무르기(↶)로 수정해봐요');
+    const cfg = this.levelConfig;
+    if (cfg?.endCell) {
+      const endId = cellId(cfg.endCell.x, cfg.endCell.y);
+      const endEl = this.cellEls.get(endId);
+      if (endEl) {
+        endEl.classList.add('urgent');
+        setTimeout(() => endEl.classList.remove('urgent'), 2000);
+      }
+    }
   }
 
   private _exitToMenu(): void {

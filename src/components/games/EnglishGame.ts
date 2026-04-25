@@ -1,7 +1,8 @@
 import { appRouter } from '../../router/AppRouter';
 import { ENGLISH_WORDS, getWordsByDifficulty } from '../../game-data/englishWords';
 import { buildQuizSession } from '../../systems/english/englishGameEngine';
-import type { EnglishQuizSession, EnglishQuizQuestion } from '../../systems/english/englishGameEngine';
+import type { EnglishQuizSession, EnglishQuizQuestion, QuestionType } from '../../systems/english/englishGameEngine';
+import type { WordEntry } from '../../game-data/englishWords';
 
 const STYLE_ID = 'english-game-styles';
 
@@ -28,7 +29,54 @@ function injectStyles(): void {
       70%  { transform: scale(1.15); }
       100% { transform: scale(1); opacity: 1; }
     }
+    @keyframes eg-wrong-slide {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .eng-choice-btn:active { transform: scale(0.95); transition: transform 100ms; }
+
+    /* 이모지 플립 카드 */
+    .eg-emoji-flipcard {
+      width: 72px; height: 72px;
+      perspective: 600px;
+      cursor: pointer;
+      margin: 0 auto 10px;
+      flex-shrink: 0;
+    }
+    .eg-emoji-inner {
+      width: 100%; height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 420ms cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 18px;
+    }
+    .eg-emoji-flipcard.flipped .eg-emoji-inner {
+      transform: rotateY(180deg);
+    }
+    .eg-emoji-front, .eg-emoji-back {
+      position: absolute; inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .eg-emoji-front {
+      background: rgba(255,255,255,0.18);
+      border: 2px solid rgba(255,255,255,0.32);
+      font-size: 1.4rem; color: rgba(255,255,255,0.9);
+      flex-direction: column; gap: 2px;
+    }
+    .eg-emoji-front-label {
+      font-size: 9px; font-weight: 800;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.65);
+      text-transform: uppercase;
+    }
+    .eg-emoji-back {
+      background: rgba(255,255,255,0.12);
+      border: 2px solid rgba(255,255,255,0.28);
+      font-size: 3rem;
+      transform: rotateY(180deg);
+    }
   `;
   document.head.appendChild(style);
 }
@@ -40,20 +88,23 @@ export class EnglishGame {
   private correctCount = 0;
   private isProcessing = false;
   private pendingTimer: ReturnType<typeof setTimeout> | null = null;
+  private _currentDifficulty: string = 'beginner';
 
   private wordEl: HTMLElement | null = null;
   private choicesEl: HTMLElement | null = null;
   private progressFill: HTMLElement | null = null;
   private progressLabel: HTMLElement | null = null;
-  private emojiEl: HTMLElement | null = null;
+  private emojiFlipcard: HTMLElement | null = null;
   private combo = 0;
   private dotEls: HTMLElement[] = [];
   private scoreLabelEl: HTMLElement | null = null;
   private _correctHistory: boolean[] = [];
+  private _wrongQuestions: Array<{ word: WordEntry; questionType: QuestionType }> = [];
+  private chipEl: HTMLElement | null = null;
+  private replayBtnEl: HTMLButtonElement | null = null;
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
-    // .english-game 클래스 유지 (DOM 테스트 호환)
     this.el.className = 'english-game';
     this.el.style.cssText = `
       display: none;
@@ -73,7 +124,8 @@ export class EnglishGame {
       clearTimeout(this.pendingTimer);
       this.pendingTimer = null;
     }
-    const diff = (difficulty ?? 'beginner') as 'beginner' | 'elementary' | 'intermediate' | 'advanced';
+    this._currentDifficulty = difficulty ?? this._currentDifficulty ?? 'beginner';
+    const diff = this._currentDifficulty as 'beginner' | 'elementary' | 'intermediate' | 'advanced';
     let words = getWordsByDifficulty(diff);
     if (words.length < 4) {
       words = ENGLISH_WORDS;
@@ -83,6 +135,7 @@ export class EnglishGame {
     this.correctCount = 0;
     this.isProcessing = false;
     this._correctHistory = [];
+    this._wrongQuestions = [];
     this.combo = 0;
 
     this.el.style.alignItems = '';
@@ -103,18 +156,21 @@ export class EnglishGame {
     this.choicesEl = null;
     this.progressFill = null;
     this.progressLabel = null;
-    this.emojiEl = null;
+    this.emojiFlipcard = null;
+    this.chipEl = null;
+    this.replayBtnEl = null;
     this.dotEls = [];
     this.scoreLabelEl = null;
     this.combo = 0;
     this._correctHistory = [];
+    this._wrongQuestions = [];
     this.session = null;
   }
 
   private buildLayout(): void {
     this.el.innerHTML = '';
 
-    // ── HUD (.eng-hud — 테스트 호환용 클래스명 유지) ─────────────────────────
+    // ── HUD ─────────────────────────────────────────────────────────────────
     const hudEl = document.createElement('div');
     hudEl.className = 'eng-hud';
     hudEl.style.cssText = `
@@ -175,12 +231,12 @@ export class EnglishGame {
     hudEl.appendChild(pill);
     this.el.appendChild(hudEl);
 
-    // ── 단어 카드 (.eng-card — 테스트 호환용 클래스명 유지) ───────────────────
+    // ── 단어 카드 ────────────────────────────────────────────────────────────
     const card = document.createElement('div');
     card.className = 'eng-card';
     card.style.cssText = `
       margin: 12px 20px;
-      padding: 24px 20px;
+      padding: 20px 20px 18px;
       border-radius: 24px;
       background: rgba(255,255,255,0.15);
       border: 1px solid rgba(255,255,255,0.25);
@@ -189,33 +245,41 @@ export class EnglishGame {
       box-shadow: 0 8px 32px rgba(6,95,70,0.45);
       text-align: center;
       flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center;
     `;
 
-    // chip
-    const chip = document.createElement('span');
-    chip.textContent = '뜻을 맞춰봐';
-    chip.style.cssText = `
+    // chip (방향 표시)
+    this.chipEl = document.createElement('span');
+    this.chipEl.style.cssText = `
       display: inline-block;
       background: rgba(255,255,255,0.18);
       border: 1px solid rgba(255,255,255,0.28);
       border-radius: 999px;
       padding: 4px 14px;
       font-size: 12px; font-weight: 700; color: #fff;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     `;
-    card.appendChild(chip);
+    card.appendChild(this.chipEl);
 
-    // 이모지
-    this.emojiEl = document.createElement('div');
-    this.emojiEl.style.cssText = `
-      font-size: 4rem;
-      line-height: 1;
-      margin-bottom: 8px;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-    `;
-    card.appendChild(this.emojiEl);
+    // 이모지 플립 카드
+    this.emojiFlipcard = document.createElement('div');
+    this.emojiFlipcard.className = 'eg-emoji-flipcard';
+    const inner = document.createElement('div');
+    inner.className = 'eg-emoji-inner';
+    const front = document.createElement('div');
+    front.className = 'eg-emoji-front';
+    front.innerHTML = `<span>🎴</span><span class="eg-emoji-front-label">HINT</span>`;
+    const back = document.createElement('div');
+    back.className = 'eg-emoji-back eg-emoji-back-content';
+    inner.appendChild(front);
+    inner.appendChild(back);
+    this.emojiFlipcard.appendChild(inner);
+    this.emojiFlipcard.addEventListener('pointerdown', () => {
+      this.emojiFlipcard?.classList.toggle('flipped');
+    });
+    card.appendChild(this.emojiFlipcard);
 
-    // 영어 단어
+    // 메인 단어
     this.wordEl = document.createElement('div');
     this.wordEl.style.cssText = `
       font-size: 2.2rem;
@@ -223,25 +287,29 @@ export class EnglishGame {
       color: #fff;
       text-shadow: 0 2px 8px rgba(0,0,0,0.25);
       letter-spacing: 2px;
-      margin-bottom: 12px;
+      margin: 8px 0 10px;
+      line-height: 1.2;
     `;
     card.appendChild(this.wordEl);
 
-    // "다시 듣기" 버튼
-    const replayBtn = document.createElement('button');
-    replayBtn.className = 'eng-replay-btn';
-    replayBtn.innerHTML = '🔊 다시 듣기';
-    replayBtn.style.cssText = `
+    // TTS 버튼 (영→한 문제일 때만 표시)
+    this.replayBtnEl = document.createElement('button');
+    this.replayBtnEl.className = 'eng-replay-btn';
+    this.replayBtnEl.innerHTML = '🔊 듣기';
+    this.replayBtnEl.style.cssText = `
       background: rgba(255,255,255,0.14);
       border: 1px solid rgba(255,255,255,0.28);
       border-radius: 999px;
-      padding: 8px 18px;
+      padding: 6px 16px;
       color: #fff; font-size: 13px; font-weight: 700;
       cursor: pointer; touch-action: manipulation;
       display: inline-flex; align-items: center; gap: 6px;
     `;
-    replayBtn.addEventListener('pointerdown', () => {
-      const word = (this.wordEl as HTMLElement).textContent ?? '';
+    this.replayBtnEl.addEventListener('pointerdown', () => {
+      if (!this.session) return;
+      const q = this.session.questions[this.currentIdx];
+      if (!q || q.questionType !== 'en-to-ko') return;
+      const word = q.word.english;
       if (word && 'speechSynthesis' in window) {
         const utt = new SpeechSynthesisUtterance(word);
         utt.lang = 'en-US';
@@ -249,10 +317,10 @@ export class EnglishGame {
         window.speechSynthesis.speak(utt);
       }
     });
-    card.appendChild(replayBtn);
+    card.appendChild(this.replayBtnEl);
     this.el.appendChild(card);
 
-    // ── 보기 2×2 그리드 ────────────────────────────────────────────────────────
+    // ── 보기 2×2 그리드 ──────────────────────────────────────────────────────
     this.choicesEl = document.createElement('div');
     this.choicesEl.style.cssText = `
       display: grid;
@@ -264,7 +332,7 @@ export class EnglishGame {
     `;
     this.el.appendChild(this.choicesEl);
 
-    // ── 진행 도트 행 ───────────────────────────────────────────────────────────
+    // ── 진행 도트 행 ─────────────────────────────────────────────────────────
     const dotRowEl = document.createElement('div');
     dotRowEl.style.cssText = `
       display: flex;
@@ -316,6 +384,7 @@ export class EnglishGame {
     const q = this.session.questions[this.currentIdx];
     this.isProcessing = false;
 
+    // 진행 표시
     if (this.progressLabel) {
       this.progressLabel.textContent = `${this.currentIdx + 1}/${total}`;
     }
@@ -323,16 +392,32 @@ export class EnglishGame {
       this.progressFill.style.width = `${(this.currentIdx / total) * 100}%`;
     }
 
-    this.wordEl.textContent = q.word.english;
+    // 이모지 플립 카드 리셋 (문제마다 가려진 상태로)
+    if (this.emojiFlipcard) {
+      this.emojiFlipcard.classList.remove('flipped');
+      const backEl = this.emojiFlipcard.querySelector('.eg-emoji-back-content') as HTMLElement | null;
+      if (backEl) backEl.textContent = q.word.emoji ?? '';
+    }
+
+    // 칩 방향 표시 + 단어 표시
+    if (q.questionType === 'en-to-ko') {
+      if (this.chipEl) this.chipEl.textContent = '영어 → 한글';
+      this.wordEl.textContent = q.word.english;
+      this.wordEl.style.letterSpacing = '2px';
+      if (this.replayBtnEl) this.replayBtnEl.style.display = 'inline-flex';
+    } else {
+      if (this.chipEl) this.chipEl.textContent = '한글 → 영어';
+      this.wordEl.textContent = q.word.korean;
+      this.wordEl.style.letterSpacing = '0px';
+      if (this.replayBtnEl) this.replayBtnEl.style.display = 'none';
+    }
+
+    // 입장 애니메이션
     this.wordEl.style.animation = 'none';
     void this.wordEl.offsetWidth;
     this.wordEl.style.animation = 'eg-word-enter 250ms ease-out';
 
-    if (this.emojiEl) {
-      this.emojiEl.textContent = q.word.emoji ?? '';
-    }
-
-    // 진행 도트 업데이트
+    // 진행 도트
     this.dotEls.forEach((dot, i) => {
       if (i < this.currentIdx) {
         dot.style.background = this._correctHistory[i]
@@ -347,10 +432,10 @@ export class EnglishGame {
       this.scoreLabelEl.textContent = `${this.correctCount} / ${total}`;
     }
 
+    // 선택지 렌더
     this.choicesEl.innerHTML = '';
     q.choices.forEach((choice, idx) => {
       const btn = document.createElement('button');
-      // .eng-choice-btn 클래스명 유지 (테스트 호환)
       btn.className = 'eng-choice-btn';
       btn.textContent = choice;
       btn.dataset['idx'] = String(idx);
@@ -383,8 +468,11 @@ export class EnglishGame {
 
     const correctBtn = buttons[q.correctIdx];
 
-    // 정답 여부 기록
     this._correctHistory[this.currentIdx] = isCorrect;
+
+    if (!isCorrect) {
+      this._wrongQuestions.push({ word: q.word, questionType: q.questionType });
+    }
 
     if (isCorrect) {
       correctBtn.style.background = 'rgba(16,185,129,0.55)';
@@ -415,11 +503,12 @@ export class EnglishGame {
   private showScore(): void {
     const total = this.session?.totalCount ?? 10;
     const pct = Math.round((this.correctCount / total) * 100);
-    const msg = pct >= 80 ? '훌륭해요!' : pct >= 50 ? '잘 했어요!' : '더 연습해봐요!';
+    const msg = pct >= 80 ? '훌륭해요! 🎉' : pct >= 50 ? '잘 했어요! 👍' : '더 연습해봐요! 💪';
 
     this.el.innerHTML = '';
     this.el.style.alignItems = 'center';
-    this.el.style.justifyContent = 'center';
+    this.el.style.justifyContent = 'flex-start';
+    this.el.style.overflowY = 'auto';
 
     const overlay = document.createElement('div');
     overlay.style.cssText = `
@@ -427,28 +516,99 @@ export class EnglishGame {
       flex-direction: column;
       align-items: center;
       width: 100%;
-      padding: 32px 24px;
+      padding: calc(env(safe-area-inset-top, 0px) + 32px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px);
       gap: 16px;
+      box-sizing: border-box;
+      min-height: 100%;
     `;
 
+    // 점수 뱃지
     const badge = document.createElement('div');
     badge.style.cssText = `
       background: rgba(255,255,255,0.18);
       border: 2px solid rgba(255,255,255,0.30);
       backdrop-filter: blur(12px);
       border-radius: 32px;
-      padding: 40px 48px;
+      padding: 32px 40px;
       text-align: center;
       width: 100%;
       box-shadow: 0 8px 32px rgba(6,95,70,0.45);
       animation: eg-score-pop 500ms cubic-bezier(0.34,1.56,0.64,1) both;
+      box-sizing: border-box;
     `;
     badge.innerHTML = `
-      <div style="font-size:1rem;font-weight:700;color:rgba(255,255,255,0.8);letter-spacing:2px;margin-bottom:8px;">최종 점수</div>
-      <div style="font-size:3.5rem;font-weight:900;color:#FDE68A;line-height:1;text-shadow:0 4px 16px rgba(0,0,0,0.25);">${this.correctCount} / ${total}</div>
-      <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-top:10px;">${pct}% 정답 — ${msg}</div>
+      <div style="font-size:0.85rem;font-weight:700;color:rgba(255,255,255,0.75);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;">최종 점수</div>
+      <div style="font-size:3.2rem;font-weight:900;color:#FDE68A;line-height:1;text-shadow:0 4px 16px rgba(0,0,0,0.25);">${this.correctCount} / ${total}</div>
+      <div style="font-size:1rem;font-weight:700;color:#fff;margin-top:8px;">${pct}% 정답 — ${msg}</div>
     `;
+    overlay.appendChild(badge);
 
+    // 틀린 문제 요약 섹션
+    if (this._wrongQuestions.length > 0) {
+      const summaryCard = document.createElement('div');
+      summaryCard.style.cssText = `
+        background: rgba(239,68,68,0.12);
+        border: 1.5px solid rgba(239,68,68,0.30);
+        backdrop-filter: blur(12px);
+        border-radius: 24px;
+        padding: 20px;
+        width: 100%;
+        box-sizing: border-box;
+      `;
+
+      const summaryTitle = document.createElement('div');
+      summaryTitle.style.cssText = `
+        font-size: 12px; font-weight: 800; color: rgba(255,255,255,0.75);
+        letter-spacing: 0.12em; text-transform: uppercase;
+        margin-bottom: 14px;
+        display: flex; align-items: center; gap: 6px;
+      `;
+      summaryTitle.innerHTML = `<span>❌</span> 틀린 문제 복습 (${this._wrongQuestions.length}개)`;
+      summaryCard.appendChild(summaryTitle);
+
+      this._wrongQuestions.forEach((item, i) => {
+        const row = document.createElement('div');
+        row.style.cssText = `
+          display: flex; align-items: center; gap: 12px;
+          padding: 10px 12px;
+          background: rgba(255,255,255,0.10);
+          border-radius: 14px;
+          margin-bottom: ${i < this._wrongQuestions.length - 1 ? '8px' : '0'};
+          animation: eg-wrong-slide 300ms ${i * 60}ms ease both;
+        `;
+
+        const emojiSpan = document.createElement('span');
+        emojiSpan.style.cssText = 'font-size: 1.8rem; flex-shrink: 0; line-height: 1;';
+        emojiSpan.textContent = item.word.emoji ?? '❓';
+        row.appendChild(emojiSpan);
+
+        const info = document.createElement('div');
+        info.style.cssText = 'flex: 1; min-width: 0;';
+
+        const dirLabel = document.createElement('div');
+        dirLabel.style.cssText = `
+          font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.55);
+          letter-spacing: 0.08em; margin-bottom: 2px;
+        `;
+        dirLabel.textContent = item.questionType === 'en-to-ko' ? '영어 → 한글' : '한글 → 영어';
+        info.appendChild(dirLabel);
+
+        const wordLine = document.createElement('div');
+        wordLine.style.cssText = `
+          font-size: 1rem; font-weight: 800; color: #fff;
+          white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        `;
+        wordLine.textContent = `${item.word.english} = ${item.word.korean}`;
+        info.appendChild(wordLine);
+
+        row.appendChild(info);
+        summaryCard.appendChild(row);
+      });
+
+      overlay.appendChild(summaryCard);
+    }
+
+    // 버튼
     const homeBtn = document.createElement('button');
     homeBtn.textContent = '영어 메뉴로 돌아가기';
     homeBtn.style.cssText = `
@@ -464,6 +624,7 @@ export class EnglishGame {
       box-shadow: 0 6px 24px rgba(255,255,255,0.30);
       transition: transform 100ms ease;
       touch-action: manipulation;
+      box-sizing: border-box;
     `;
     homeBtn.addEventListener('pointerdown', () => {
       appRouter.navigate({ to: 'english-menu', subject: 'english', replace: true });
@@ -483,10 +644,10 @@ export class EnglishGame {
       cursor: pointer;
       transition: transform 100ms ease;
       touch-action: manipulation;
+      box-sizing: border-box;
     `;
-    retryBtn.addEventListener('pointerdown', () => this.show());
+    retryBtn.addEventListener('pointerdown', () => this.show(this._currentDifficulty));
 
-    overlay.appendChild(badge);
     overlay.appendChild(homeBtn);
     overlay.appendChild(retryBtn);
     this.el.appendChild(overlay);

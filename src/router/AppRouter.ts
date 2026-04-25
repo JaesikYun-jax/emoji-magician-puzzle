@@ -2,13 +2,16 @@ import type { SubjectId } from '../game-data/subjectConfig';
 
 export type ScreenId =
   | 'brand-home'
+  | 'profile-setup'
+  | 'home-b'
   | 'subject-select'
+  // ── 레거시 (테스트 호환용, 런타임 미사용) ──
+  | 'level-select'
+  | 'game-math'
   | 'math-menu'
   | 'english-menu'
   | 'korean-menu'
-  | 'level-select'
   | 'level-intro'
-  | 'game-math'
   | 'game-english'
   | 'result'
   | 'level-test-math'
@@ -23,7 +26,10 @@ export type ScreenId =
   | 'game-creativity'
   | 'game-korean'
   | 'arithmetic-menu'
-  | 'game-arithmetic';
+  | 'game-arithmetic'
+  | 'game-matrix-reasoning'
+  | 'game-odd-one-out'
+  | 'game-sentence-order';
 
 export interface NavigationPayload {
   to: ScreenId;
@@ -114,7 +120,9 @@ export class AppRouter {
 
   back(): void {
     if (this.historyStack.length === 0) {
-      this.navigate({ to: 'brand-home', replace: true });
+      // home-b가 등록되ていれば home-b로, 없으면 brand-home으로 폴백
+      const fallback: ScreenId = this.screens['home-b'] ? 'home-b' : 'brand-home';
+      this.navigate({ to: fallback, replace: true });
       return;
     }
     const target = this.historyStack.pop()!;

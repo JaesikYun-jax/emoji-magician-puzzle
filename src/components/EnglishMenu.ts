@@ -1,7 +1,18 @@
-import type { AppRouter } from '../router/AppRouter';
+import type { AppRouter, ScreenId } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
 import { t } from '../i18n';
-import { ENGLISH_WORDS } from '../game-data/englishWords';
+import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
+import { buildSubjectProgress } from '../systems/progression/xpEngine';
+import { PlacementTest } from './PlacementTest';
+import type { PlacementQuestion } from './PlacementTest';
+
+const ENGLISH_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
+  { id: 'ep1', questionText: '"사과" 의 영어는?', choices: ['Orange', 'Apple', 'Grape', 'Banana'], correctIndex: 1, emoji: '🍎' },
+  { id: 'ep2', questionText: '"강아지" 의 영어는?', choices: ['Cat', 'Bird', 'Dog', 'Fish'], correctIndex: 2, emoji: '🐶' },
+  { id: 'ep3', questionText: 'What color is the sky?', choices: ['Red', 'Green', 'Blue', 'Yellow'], correctIndex: 2, emoji: '🌈' },
+  { id: 'ep4', questionText: '"나비" 의 영어는?', choices: ['Bee', 'Fly', 'Ant', 'Butterfly'], correctIndex: 3, emoji: '🦋' },
+  { id: 'ep5', questionText: 'How many days in a week?', choices: ['5', '6', '7', '8'], correctIndex: 2, emoji: '📅' },
+];
 
 const ENGLISH_MENU_STYLE = `
 #english-menu {
@@ -29,7 +40,6 @@ const ENGLISH_MENU_STYLE = `
 }
 #english-menu > * { position: relative; z-index: 1; }
 
-/* Decorative floating letter */
 #english-menu .em-decor {
   position: absolute;
   font-family: 'Fraunces', serif;
@@ -90,63 +100,11 @@ const ENGLISH_MENU_STYLE = `
   letter-spacing: -0.02em;
 }
 
-#english-menu .lt-banner {
+#english-menu .sm-xp-row {
+  padding: 0 24px 12px;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 8px 16px 0;
-  padding: 16px 20px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(253,230,138,0.18), rgba(251,113,133,0.18));
-  border: 1px solid rgba(253,230,138,0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  cursor: pointer;
-  text-align: left;
-  width: calc(100% - 32px);
-  max-width: 528px;
-  margin-inline: auto;
-  transition: transform 250ms, border-color 250ms, box-shadow 250ms;
-}
-#english-menu .lt-banner:hover {
-  transform: translateY(-2px);
-  border-color: rgba(253,230,138,0.6);
-  box-shadow: 0 12px 36px rgba(253,230,138,0.25);
-}
-#english-menu .lt-banner:active { transform: scale(0.98); }
-#english-menu .lt-banner-icon {
-  width: 44px; height: 44px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #FDE68A, #FB7185);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(251,113,133,0.4);
-}
-#english-menu .lt-banner-text { flex: 1; }
-#english-menu .lt-banner-title {
-  display: block;
-  font-family: 'Fraunces', 'Pretendard Variable', serif;
-  font-variation-settings: 'opsz' 72;
-  font-size: 1rem; font-weight: 700; color: #fff;
-  letter-spacing: -0.02em;
-}
-#english-menu .lt-banner-sub {
-  display: block; font-size: 0.78rem;
-  color: rgba(255,255,255,0.75); margin-top: 3px;
-}
-#english-menu .lt-banner-arrow {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; flex-shrink: 0;
-  transition: transform 200ms, background 200ms;
-}
-#english-menu .lt-banner:hover .lt-banner-arrow {
-  transform: translateX(3px);
-  background: rgba(217,249,157,0.25);
-  color: #D9F99D;
+  flex-direction: column;
+  gap: 6px;
 }
 
 #english-menu .em-content {
@@ -154,12 +112,12 @@ const ENGLISH_MENU_STYLE = `
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 32px 24px;
-  gap: 24px;
+  padding: 8px 24px 24px;
+  gap: 16px;
   max-width: 520px;
   margin: 0 auto;
   width: 100%;
+  overflow-y: auto;
 }
 
 #english-menu .em-info-card {
@@ -167,7 +125,7 @@ const ENGLISH_MENU_STYLE = `
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.16);
   border-radius: 28px;
-  padding: 36px 28px;
+  padding: 28px 24px;
   text-align: center;
   width: 100%;
   backdrop-filter: blur(16px);
@@ -193,22 +151,23 @@ const ENGLISH_MENU_STYLE = `
 
 #english-menu .em-info-mark {
   width: 72px; height: 72px;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #FDE68A, #FB7185);
+  background: linear-gradient(135deg, #D9F99D, #10B981);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 12px 32px rgba(251,113,133,0.35);
+  box-shadow: 0 12px 32px rgba(16,185,129,0.35);
   position: relative;
   z-index: 1;
+  font-size: 2rem;
 }
 
 #english-menu .em-info-title {
   font-family: 'Fraunces', 'Pretendard Variable', serif;
   font-variation-settings: 'opsz' 144, 'SOFT' 60;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: block;
   letter-spacing: -0.03em;
   position: relative;
@@ -221,9 +180,9 @@ const ENGLISH_MENU_STYLE = `
 }
 
 #english-menu .em-info-sub {
-  font-size: 0.92rem;
-  color: rgba(255,255,255,0.75);
-  line-height: 1.6;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.70);
+  line-height: 1.5;
   position: relative;
   z-index: 1;
 }
@@ -232,20 +191,18 @@ const ENGLISH_MENU_STYLE = `
   display: flex;
   justify-content: center;
   gap: 20px;
-  margin-top: 24px;
-  padding-top: 20px;
+  margin-top: 20px;
+  padding-top: 16px;
   border-top: 1px dashed rgba(255,255,255,0.18);
   position: relative;
   z-index: 1;
 }
-#english-menu .em-info-stat {
-  text-align: center;
-}
+#english-menu .em-info-stat { text-align: center; }
 #english-menu .em-info-stat-num {
   font-family: 'Fraunces', serif;
   font-style: italic;
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #D9F99D;
   display: block;
   letter-spacing: -0.02em;
@@ -259,6 +216,40 @@ const ENGLISH_MENU_STYLE = `
   margin-top: 2px;
   display: block;
 }
+
+#english-menu .sm-tabs {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+#english-menu .sm-tabs::-webkit-scrollbar { display: none; }
+#english-menu .sm-tab {
+  padding: 10px 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(10px);
+  font-family: 'Plus Jakarta Sans', 'Pretendard Variable', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.70);
+  cursor: pointer;
+  border-radius: 999px;
+  transition: all 200ms;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#english-menu .sm-tab:hover { color: #fff; border-color: rgba(255,255,255,0.28); }
+#english-menu .sm-tab.active {
+  color: #064E3B;
+  background: #D9F99D;
+  border-color: #D9F99D;
+  box-shadow: 0 6px 20px rgba(217,249,157,0.35);
+}
+
+#english-menu .sm-tab-detail { width: 100%; }
 
 #english-menu .em-start-btn {
   width: 100%;
@@ -309,14 +300,15 @@ const ENGLISH_MENU_STYLE = `
 
 export class EnglishMenu {
   private el: HTMLElement | null = null;
+  private activeGameTab: string | null = null;
+  private _forcedOverrides: Map<string, string> = new Map();
+  private _settingsOpen: boolean = false;
 
   constructor(
     private container: HTMLElement,
     private router: AppRouter,
-    private saveService?: SaveService,
-  ) {
-    void this.saveService;
-  }
+    private saveService: SaveService,
+  ) {}
 
   show(): void {
     this.hide();
@@ -328,10 +320,21 @@ export class EnglishMenu {
       document.head.appendChild(style);
     }
 
+    const rawProgress = this.saveService.getSubjectProgress('english');
+    const progress = buildSubjectProgress({
+      subjectId: 'english',
+      xp: rawProgress.xp,
+      totalClears: rawProgress.totalClears,
+      streak: rawProgress.streak,
+      bestStreak: rawProgress.bestStreak,
+    });
+
+    const accentColor = '#D9F99D';
+    const pct = progress.levelProgressPercent;
+
     const el = document.createElement('div');
     el.id = 'english-menu';
     el.innerHTML = `
-      <!-- Decorative floating letters -->
       <span class="em-decor em-decor--1" aria-hidden="true">Aa</span>
       <span class="em-decor em-decor--2" aria-hidden="true">Zz</span>
 
@@ -345,40 +348,42 @@ export class EnglishMenu {
         </div>
       </div>
 
-      <button class="lt-banner" id="em-lt-banner">
-        <span class="lt-banner-icon">🧪</span>
-        <div class="lt-banner-text">
-          <span class="lt-banner-title">내 레벨 찾기</span>
-          <span class="lt-banner-sub">5문제로 딱 맞는 단계를 찾아줄게요</span>
+      <div class="sm-xp-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;font-weight:700;color:${accentColor};letter-spacing:0.1em;text-transform:uppercase;">
+            Lv.${progress.level} · ${progress.rank}
+          </span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.55);">
+            ${progress.xpToNextLevel > 0 ? `+${progress.xpToNextLevel} XP to next` : 'MAX LEVEL'}
+          </span>
         </div>
-        <span class="lt-banner-arrow">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </button>
+        <div style="height:5px;background:rgba(255,255,255,0.15);border-radius:99px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${accentColor};border-radius:99px;transition:width 0.8s cubic-bezier(0.22,0.61,0.36,1);"></div>
+        </div>
+      </div>
 
       <div class="em-content">
         <div class="em-info-card">
-          <div class="em-info-mark" aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <text x="13" y="28" font-family="Fraunces, serif" font-size="26" font-weight="800" font-style="italic" fill="#064E3B">A</text>
-              <text x="26" y="28" font-family="Fraunces, serif" font-size="18" font-weight="800" font-style="italic" fill="#064E3B">a</text>
-            </svg>
-          </div>
+          <div class="em-info-mark" aria-hidden="true">🔤</div>
           <span class="em-info-title">영어 <em>단어 학습</em></span>
           <span class="em-info-sub">${t('subject.english.sub')}<br/>입문부터 고급까지, 단계별 플래시카드</span>
           <div class="em-info-stats">
             <div class="em-info-stat">
-              <span class="em-info-stat-num">${ENGLISH_WORDS.length}+</span>
-              <span class="em-info-stat-label">Words</span>
+              <span class="em-info-stat-num">${progress.xpInCurrentLevel} XP</span>
+              <span class="em-info-stat-label">이번 레벨</span>
             </div>
             <div class="em-info-stat">
-              <span class="em-info-stat-num">A — Z</span>
-              <span class="em-info-stat-label">Levels</span>
+              <span class="em-info-stat-num">Lv.${progress.level}</span>
+              <span class="em-info-stat-label">현재 레벨</span>
             </div>
           </div>
         </div>
+
+        <div class="sm-tabs"></div>
+        <div class="sm-tab-detail"></div>
+
         <button class="em-start-btn" id="em-start">
-          <span>게임 시작하기</span>
+          <span>오늘의 학습 시작하기</span>
           <span class="em-start-btn__arrow" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </span>
@@ -386,32 +391,197 @@ export class EnglishMenu {
       </div>
     `;
 
-    el.querySelector('.mm-back-btn')!.addEventListener('click', () => {
+    el.querySelector('.mm-back-btn')!.addEventListener('pointerdown', () => {
       this.router.back();
     });
 
-    el.querySelector('#em-lt-banner')!.addEventListener('click', () => {
-      this.router.navigate({ to: 'level-test-english', subject: 'english' });
-    });
-
-    el.querySelector('#em-start')!.addEventListener('click', () => {
-      const savedResult = this.saveService?.getEnglishLevelTestResult();
-      const LABEL_TO_DIFFICULTY: Record<string, string> = {
-        '입문': 'beginner',
-        '기초': 'elementary',
-        '중급': 'intermediate',
-        '고급': 'advanced',
-      };
-      let levelId = 'beginner';
-      if (savedResult?.recommendedLevelId) {
-        const label = savedResult.recommendedLevelId.replace(/^english-/, '');
-        levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
+    el.querySelector('#em-start')!.addEventListener('pointerdown', () => {
+      if (!this.saveService.isPlacementDone('english')) {
+        const placement = new PlacementTest(this.container, this.router, this.saveService);
+        placement.show({
+          subjectId: 'english',
+          subjectLabelKo: '영어',
+          subjectLabelEn: 'English',
+          questions: ENGLISH_PLACEMENT_QUESTIONS,
+          gradientCss: 'linear-gradient(165deg, #064E3B, #065F46, #10B981)',
+          onComplete: (_score) => {
+            placement.hide();
+            const savedResult = this.saveService.getEnglishLevelTestResult();
+            const LABEL_TO_DIFFICULTY: Record<string, string> = {
+              '입문': 'beginner',
+              '기초': 'elementary',
+              '중급': 'intermediate',
+              '고급': 'advanced',
+            };
+            let levelId = 'beginner';
+            if (savedResult?.recommendedLevelId) {
+              const label = savedResult.recommendedLevelId.replace(/^english-/, '');
+              levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
+            }
+            this.router.navigate({ to: 'game-english', subject: 'english', levelId });
+          },
+          onBack: () => { placement.hide(); },
+        });
+      } else {
+        const savedResult = this.saveService.getEnglishLevelTestResult();
+        const LABEL_TO_DIFFICULTY: Record<string, string> = {
+          '입문': 'beginner',
+          '기초': 'elementary',
+          '중급': 'intermediate',
+          '고급': 'advanced',
+        };
+        let levelId = 'beginner';
+        if (savedResult?.recommendedLevelId) {
+          const label = savedResult.recommendedLevelId.replace(/^english-/, '');
+          levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
+        }
+        this.router.navigate({ to: 'game-english', subject: 'english', levelId });
       }
-      this.router.navigate({ to: 'game-english', subject: 'english', levelId });
     });
 
     this.container.appendChild(el);
     this.el = el;
+
+    this._renderGameTabs(el, 'english');
+  }
+
+  private _renderGameTabs(el: HTMLElement, subjectId: string): void {
+    const games = getGamesBySubject(subjectId);
+    const tabsEl = el.querySelector('.sm-tabs') as HTMLElement;
+
+    tabsEl.innerHTML = games.map(g => `
+      <button class="sm-tab ${this.activeGameTab === g.id ? 'active' : ''}" data-game-id="${g.id}">
+        ${g.icon} ${g.labelKo}
+      </button>
+    `).join('');
+
+    tabsEl.querySelectorAll('.sm-tab').forEach(btn => {
+      btn.addEventListener('pointerdown', () => {
+        this.activeGameTab = (btn as HTMLElement).dataset['gameId'] ?? null;
+        this._settingsOpen = false;
+        this._renderGameTabs(el, subjectId);
+        this._renderTabDetail(el, subjectId);
+      });
+    });
+
+    this._renderTabDetail(el, subjectId);
+  }
+
+  private _renderTabDetail(el: HTMLElement, subjectId: string): void {
+    const tabDetailEl = el.querySelector('.sm-tab-detail') as HTMLElement;
+    if (!this.activeGameTab) {
+      tabDetailEl.innerHTML = '';
+      return;
+    }
+    const game = getGameById(this.activeGameTab);
+    if (!game) return;
+
+    const ds = game.difficultySettings;
+    const forcedId = ds ? (this._forcedOverrides.get(game.id) ?? null) : null;
+    const forcedOption = forcedId && ds ? ds.options.find(o => o.id === forcedId) ?? null : null;
+    const settingsOpen = this._settingsOpen;
+
+    const settingsBtnHtml = ds ? `
+      <button class="sm-settings-btn" style="
+        background:${settingsOpen ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)'};
+        border:1px solid rgba(255,255,255,0.3);border-radius:8px;
+        padding:5px 8px;cursor:pointer;color:#fff;font-size:15px;line-height:1;
+        flex-shrink:0;transition:background 150ms;
+      " title="난이도 설정">⚙️</button>
+    ` : '';
+
+    const settingsPanelHtml = (ds && settingsOpen) ? `
+      <div class="sm-settings-panel" style="
+        background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.12);
+        border-radius:12px;padding:10px 12px;
+      ">
+        <div style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;
+          text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">
+          ${ds.panelLabel}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${ds.options.map(opt => `
+            <button class="sm-diff-opt" data-opt-id="${opt.id}" style="
+              background:${forcedId === opt.id ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.08)'};
+              border:1px solid ${forcedId === opt.id ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)'};
+              border-radius:8px;padding:5px 10px;color:#fff;
+              font-size:12px;font-weight:${forcedId === opt.id ? '700' : '400'};
+              cursor:pointer;transition:all 120ms;
+            ">${opt.label}</button>
+          `).join('')}
+        </div>
+        ${forcedId ? `
+          <div style="margin-top:6px;color:rgba(255,255,255,0.5);font-size:11px;">
+            ✓ ${forcedOption?.label ?? ''} 으로 고정됨 &nbsp;
+            <button class="sm-diff-reset" style="
+              background:none;border:none;color:rgba(255,255,255,0.5);
+              font-size:11px;cursor:pointer;text-decoration:underline;padding:0;
+            ">초기화</button>
+          </div>
+        ` : ''}
+      </div>
+    ` : '';
+
+    const soloLabel = forcedOption
+      ? `이 게임만 하기 (${forcedOption.label}) →`
+      : '이 게임만 하기 →';
+
+    tabDetailEl.innerHTML = `
+      <div style="
+        background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+        border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;
+      ">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:28px;">${game.icon}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="color:#fff;font-weight:700;font-size:15px;">${game.labelKo}</div>
+            <div style="color:rgba(255,255,255,0.65);font-size:13px;margin-top:2px;">${game.descriptionKo}</div>
+          </div>
+          ${settingsBtnHtml}
+        </div>
+        ${settingsPanelHtml}
+        <button class="sm-solo-btn" data-route="${game.routeId}" style="
+          background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+          border-radius:12px;color:#fff;font-size:14px;font-weight:700;
+          padding:10px 16px;cursor:pointer;text-align:center;
+        ">${soloLabel}</button>
+      </div>
+    `;
+
+    tabDetailEl.querySelector('.sm-settings-btn')?.addEventListener('pointerdown', () => {
+      this._settingsOpen = !this._settingsOpen;
+      this._renderTabDetail(el, subjectId);
+    });
+
+    tabDetailEl.querySelectorAll('.sm-diff-opt').forEach(btn => {
+      btn.addEventListener('pointerdown', () => {
+        const optId = (btn as HTMLElement).dataset['optId']!;
+        if (this._forcedOverrides.get(game.id) === optId) {
+          this._forcedOverrides.delete(game.id);
+        } else {
+          this._forcedOverrides.set(game.id, optId);
+        }
+        this._renderTabDetail(el, subjectId);
+      });
+    });
+
+    tabDetailEl.querySelector('.sm-diff-reset')?.addEventListener('pointerdown', () => {
+      this._forcedOverrides.delete(game.id);
+      this._renderTabDetail(el, subjectId);
+    });
+
+    tabDetailEl.querySelector('.sm-solo-btn')?.addEventListener('pointerdown', () => {
+      const forced = ds ? (this._forcedOverrides.get(game.id) ?? null) : null;
+      if (forced && ds) {
+        if (ds.paramKey === 'difficulty') {
+          this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'english', difficulty: forced as 'easy' | 'normal' | 'hard' });
+        } else {
+          this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'english', levelId: forced });
+        }
+      } else {
+        this.router.navigate({ to: game.routeId as ScreenId, subject: subjectId as 'english' });
+      }
+    });
   }
 
   hide(): void {

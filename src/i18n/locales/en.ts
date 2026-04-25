@@ -100,17 +100,6 @@ export const en = {
   'subject.comingSoonMsg': 'Coming Soon',
   'subject.korean.detail': 'Dictation, word chains & more<br>Fun Korean games are on the way!',
 
-  'math.operation.addition': 'Addition',
-  'math.operation.subtraction': 'Subtraction',
-  'math.operation.multiplication': 'Multiplication',
-  'math.digit.single': '1-digit',
-  'math.digit.double': '2-digit',
-  'math.digit.triple': '3-digit',
-  'math.orderError': 'Wrong order!',
-  'math.levelClear': '🎊 Clear!',
-  'math.movesLeft': 'Moves Left',
-  'math.moves': 'Moves',
-
   'english.category.beginner': 'Beginner',
   'english.category.elementary': 'Elementary',
   'english.category.intermediate': 'Intermediate',
@@ -214,6 +203,7 @@ export const en = {
   'patFind.result.score': '{correct} / {total} correct',
   'patFind.result.retry': '🔄 Try Again',
   'patFind.result.menu': '🏠 Menu',
+  'patFind.prompt': 'Choose the missing number',
   'patFind.timeOver': '⏰ Time\'s Up!',
   'patFind.pattern.arithmetic': 'Arithmetic',
   'patFind.pattern.geometric': 'Geometric',
@@ -296,6 +286,22 @@ export const en = {
   'arithmetic.result.fail': 'Try again!',
   'arithmetic.result.correct': '{n} correct',
 
+  // Sentence Ordering Game (SentenceOrderingGame)
+  'english.order.chipLabel.SV':    'Pattern 1 · Subject + Verb',
+  'english.order.chipLabel.SVC':   'Pattern 2 · Subject + be + Complement',
+  'english.order.chipLabel.SVO':   'Pattern 3 · Subject + Verb + Object',
+  'english.order.tapHint':         'Tap the words in order',
+  'english.order.correct':         'Correct! ✨',
+  'english.order.wrong':           'Try again!',
+  'english.order.finalScore':      'Word Order Result',
+  'english.order.homeBtn':         'Back to English Menu',
+  'english.order.retryBtn':        'Try Again',
+  'english.order.resultMsg.great': 'Perfect word order sense!',
+  'english.order.resultMsg.good':  'Well done! A bit more practice!',
+  'english.order.resultMsg.keep':  'Keep practicing — you can do it!',
+  'english.order.scoreComplete':   '{total} questions done',
+  'english.order.mistakes':        '{n} mistake(s)',
+
   // English game inline strings (EnglishGame)
   'english.game.chipLabel': 'Guess the Meaning',
   'english.game.replayBtn': '🔊 Play Again',
@@ -306,6 +312,88 @@ export const en = {
   'english.game.homeBtn': 'Back to English Menu',
   'english.game.retryBtn': 'Try Again',
 
+  // ── Onboarding (profile creation) ──────────────────────────────────────────
+  'onboarding.title': "Let's get started!",
+  'onboarding.nickname.label': 'What should we call your child?',
+  'onboarding.nickname.placeholder': 'Nickname (1-10 chars)',
+  'onboarding.age.label': "Tell us your child's age or grade",
+  'onboarding.age.daycare': 'Daycare',
+  'onboarding.age.kindergarten': 'Kindergarten',
+  'onboarding.age.g1': 'Grade 1',
+  'onboarding.age.g2': 'Grade 2',
+  'onboarding.age.g3': 'Grade 3',
+  'onboarding.age.g4': 'Grade 4',
+  'onboarding.age.g5': 'Grade 5',
+  'onboarding.age.g6': 'Grade 6',
+  'onboarding.start': 'Start!',
+  'onboarding.nickname.error': 'Please enter a nickname (1-10 characters)!',
+  'onboarding.age.error': 'Please choose your grade!',
+
+  // ── Home B (kids home) ──────────────────────────────────────────────────────
+  'home.greeting': 'Hi, {name}! Welcome! 👋',
+  'home.todayMission': "Today's Mission",
+  'home.todayMission.placeholder': 'Ready for a game today? 🎮',
+  'home.subjectProgress': 'Lv.{lv} · ★{stars}',
+  'home.comingSoon': 'Coming soon!',
+  'home.subjectStart': 'Play →',
+
+  // Common menu
+  'menu.todayStudy': "Start Today's Learning",
+  'menu.playThisOnly': 'Play this only →',
+  'menu.placement.title': 'Placement Complete!',
+
+  // Math menu
+  'math.menu.infoTitle': 'Math Problems',
+  'math.menu.infoSub': 'Equation Fill · Pattern Finder · Arithmetic Quiz',
+
+  // English menu
+  'english.menu.infoTitle': 'English Word Learning',
+  'english.menu.infoSub': 'Step-by-step flashcards from beginner to advanced',
+
+  // Logic menu
+  'logic.menu.infoTitle': 'Logic Quiz',
+  'logic.menu.infoSub': 'Find answers by reasoning through rules and patterns',
+
+  // Creativity menu
+  'creativity.menu.infoTitle': 'Creative Association Quiz',
+  'creativity.menu.infoSub': 'Connect words into 4 groups in an association puzzle',
+
+  // Matrix Reasoning
+  'matrix.title': 'Matrix Reasoning',
+  'matrix.subtitle': 'Choose the shape for the blank',
+  'matrix.hint': 'Look for patterns in rows and columns',
+  'matrix.result.perfect': '🎊 Mensa Genius!',
+  'matrix.result.great': '⭐ Excellent!',
+  'matrix.result.good': '👍 Good job!',
+  'matrix.result.fail': '😅 Try again!',
+  'matrix.result.score': '{correct} / {total} correct',
+  'matrix.result.retry': '🔄 Retry',
+  'matrix.result.menu': '🏠 Menu',
+  'matrix.timeOver': '⏰ Time up!',
+  'matrix.correct': 'Correct! ✨',
+  'matrix.wrong': 'Not quite...',
+  // Odd One Out
+  'oddone.title': 'Odd One Out',
+  'oddone.subtitle': 'Find the one that is different',
+  'oddone.hint.color': 'Look for a different color',
+  'oddone.hint.shape': 'Look for a different shape',
+  'oddone.hint.size': 'Look for a different size',
+  'oddone.hint.fill': 'Look for a different fill',
+  'oddone.hint.rotation': 'Look for a different direction',
+  'oddone.hint.chirality': 'Look carefully — one is different',
+  'oddone.hint.compound': 'Find what is different',
+  'oddone.result.perfect': '🎊 Perfect Eye!',
+  'oddone.result.great': '⭐ Sharp!',
+  'oddone.result.good': '👍 Good job!',
+  'oddone.result.fail': '😅 Try again!',
+  'oddone.result.score': '{correct} / {total} correct',
+  'oddone.result.retry': '🔄 Retry',
+  'oddone.result.menu': '🏠 Menu',
+  'oddone.timeOver': '⏰ Time up!',
+  'oddone.correct': 'Correct! ✨',
+  'oddone.wrong': 'Not quite...',
+  'oddone.noTimer': 'Take your time 🧐',
+
   // Korean game inline strings (KoreanGame)
   'korean.game.chipLabel': 'Build the Sound',
   'korean.game.finalScore': 'Korean Score',
@@ -314,4 +402,49 @@ export const en = {
   'korean.game.resultMsg.keep': 'Keep practicing! 💪',
   'korean.game.retryBtn': 'Try Again',
   'korean.game.backBtn': 'Back to Korean Menu',
+
+  // ── Explorer Ranks (XP-based, xpEngine.computeRank) ─────────────────────────
+  'rank.explorer.1': 'Alley Explorer',
+  'rank.explorer.2': 'Park Explorer',
+  'rank.explorer.3': 'Forest Explorer',
+  'rank.explorer.4': 'Mountain Explorer',
+  'rank.explorer.5': 'Cave Explorer',
+  'rank.explorer.6': 'Desert Explorer',
+  'rank.explorer.7': 'Ocean Explorer',
+  'rank.explorer.8': 'Polar Explorer',
+  'rank.explorer.9': 'Sky Explorer',
+  'rank.explorer.10': 'Space Explorer',
+
+  // ── Color Tier Ranks (Creativity, CREATIVITY_RANKS) ──────────────────────────
+  'rank.color.1':  'Iron III',
+  'rank.color.2':  'Iron II',
+  'rank.color.3':  'Iron I',
+  'rank.color.4':  'Bronze III',
+  'rank.color.5':  'Bronze II',
+  'rank.color.6':  'Bronze I',
+  'rank.color.7':  'Silver III',
+  'rank.color.8':  'Silver II',
+  'rank.color.9':  'Silver I',
+  'rank.color.10': 'Gold III',
+  'rank.color.11': 'Gold II',
+  'rank.color.12': 'Gold I',
+  'rank.color.13': 'Emerald III',
+  'rank.color.14': 'Emerald II',
+  'rank.color.15': 'Emerald I',
+  'rank.color.16': 'Sapphire III',
+  'rank.color.17': 'Sapphire II',
+  'rank.color.18': 'Sapphire I',
+  'rank.color.19': 'Diamond III',
+  'rank.color.20': 'Diamond II',
+  'rank.color.21': 'Diamond I',
+  'rank.color.22': 'Master',
+
+  // ── Creativity Badges (CREATIVITY_BADGES) ─────────────────────────────────────
+  'badge.creativity.1': 'First Step',
+  'badge.creativity.2': 'Burning Passion',
+  'badge.creativity.3': 'Practice Light',
+  'badge.creativity.4': 'Starlight Explorer',
+  'badge.creativity.5': 'Wave Conqueror',
+  'badge.creativity.6': 'Diamond Will',
+  'badge.creativity.7': "Master's Crown",
 };

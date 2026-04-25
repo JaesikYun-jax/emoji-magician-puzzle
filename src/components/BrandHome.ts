@@ -1,4 +1,5 @@
 import type { AppRouter } from '../router/AppRouter';
+import type { SaveService } from '../services/SaveService';
 
 /* =========================================================================
    BrandHome — Sabak "사교육비 박살" HomeA
@@ -52,7 +53,7 @@ const BRAND_HOME_STYLE = `
   color: #D9F99D; margin-top: 30px; justify-content: center; align-self: center;
 }
 .bh-hero__headline {
-  font-size: 48px; margin-top: 14px; text-align: center; line-height: 1.02;
+  font-size: 48px; margin-top: 14px; text-align: center; line-height: 1.18;
 }
 .bh-hero__sub {
   font-size: 13px; color: rgba(255,255,255,0.70); line-height: 1.6;
@@ -178,6 +179,16 @@ const BRAND_HOME_STYLE = `
 }
 .bh-stat-card__big { font-family: var(--f-display); font-weight: 700; font-size: 32px; color: #FDE68A; flex-shrink: 0; min-width: 72px; letter-spacing: -0.035em; }
 .bh-stat-card__text { font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.55; }
+
+.bh-why__iq-tagline {
+  font-family: var(--f-display); font-size: 20px; font-weight: 800;
+  color: #FDE68A; margin-top: 6px; letter-spacing: -0.02em;
+}
+.bh-why__insight {
+  margin-top: 22px; font-size: 13px; color: rgba(255,255,255,0.72);
+  line-height: 1.7; border-left: 3px solid rgba(251,113,133,0.55);
+  padding-left: 14px;
+}
 
 /* ───── Subjects ───── */
 .bh-subjects {
@@ -469,7 +480,7 @@ function svgMascot(frenzy: number, smashed: boolean): string {
 
 const SUBJECT_CARDS = [
   {
-    id: 'math', name: '수리 수학', tagline: '연산이 재미있어지는 순간',
+    id: 'math', name: '수리 수학', tagline: '빠른 연산, 강한 수 감각',
     skills: ['한 자리 덧·뺄', '두 자리 계산', '구구단', '수 패턴'],
     caption: '합이 28인 카드 두 장을 찾아봐요',
     demo: () => {
@@ -488,7 +499,7 @@ const SUBJECT_CARDS = [
     },
   },
   {
-    id: 'english', name: '영어', tagline: '그림으로 배우는 단어',
+    id: 'english', name: '영어', tagline: '언어 기억력 훈련',
     skills: ['사이트워드 120', '파닉스', '짧은 문장', '발음'],
     caption: '그림에 맞는 단어를 골라요',
     demo: () => {
@@ -508,7 +519,7 @@ const SUBJECT_CARDS = [
     },
   },
   {
-    id: 'korean', name: '국어', tagline: '자모에서 읽기까지',
+    id: 'korean', name: '국어', tagline: '언어 인식 & 기억 훈련',
     skills: ['자모 14개', '받침', '어휘', '짧은 문장'],
     caption: '자모를 조합해 글자를 만들어요',
     demo: () => `<div style="display:flex;align-items:center;gap:10px;justify-content:center;">
@@ -520,7 +531,7 @@ const SUBJECT_CARDS = [
     </div>`,
   },
   {
-    id: 'logic', name: '논리', tagline: '규칙을 찾는 즐거움',
+    id: 'logic', name: '논리', tagline: '논리 사고력 & 패턴 인식',
     skills: ['패턴 잇기', '순서 추리', '분류', '관계'],
     caption: '다음에 올 모양을 찾아봐요',
     demo: () => `<div style="display:flex;gap:10px;align-items:center;justify-content:center;">
@@ -532,7 +543,7 @@ const SUBJECT_CARDS = [
     </div>`,
   },
   {
-    id: 'creative', name: '창의', tagline: '한 번에 그리는 집중',
+    id: 'creative', name: '창의', tagline: '공간 지각 & 집중력 훈련',
     skills: ['한붓그리기', '대칭', '색 감각', '공간'],
     caption: '선을 떼지 않고 모든 점을 지나요',
     demo: () => `<svg viewBox="0 0 180 100" width="200" height="110">
@@ -566,7 +577,11 @@ export class BrandHome {
   private tapTimes: number[] = [];
   private frenzyTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(private container: HTMLElement, private router: AppRouter) {}
+  constructor(
+    private container: HTMLElement,
+    private router: AppRouter,
+    private saveService: SaveService,
+  ) {}
 
   show(): void {
     this.hide();
@@ -613,13 +628,13 @@ export class BrandHome {
             </button>
           </div>
 
-          <span class="sb-eyebrow bh-hero__eyebrow">사 · 교 · 육 · 비 · 박 · 살</span>
+          <span class="sb-eyebrow bh-hero__eyebrow">두 · 뇌 · 의 · 힘 · 을 · 키 · 우 · 자</span>
 
           <h1 class="sb-display bh-hero__headline">
-            학원비는 <em style="color:#FB7185">박살</em>,<br/>
-            두뇌는 <em style="color:#FDE68A">쑥쑥</em>
+            생각하고, <em style="color:#FDE68A">계산하고</em>,<br/>
+            <em style="color:#FB7185">외우는 힘</em>을 키워라
           </h1>
-          <p class="bh-hero__sub">하루 5분 미니게임으로 수학·영어·국어·논리·창의를 모두.</p>
+          <p class="bh-hero__sub">멘사 테스트 기반 두뇌 훈련. 더 잘 생각하고, 더 빠르게 계산하고, 더 오래 기억하도록.</p>
 
           <div class="bh-stage">
             <div class="bh-mascot" data-frenzy="1" data-smashed="0">
@@ -640,10 +655,10 @@ export class BrandHome {
 
           <div class="bh-hero__cta-wrap">
             <button class="bh-hero__cta bh-cta-start" type="button">
-              <span>사박 시작하기</span>${ARROW_RIGHT}
+              <span>두뇌 훈련 시작하기</span>${ARROW_RIGHT}
             </button>
             <button class="bh-scroll-hint" type="button" data-scroll-target="why">
-              <span>왜 사박일까?</span>
+              <span>왜 두뇌 훈련인가?</span>
               <svg width="18" height="10" viewBox="0 0 18 10" fill="none"><path d="M1 1l8 7 8-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
           </div>
@@ -651,36 +666,38 @@ export class BrandHome {
 
         <!-- WHY -->
         <section class="bh-why" data-section="why">
-          <span class="sb-eyebrow" style="color:#FB7185">문제</span>
+          <span class="sb-eyebrow" style="color:#FB7185">핵심</span>
+          <p class="bh-why__iq-tagline">돌고 돌아 IQ입니다.</p>
           <h2 class="sb-display bh-why__title">
-            <em style="color:#FB7185">월 38만원</em><br/>
-            학원비, 정말 필요해요?
+            <em style="color:#FDE68A">두뇌 체력</em>이 없으면<br/>
+            공부해도 힘들다
           </h2>
           <div class="bh-why__cards">
             <div class="bh-stat-card">
-              <div class="bh-stat-card__big">73%</div>
-              <div class="bh-stat-card__text">초등생 학부모가 "사교육비 부담 크다"고 답함</div>
+              <div class="bh-stat-card__big">IQ</div>
+              <div class="bh-stat-card__text">멘사 테스트 기반 — 더 잘 생각하는 훈련만 골랐습니다</div>
             </div>
             <div class="bh-stat-card">
               <div class="bh-stat-card__big">5분</div>
-              <div class="bh-stat-card__text">하루 5분 게임 학습이 집중력·기억력 향상에 효과적 (Oxford, 2023)</div>
+              <div class="bh-stat-card__text">하루 5분, 사고·연산·기억 훈련이 쌓이면 모든 공부가 쉬워집니다</div>
             </div>
             <div class="bh-stat-card">
-              <div class="bh-stat-card__big">1/40</div>
-              <div class="bh-stat-card__text">사박 구독료는 학원비의 <span style="color:#FDE68A">40분의 1</span></div>
+              <div class="bh-stat-card__big">×10</div>
+              <div class="bh-stat-card__text">두뇌 체력이 갖춰진 아이는 사교육비 쏟아붓는 것보다 <span style="color:#FDE68A">훨씬 빠르게</span> 성장합니다</div>
             </div>
           </div>
+          <p class="bh-why__insight">자극과 훈련을 통해 후천적으로 개발할 수 있는 연습은 모두 담았습니다.</p>
         </section>
 
         <!-- SUBJECTS -->
         <section class="bh-subjects">
           <div class="bh-subjects__hdr">
-            <span class="sb-eyebrow" style="color:#6D28D9">다섯 과목 · 200+ 미니게임</span>
+            <span class="sb-eyebrow" style="color:#6D28D9">5가지 훈련 영역 · 200+ 미니게임</span>
             <h2 class="sb-display bh-subjects__title">
-              기본기는 <em style="color:#6D28D9">탄탄</em>하게<br/>
-              학습은 <em style="color:#F43F5E">게임</em>으로
+              생각하고, <em style="color:#6D28D9">계산하고</em>,<br/>
+              <em style="color:#F43F5E">기억하는 힘</em>
             </h2>
-            <p class="bh-subjects__sub">연산, 파닉스, 자모, 패턴, 창의 — 학교에서 꼭 필요한 다섯 가지 기본기를 아이가 자기도 모르게 익힙니다.</p>
+            <p class="bh-subjects__sub">시험 잘 보는 법이 아니라, 연산·논리·기억·언어·창의 — 더 잘 생각할 수 있는 두뇌 훈련만 모았습니다.</p>
           </div>
 
           <div class="bh-subjects__scroller">
@@ -714,10 +731,10 @@ export class BrandHome {
             </div>
             <div>
               <div class="sb-display bh-foundation__title">
-                <em style="color:#FDE68A">교과서의 기본기</em>를<br/>
-                아이 스스로 쌓아요
+                <em style="color:#FDE68A">멘사 테스트 기반</em><br/>
+                두뇌 훈련 프로그램
               </div>
-              <div class="bh-foundation__sub">초1-6 교과 과정 기반 · 교육 전문가 감수</div>
+              <div class="bh-foundation__sub">재미를 강조한 뇌풀기 게임을 넘어선 두뇌 성장을 지향합니다</div>
             </div>
           </div>
         </section>
@@ -726,14 +743,14 @@ export class BrandHome {
         <section class="bh-parent">
           <span class="sb-eyebrow" style="color:#6D28D9">부모 안심</span>
           <h2 class="sb-display bh-parent__title">
-            학부모용 <em style="color:#F43F5E">리포트</em>까지
+            두뇌 성장 <em style="color:#F43F5E">리포트</em>까지
           </h2>
           <div class="bh-parent__list">
             ${[
-              { i: '📊', t: '주간 성장 리포트', d: '과목별 숙련도·연속일수·집중시간' },
+              { i: '🧠', t: '두뇌 훈련 성장 리포트', d: '사고·연산·기억력 영역별 발전 추적' },
               { i: '🔒', t: '광고 없음, 결제 없음', d: '아이가 임의로 결제할 일 없어요' },
               { i: '⏰', t: '시간 제한 설정', d: '하루 10분~40분 부모가 조절' },
-              { i: '🌱', t: '연령 맞춤 난이도', d: '4-6세 / 7-9세 / 10-12세 자동 조정' },
+              { i: '🌱', t: '연령 맞춤 난이도', d: '멘사 기반 · 단계별 두뇌 훈련 자동 조정' },
             ].map(x => `
               <div class="bh-parent-row">
                 <span class="bh-parent-row__emoji">${x.i}</span>
@@ -746,13 +763,13 @@ export class BrandHome {
 
           <div class="bh-final">
             <div class="sb-display bh-final__display">
-              오늘부터 <em style="color:#6D28D9">박살</em>
+              오늘부터 <em style="color:#6D28D9">두뇌 훈련</em>
             </div>
             <button class="bh-final__cta bh-cta-start" type="button">
-              <span>14일 무료로 시작</span>
+              <span>두뇌 훈련 시작하기</span>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="right:26px;position:absolute;"><path d="M4 10h12M11 5l5 5-5 5" stroke="#D9F99D" stroke-width="2.4" stroke-linecap="round"/></svg>
             </button>
-            <div class="bh-final__meta">월 9,900원 · 언제든 해지 · 5가족까지</div>
+            <div class="bh-final__meta">사교육비보다 중요한 것 · 두뇌 체력을 먼저 키우세요</div>
           </div>
         </section>
 
@@ -764,7 +781,10 @@ export class BrandHome {
     if (!this.el) return;
 
     this.el.querySelectorAll<HTMLButtonElement>('.bh-cta-start').forEach(btn => {
-      btn.addEventListener('click', () => this.router.navigate({ to: 'subject-select' }));
+      btn.addEventListener('click', () => {
+        const dest = this.saveService.hasProfile() ? 'home-b' : 'profile-setup';
+        this.router.navigate({ to: dest });
+      });
     });
 
     const scrollHint = this.el.querySelector<HTMLButtonElement>('.bh-scroll-hint');
