@@ -488,6 +488,9 @@ export class PatternFinderGame {
   private _exitToMenu(): void {
     this._stopTimer();
     this.hide();
-    appRouter.navigate({ to: 'math-menu', subject: 'math', skipHistory: true });
+    // back()으로 스택의 'math-menu'를 pop해 정상 복귀.
+    // skipHistory: true로 navigate하면 스택에 'math-menu'가 잔류해
+    // math-menu → back() → math-menu 루프 버그가 발생한다.
+    appRouter.back();
   }
 }

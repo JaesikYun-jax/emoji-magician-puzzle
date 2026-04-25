@@ -395,7 +395,19 @@ export class EnglishMenu {
     });
 
     el.querySelector('#em-start')!.addEventListener('click', () => {
-      this.router.navigate({ to: 'game-english', subject: 'english' });
+      const savedResult = this.saveService?.getEnglishLevelTestResult();
+      const LABEL_TO_DIFFICULTY: Record<string, string> = {
+        '입문': 'beginner',
+        '기초': 'elementary',
+        '중급': 'intermediate',
+        '고급': 'advanced',
+      };
+      let levelId = 'beginner';
+      if (savedResult?.recommendedLevelId) {
+        const label = savedResult.recommendedLevelId.replace(/^english-/, '');
+        levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
+      }
+      this.router.navigate({ to: 'game-english', subject: 'english', levelId });
     });
 
     this.container.appendChild(el);

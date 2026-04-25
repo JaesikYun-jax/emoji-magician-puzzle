@@ -18,6 +18,7 @@ export interface WordEntry {
   id: string;
   english: string;
   korean: string;
+  emoji: string;   // 단어 대표 이모지 (카테고리 파일에서 필수 제공)
   category: EnglishCategory;
   difficulty: EnglishDifficulty;
 }

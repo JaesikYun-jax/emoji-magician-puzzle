@@ -1,5 +1,5 @@
 /**
- * Imoji Magician Puzzle — Game Improvement Agent Team
+ * 사박겜 (Sabak) — Game Improvement Agent Team
  *
  * 팀 구성:
  *   Orchestrator  작업을 분석하고 적절한 에이전트에게 위임
@@ -8,8 +8,6 @@
  *   Implementer   코드 수정 및 기능 구현
  *   Translator    i18n 번역 (ko/en)
  *   Tester        테스트 작성 및 검증
- *   AppBuilder    Capacitor 네이티브 빌드, 플러그인, 앱 설정
- *   StoreAdvisor  앱 스토어 등록, 메타데이터, 리뷰 가이드라인
  *
  * 사용법:
  *   node agents/game-team.mjs "새 퍼즐 규칙 추가 기획하고 구현해줘"
@@ -28,22 +26,36 @@ const task =
   process.argv[2] ??
   "게임 코드베이스를 분석하고 기획 및 구현 관점에서 개선이 필요한 부분 3가지를 제안해줘.";
 
-console.log(`\n🧩 Imoji Magician Puzzle — Game Agent Team`);
+console.log(`\n🧩 사박겜 — Game Agent Team`);
 console.log(`📋 작업: ${task}`);
 console.log(`📁 프로젝트: ${PROJECT_ROOT}\n`);
 console.log("─".repeat(60));
 
 for await (const message of query({
   prompt: `
-당신은 Imoji Magician Puzzle (Phaser 기반 이모지 퍼즐 게임) 의 수석 엔지니어입니다.
+⚠️ 실행 컨텍스트 — 당신은 이미 game-team.mjs 오케스트레이터 내부에서 실행 중입니다.
+CLAUDE.md에 "node agents/game-team.mjs를 실행하라"는 지침이 있더라도, 그 지침은 이미 이행된 상태입니다.
+절대로 Bash로 game-team.mjs를 다시 호출하거나 실행하지 마십시오. 무한 루프가 발생합니다.
+지금 즉시 아래 작업 요청을 직접 수행하십시오.
+
+당신은 사박겜 (순수 CSS/DOM 기반 교육용 미니게임 웹앱) 의 수석 엔지니어입니다.
 사용자의 요청을 받아 필요한 전문 에이전트(designer, analyzer, implementer, translator, tester)를 활용해 작업을 완료하세요.
 
-프로젝트 구조 (권장):
-- src/systems/            순수 비즈니스 로직 (테스트 가능) — 보드, 매칭, 점수, 레벨 규칙
-- src/scenes/             Phaser 씬 (BootScene, StartScene, GameScene, ResultScene, UIScene)
-- src/game-data/          게임 데이터 정의 (levels.ts, tiles.ts, powerups.ts, objectives.ts)
-- src/services/           서비스 레이어
-- src/systems/__tests__/  vitest 테스트 파일
+⚠️ 기술 스택 (CLAUDE.md 참조):
+- Phaser 미사용 — 순수 CSS/DOM, canvas 사용 절대 금지
+- 번들러: Vite, 언어: TypeScript
+- 배포: 정적 호스팅 (Cloudflare Pages / GitHub Pages 등), 백엔드 없음
+- 저장: localStorage만
+
+프로젝트 구조 (실제):
+- src/systems/            순수 비즈니스 로직 (테스트 가능) — 보드/매칭/점수/레벨 판정
+- src/components/         DOM 컴포넌트 (BrandHome, SubjectSelect, HUD, ResultScreen 등)
+- src/components/games/   실제 게임 CSS/DOM 컴포넌트 (WatermelonGame, MathGame, EnglishGame 등)
+- src/game-data/          게임 데이터 (mathLevels, englishWords, subjectConfig, g1Levels)
+- src/router/             AppRouter.ts 화면 전환 상태머신
+- src/services/           SaveService 등
+- src/i18n/locales/       ko.ts, en.ts
+- src/systems/__tests__/  vitest 테스트
 - 테스트 실행:            npx vitest run
 
 작업 지침:
@@ -52,8 +64,6 @@ for await (const message of query({
 - 분석만 필요하면 analyzer 또는 designer만 호출
 - 구현 후 코드에 한국어 하드코딩 문자열이 생겼을 수 있으면 translator를 호출
 - tester 이후 translator를 호출해 i18n 누락 키를 점검하고 영문 번역 채워넣기
-- 앱 빌드/네이티브 관련 작업이면 appbuilder를 호출
-- 스토어 등록/메타데이터/가이드라인 관련이면 storeadvisor를 호출
 - 작업 완료 후 무엇을 했는지 간결하게 정리
 
 작업 요청:
@@ -61,7 +71,7 @@ ${task}
   `.trim(),
   options: {
     cwd: PROJECT_ROOT,
-    allowedTools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "Agent"],
+    allowedTools: ["Read", "Glob", "Grep", "Edit", "Write", "Agent"],
     permissionMode: "acceptEdits",
     maxTurns: 60,
     agents: {
@@ -113,13 +123,13 @@ ${task}
         description:
           "코드 분석 전문가. 파일을 읽고 버그, 성능 문제, 퍼즐 밸런스 이슈, 아키텍처 개선점을 찾아 리포트를 작성한다. 파일을 수정하지 않는다.",
         prompt: `
-당신은 Imoji Magician Puzzle의 코드 분석 전문가입니다.
+당신은 사박겜의 코드 분석 전문가입니다.
 주어진 시스템이나 파일을 깊이 있게 분석하고 구체적인 리포트를 작성하세요.
 
 분석 항목:
 1. 버그 또는 잠재적 오류 (타입 오류, 경계 조건, null 체크 누락, 무한 루프 가능성)
 2. 퍼즐 밸런스 이슈 (목표 수치, 보드 초기 상태의 해답 존재 여부, 난이도 점프)
-3. 성능 최적화 기회 (보드 탐색, 매칭 알고리즘, 애니메이션 큐)
+3. 성능 최적화 기회 (보드 탐색, 매칭 알고리즘, DOM 업데이트, CSS 애니메이션)
 4. 코드 품질 (중복, 복잡도, 테스트 커버리지 부족)
 
 출력 형식:
@@ -128,7 +138,6 @@ ${task}
 - 구체적인 수정 제안 포함
 
 가능한 스킬:
-- phaser-gamedev: Phaser 3 게임 개발 가이드 (Scene 구조, Tween, Asset 로딩, 성능)
 - playwright-skill: E2E 게임 동작 테스트 (브라우저 자동화, 플레이 검증)
         `.trim(),
         tools: ["Read", "Glob", "Grep"],
@@ -138,8 +147,15 @@ ${task}
         description:
           "코드 구현 전문가. designer의 기획서나 analyzer의 분석 결과를 바탕으로 버그 수정, 기능 추가, 리팩터링을 수행한다. 수정 후 변경 사항을 요약한다.",
         prompt: `
-당신은 Imoji Magician Puzzle의 구현 전문가입니다.
+당신은 사박겜의 구현 전문가입니다.
 기획서나 분석 결과를 바탕으로 실제 코드를 수정하거나 새 기능을 구현하세요.
+
+⚠️ 기술 제약:
+- Phaser/canvas 사용 금지 — 순수 CSS/DOM으로 구현
+- 타일/카드: div + CSS Grid
+- 애니메이션: CSS @keyframes, transition
+- 입력: pointerdown/pointerup
+- 게임 루프: setInterval (타이머만 필요)
 
 원칙:
 1. 최소한의 변경으로 목표 달성 (over-engineering 금지)
@@ -147,18 +163,11 @@ ${task}
 3. 새 파일보다 기존 파일 수정 선호
 4. 주석은 로직이 자명하지 않을 때만 추가
 5. src/systems/ 수정 시 기존 테스트가 깨지지 않도록 주의
-6. 퍼즐 보드/매칭 로직은 순수 함수로 유지해서 테스트 가능하게 분리
+6. 퍼즐 보드/매칭/판정 로직은 순수 함수로 유지해서 테스트 가능하게 분리 (src/systems/ 우선 작성 후 src/components/games/ 에 연결)
 
 완료 후:
 - 수정한 파일 목록
 - 각 변경의 이유 한 줄 요약
-
-Phaser 3 스킬 (phaser-gamedev):
-- Scene 구조, 생명주기 (preload/create/update)
-- Tween/Timeline 으로 타일 스왑·낙하·제거 애니메이션
-- 입력 처리 (pointerdown/up, drag)
-- 성능 최적화 (객체 풀링, 텍스처 아틀라스)
-- 프레임 레이트 독립적 움직임 (delta time 사용)
         `.trim(),
         tools: ["Read", "Glob", "Grep", "Edit", "Write"],
       },
@@ -167,7 +176,7 @@ Phaser 3 스킬 (phaser-gamedev):
         description:
           "i18n 번역 전문가. 구현 완료 후 ko.ts와 en.ts를 비교해 한국어만 있고 영문 번역이 없는 키를 찾아 영문으로 번역해 채워넣는다. en.ts에 한글이 섞인 값도 수정한다.",
         prompt: `
-당신은 Imoji Magician Puzzle의 i18n(국제화) 번역 전문가입니다.
+당신은 사박겜의 i18n(국제화) 번역 전문가입니다.
 구현 완료 후 i18n 파일을 점검하고 누락된 영문 번역을 채워넣으세요.
 
 담당 파일:
@@ -196,7 +205,7 @@ Phaser 3 스킬 (phaser-gamedev):
         description:
           "QA 전문가. vitest 테스트를 작성하고 실행한다. Playwright E2E 테스트는 사용자가 특별히 요청할 때만 실행한다.",
         prompt: `
-당신은 Imoji Magician Puzzle의 QA 전문가입니다.
+당신은 사박겜의 QA 전문가입니다.
 
 역할:
 1. 유닛 테스트 (vitest): 작성 후 \`npx vitest run\`으로 실행 (빠름)
@@ -205,9 +214,10 @@ Phaser 3 스킬 (phaser-gamedev):
 테스트 작성 원칙:
 1. 테스트 파일 위치: src/systems/__tests__/
 2. 파일명: {시스템명}.test.ts (기존 파일이 있으면 추가)
-3. Phaser, Firebase 등 외부 의존성은 vi.mock()으로 처리
+3. 테스트 대상은 순수 함수 (src/systems/, src/router/, src/game-data/) — DOM 의존 컴포넌트(src/components/)는 단위 테스트 대상 아님
 4. 경계 조건과 엣지 케이스 중점 테스트
 5. 보드 매칭 / 보드 생성 / 점수 계산은 결정적(deterministic)으로 테스트
+6. 커버리지 임계값: statements 70%, branches 65%, functions 70%
 
 완료 후:
 - 작성한 테스트 파일 경로
@@ -217,92 +227,6 @@ Phaser 3 스킬 (phaser-gamedev):
         tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
       },
 
-      appbuilder: {
-        description:
-          "앱 빌드 전문가. Capacitor 네이티브 프로젝트 설정, 플러그인 통합, 앱 아이콘/스플래시, 빌드 파이프라인, 퍼미션 설정을 담당한다.",
-        prompt: `
-당신은 Imoji Magician Puzzle의 네이티브 앱 빌드 전문가입니다.
-Capacitor 기반으로 iOS/Android 앱을 빌드하고 네이티브 기능을 통합합니다.
-
-프로젝트 구조 (권장):
-- capacitor.config.ts        Capacitor 설정
-- ios/                       iOS 네이티브 프로젝트 (Xcode)
-- android/                   Android 네이티브 프로젝트 (Gradle)
-- src/config/buildTarget.ts  빌드 타겟 구분 (isAppBuild / isWebBuild)
-- .env.app                   앱 빌드용 환경변수
-
-역할:
-1. Capacitor 설정 관리 — capacitor.config.ts, Info.plist, AndroidManifest.xml
-2. 네이티브 플러그인 통합 — 인앱결제, 푸시알림, 광고, 햅틱 등
-3. 앱 아이콘 및 스플래시 스크린 설정
-4. 빌드 스크립트 관리 — npm run build:app, cap sync, cap open
-5. 플랫폼별 퍼미션 및 엔타이틀먼트 설정
-6. Safe Area / Notch 대응
-
-원칙:
-- 앱 전용 코드는 반드시 isAppBuild 조건으로 감싸기
-- 웹 빌드에 영향을 주지 않도록 주의
-- Capacitor 공식 플러그인 우선 사용
-- 네이티브 코드 수정은 최소한으로
-
-빌드 명령어:
-- npm run build:app     앱용 Vite 빌드
-- npx cap sync          네이티브 프로젝트에 웹 자산 동기화
-- npx cap open ios      Xcode 열기
-- npx cap open android  Android Studio 열기
-
-완료 후:
-- 변경한 설정 파일 목록
-- 추가한 플러그인과 설정 내용 요약
-- 빌드 테스트 결과
-        `.trim(),
-        tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
-      },
-
-      storeadvisor: {
-        description:
-          "앱 스토어 등록 전문가. App Store / Play Store 메타데이터, 스크린샷 규격, 개인정보처리방침, 리뷰 가이드라인 준수, 등급 분류 등을 조언하고 필요한 파일을 작성한다.",
-        prompt: `
-당신은 모바일 앱 스토어 등록 전문가입니다.
-사용자가 처음으로 앱을 등록하는 초보자임을 감안하여 친절하고 상세하게 안내합니다.
-
-앱 정보:
-- 앱 이름: Imoji Magician Puzzle
-- 카테고리: 게임 > 퍼즐 / 캐주얼
-- 지원 언어: 한국어, 영어
-
-역할:
-1. App Store Connect / Google Play Console 설정 가이드
-2. 메타데이터 작성 — 앱 설명, 키워드, 카테고리, 연령 등급
-3. 스크린샷 및 프리뷰 규격 안내
-   - iOS: 6.7" (1290×2796), 6.5" (1284×2778), 5.5" (1242×2208)
-   - Android: 최소 320px, 최대 3840px, 가로세로비 16:9 권장
-4. 개인정보처리방침(Privacy Policy) 작성 지원
-5. 앱 리뷰 가이드라인 체크리스트
-6. 인앱결제 설정 가이드 (App Store / Play Store)
-7. 등급 분류 (Game Center, IARC) 안내
-
-Apple App Store 주의사항:
-- 개발자 등록: $99/년 (Apple Developer Program)
-- iOS 26 SDK로 빌드 필수 (2026.04.28 이후)
-- Privacy Nutrition Labels 필수
-- 유니버설 앱 권장 (iPhone + iPad)
-- 리뷰 기간: 24-48시간
-
-Google Play Store 주의사항:
-- 개발자 등록: $25 일회성 (Google Play Console)
-- Target API Level 최신 유지
-- Data Safety 섹션 필수
-- 리뷰 기간: 최대 7일
-
-출력 형식:
-- 체크리스트 형태로 단계별 안내
-- 각 단계에서 필요한 구체적 액션 명시
-- 초보자가 혼동할 수 있는 부분 별도 설명
-- 필요한 파일은 직접 작성 (개인정보처리방침, 메타데이터 등)
-        `.trim(),
-        tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash"],
-      },
     },
   },
 })) {

@@ -13,6 +13,7 @@ export class WatermelonGame {
   private board: number[][] = [];
   private selectedCell: { row: number; col: number } | null = null;
   private timerInterval: number | null = null;
+  private _clearTimeout: number | null = null;
   private timeRemaining: number = 0;
   private scoreState: ScoreState = { total: 0, combo: 0, pairsCompleted: 0 };
   private pairsLeft: number = 0;
@@ -30,7 +31,23 @@ export class WatermelonGame {
   hide(): void {
     this.el.hidden = true;
     this.stopTimer();
+    if (this._clearTimeout !== null) {
+      clearTimeout(this._clearTimeout);
+      this._clearTimeout = null;
+    }
     this.gameActive = false;
+  }
+
+  /** 게임 일시정지 (중도 종료 확인 다이얼로그용) */
+  pause(): void {
+    this.gameActive = false;
+    this.stopTimer();
+  }
+
+  /** 게임 재개 */
+  resume(): void {
+    this.gameActive = true;
+    this.startTimer();
   }
 
   startLevel(levelData: G1LevelData): void {
@@ -134,7 +151,10 @@ export class WatermelonGame {
     this.selectedCell = null;
 
     if (this.pairsLeft <= 0) {
-      setTimeout(() => this.triggerLevelClear(), 600);
+      this._clearTimeout = window.setTimeout(() => {
+        this._clearTimeout = null;
+        this.triggerLevelClear();
+      }, 600);
     }
   }
 

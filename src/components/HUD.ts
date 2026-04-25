@@ -10,13 +10,14 @@ export class HUD {
 
   constructor(private container: HTMLElement) {}
 
-  show(levelId: number): void {
+  show(levelId: number, onExit?: () => void): void {
     this.hide();
 
     const el = document.createElement('div');
     el.id = 'hud';
     el.innerHTML = `
       <div class="hud-inner">
+        ${onExit ? '<button class="hud-exit-btn" aria-label="나가기">🏠</button>' : ''}
         <div class="hud-item">
           <span class="hud-label">${t('hud.level')}</span>
           <span class="hud-value" id="hud-level">${levelId}</span>
@@ -43,6 +44,11 @@ export class HUD {
     this.scoreEl = document.getElementById('hud-score');
     this.pairsEl = document.getElementById('hud-pairs');
     this.comboEl = document.getElementById('hud-combo');
+
+    if (onExit) {
+      el.querySelector<HTMLButtonElement>('.hud-exit-btn')!
+        .addEventListener('click', onExit);
+    }
   }
 
   update(remaining: number, score: number, pairsLeft: number, combo?: number): void {

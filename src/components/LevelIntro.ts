@@ -1,6 +1,7 @@
 import type { GameBus } from '@/game-bus';
 import { t } from '@/i18n';
 import { G1_LEVELS } from '@/game-data/g1Levels';
+import { appRouter } from '@/router/AppRouter';
 
 const LEVEL_INTRO_STYLE = `
 #level-intro {
@@ -12,6 +13,7 @@ const LEVEL_INTRO_STYLE = `
   color: #fff;
   font-family: var(--f-kr);
   animation: li-fade-in 250ms ease;
+  overflow: hidden;
 }
 @keyframes li-fade-in { from { opacity: 0 } to { opacity: 1 } }
 
@@ -67,6 +69,7 @@ const LEVEL_INTRO_STYLE = `
 
 export class LevelIntro {
   private el: HTMLElement | null = null;
+  private _pendingTimers: number[] = [];
 
   constructor(private container: HTMLElement, private bus: GameBus) {}
 
@@ -86,6 +89,12 @@ export class LevelIntro {
       .map(s => `<div class="li-ring" style="width:${s}px;height:${s}px;"></div>`)
       .join('');
 
+    const timeSec = level.timeLimit ?? 60;
+    const timeLabel = timeSec >= 60
+      ? `${Math.floor(timeSec / 60)}분`
+      : `${timeSec}초`;
+    const pairsLabel = `✦ ${level.targetPairs}쌍`;
+
     const el = document.createElement('div');
     el.id = 'level-intro';
     el.innerHTML = `
@@ -97,10 +106,33 @@ export class LevelIntro {
         </div>
         <h2 class="sb-display li-title">${t('intro.goal')}</h2>
         <div class="li-meta">
-          <span>⏱ 60s</span><span>·</span><span>✦ ${t('intro.hint')}</span>
+          <span>⏱ ${timeLabel}</span><span>·</span><span>${pairsLabel}</span>
         </div>
       </div>
     `;
+
+    // 뒤로가기 버튼 (카운트다운 취소용)
+    const backBtn = document.createElement('button');
+    backBtn.setAttribute('aria-label', '뒤로가기');
+    backBtn.style.cssText = `
+      position: absolute;
+      top: 16px; left: 16px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #fff;
+      display: grid; place-items: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      z-index: 10;
+    `;
+    backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
+    backBtn.addEventListener('click', () => {
+      this.hide();
+      appRouter.back();
+    });
+    el.appendChild(backBtn);
 
     this.container.appendChild(el);
     this.el = el;
@@ -114,27 +146,30 @@ export class LevelIntro {
 
     let count = 3;
     const tick = (): void => {
+      if (!this.el) return; // hide()로 취소된 경우
       if (count > 0) {
         countEl.textContent = String(count);
         countEl.style.transform = 'scale(1.15)';
         countEl.style.opacity = '1';
-        setTimeout(() => { countEl.style.transform = 'scale(1)'; }, 200);
+        this._pendingTimers.push(window.setTimeout(() => { countEl.style.transform = 'scale(1)'; }, 200));
         count--;
-        setTimeout(tick, 1000);
+        this._pendingTimers.push(window.setTimeout(tick, 1000));
       } else {
         countEl.textContent = t('intro.go');
         countEl.classList.add('li-count--go');
         countEl.style.transform = 'scale(1.25)';
-        setTimeout(() => {
+        this._pendingTimers.push(window.setTimeout(() => {
           this.hide();
           this.bus.emit('game:start', { levelId: String(levelId) });
-        }, 700);
+        }, 700));
       }
     };
-    setTimeout(tick, 300);
+    this._pendingTimers.push(window.setTimeout(tick, 300));
   }
 
   hide(): void {
+    this._pendingTimers.forEach(id => clearTimeout(id));
+    this._pendingTimers = [];
     if (this.el) {
       this.el.remove();
       this.el = null;

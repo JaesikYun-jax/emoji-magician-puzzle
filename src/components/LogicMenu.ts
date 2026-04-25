@@ -1,11 +1,10 @@
 /**
  * LogicMenu.ts
- * 논리 종목 레벨 선택 메뉴 — 인디고 그라디언트 배경
+ * 논리 종목 시작 화면 — 레벨 그리드 없이 단순 시작 버튼 하나
  */
 
 import type { AppRouter } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
-import { LOGIC_LEVELS } from '../game-data/logicLevels';
 import { t } from '../i18n';
 
 const LOGIC_MENU_STYLE = `
@@ -21,6 +20,8 @@ const LOGIC_MENU_STYLE = `
   z-index: 20;
   font-family: 'Plus Jakarta Sans', 'Pretendard Variable', 'Apple SD Gothic Neo', sans-serif;
   overflow: hidden;
+  align-items: center;
+  justify-content: center;
 }
 #logic-menu::before {
   content: '';
@@ -51,13 +52,10 @@ const LOGIC_MENU_STYLE = `
   50%      { transform: translate(10px,-14px) rotate(5deg); }
 }
 
-#logic-menu .lm-header {
-  display: flex;
-  align-items: center;
-  padding: 20px 24px;
-  gap: 14px;
-}
 #logic-menu .lm-back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
   width: 42px; height: 42px;
   background: rgba(255,255,255,0.08);
   border: 1px solid rgba(255,255,255,0.18);
@@ -68,110 +66,92 @@ const LOGIC_MENU_STYLE = `
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition: transform 150ms, background 150ms;
+  z-index: 2;
 }
 #logic-menu .lm-back-btn:hover { background: rgba(255,255,255,0.14); }
 #logic-menu .lm-back-btn:active { transform: scale(0.92); }
 
-#logic-menu .lm-title-wrap { display: flex; flex-direction: column; gap: 2px; }
+#logic-menu .lm-card {
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1.5px solid rgba(255,255,255,0.20);
+  border-radius: 28px;
+  padding: 40px 32px;
+  width: calc(100vw - 48px);
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(99,102,241,0.35);
+}
+
 #logic-menu .lm-eyebrow {
   color: #C7D2FE;
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  margin-bottom: 6px;
 }
 #logic-menu .lm-title {
   font-family: 'Fraunces', 'Pretendard Variable', serif;
   color: #fff;
-  font-size: 1.3rem;
+  font-size: 1.8rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  margin-bottom: 8px;
 }
-
 #logic-menu .lm-subtitle {
-  color: rgba(255,255,255,0.72);
+  color: rgba(255,255,255,0.65);
   font-size: 0.88rem;
-  padding: 0 24px 16px;
   line-height: 1.5;
+  margin-bottom: 28px;
 }
 
-#logic-menu .lm-grid {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-  padding: 8px 20px 40px;
-  overflow-y: auto;
-  max-width: 520px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-#logic-menu .lm-level-btn {
-  position: relative;
+#logic-menu .lm-stats {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.16);
+  gap: 8px;
   background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: #fff;
-  cursor: pointer;
-  text-align: center;
-  transition: transform 200ms cubic-bezier(0.22,0.61,0.36,1), box-shadow 200ms, border-color 200ms;
-  min-height: 110px;
-  box-shadow: 0 4px 16px rgba(99,102,241,0.20);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 28px;
 }
-#logic-menu .lm-level-btn:hover:not(.locked) {
-  transform: translateY(-4px);
-  border-color: rgba(129,140,248,0.50);
-  box-shadow: 0 8px 28px rgba(99,102,241,0.40);
-}
-#logic-menu .lm-level-btn:active:not(.locked) {
-  transform: scale(0.96);
-}
-#logic-menu .lm-level-btn.locked {
-  opacity: 0.5;
-  cursor: default;
-}
-
-#logic-menu .lm-level-num {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.55);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  margin-bottom: 4px;
-}
-#logic-menu .lm-level-icon {
-  font-size: 2rem;
-  margin-bottom: 6px;
-}
-#logic-menu .lm-level-name {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.90);
-  line-height: 1.3;
-}
-#logic-menu .lm-stars {
-  margin-top: 8px;
+#logic-menu .lm-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.9rem;
-  letter-spacing: 2px;
-  color: #FBBF24;
+  color: rgba(255,255,255,0.85);
+  font-weight: 600;
 }
-`;
+#logic-menu .lm-stat-value {
+  font-weight: 800;
+  color: #fff;
+}
+#logic-menu .lm-stat-streak {
+  color: #FCA5A5;
+}
 
-const LEVEL_ICONS = ['🧩','🔢','🔮','📊','🌀','🧮','⚙️','🎯','🏆','👑'];
-const LEVEL_NAMES = [
-  '첫 번째 패턴', '등차수열', '피보나치의 비밀', '기하급수',
-  '혼합 패턴', '제곱수의 세계', '복합 수열', '교대 규칙',
-  '패턴 마스터', '전설의 수열',
-];
+#logic-menu .lm-start-btn {
+  display: block; width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #818CF8, #6366F1);
+  border: none;
+  border-radius: 20px;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(99,102,241,0.50);
+  transition: transform 150ms, box-shadow 150ms;
+  touch-action: manipulation;
+  letter-spacing: 0.03em;
+}
+#logic-menu .lm-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 32px rgba(99,102,241,0.60);
+}
+#logic-menu .lm-start-btn:active { transform: scale(0.97); }
+`;
 
 export class LogicMenu {
   private el: HTMLElement | null = null;
@@ -200,65 +180,69 @@ export class LogicMenu {
       <div class="lm-decor lm-decor--2">∞</div>
     `;
 
-    // 헤더
-    const header = document.createElement('div');
-    header.className = 'lm-header';
+    // 뒤로 가기 버튼
     const backBtn = document.createElement('button');
     backBtn.className = 'lm-back-btn';
     backBtn.setAttribute('aria-label', 'back');
     backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     backBtn.addEventListener('click', () => this.router.back());
-    const titleWrap = document.createElement('div');
-    titleWrap.className = 'lm-title-wrap';
-    titleWrap.innerHTML = `
-      <span class="lm-eyebrow">Logic · 논리</span>
-      <span class="lm-title">${t('logic.title')}</span>
+    el.appendChild(backBtn);
+
+    // 메인 카드
+    const card = document.createElement('div');
+    card.className = 'lm-card';
+
+    // 제목
+    card.innerHTML = `
+      <div class="lm-eyebrow">Logic · 논리</div>
+      <div class="lm-title">${t('logic.title')}</div>
+      <div class="lm-subtitle">${t('logic.subtitle')}</div>
     `;
-    header.appendChild(backBtn);
-    header.appendChild(titleWrap);
-    el.appendChild(header);
 
-    const subtitle = document.createElement('p');
-    subtitle.className = 'lm-subtitle';
-    subtitle.textContent = t('logic.subtitle');
-    el.appendChild(subtitle);
+    // 진행 통계
+    const clearCount = this.saveService.getLogicClearCount();
+    const streak = this.saveService.getLogicStreak();
+    const currentLevelId = this.saveService.getCurrentLogicLevelId();
+    const levelMatch = currentLevelId.match(/^logic-(\d+)$/);
+    const levelNum = levelMatch ? parseInt(levelMatch[1], 10) : 1;
 
-    // 레벨 그리드
-    const grid = document.createElement('div');
-    grid.className = 'lm-grid';
+    const statsEl = document.createElement('div');
+    statsEl.className = 'lm-stats';
 
-    LOGIC_LEVELS.forEach((level, idx) => {
-      const progress = this.saveService.getLogicProgress(level.id);
-      const isUnlocked = progress.isUnlocked;
+    const levelRow = document.createElement('div');
+    levelRow.className = 'lm-stat-row';
+    levelRow.innerHTML = `<span>현재 레벨</span><span class="lm-stat-value">Level ${levelNum}</span>`;
+    statsEl.appendChild(levelRow);
 
-      const btn = document.createElement('button');
-      btn.className = `lm-level-btn${isUnlocked ? '' : ' locked'}`;
+    const clearRow = document.createElement('div');
+    clearRow.className = 'lm-stat-row';
+    clearRow.innerHTML = `<span>클리어</span><span class="lm-stat-value">${clearCount}회</span>`;
+    statsEl.appendChild(clearRow);
 
-      const starsHtml = Array.from({ length: 3 }, (_, i) =>
-        `<span style="color:${i < progress.stars ? '#FBBF24' : 'rgba(255,255,255,0.25)'}">${i < progress.stars ? '★' : '☆'}</span>`
-      ).join('');
+    if (streak > 0) {
+      const streakRow = document.createElement('div');
+      streakRow.className = 'lm-stat-row lm-stat-streak';
+      streakRow.innerHTML = `<span>연속 성공</span><span class="lm-stat-value lm-stat-streak">${streak}회 🔥</span>`;
+      statsEl.appendChild(streakRow);
+    }
 
-      btn.innerHTML = `
-        <div class="lm-level-num">LEVEL ${idx + 1}</div>
-        <div class="lm-level-icon">${isUnlocked ? (LEVEL_ICONS[idx] ?? '🧩') : '🔒'}</div>
-        <div class="lm-level-name">${LEVEL_NAMES[idx] ?? level.id}</div>
-        <div class="lm-stars">${starsHtml}</div>
-      `;
+    card.appendChild(statsEl);
 
-      if (isUnlocked) {
-        btn.addEventListener('click', () => {
-          this.router.navigate({
-            to: 'game-logic',
-            subject: 'logic',
-            levelId: level.id,
-          });
-        });
-      }
-
-      grid.appendChild(btn);
+    // 시작 버튼
+    const startBtn = document.createElement('button');
+    startBtn.className = 'lm-start-btn';
+    startBtn.textContent = '▶ 시작';
+    startBtn.addEventListener('click', () => {
+      const levelId = this.saveService.getCurrentLogicLevelId();
+      this.router.navigate({
+        to: 'game-logic',
+        subject: 'logic',
+        levelId,
+      });
     });
+    card.appendChild(startBtn);
 
-    el.appendChild(grid);
+    el.appendChild(card);
     this.container.appendChild(el);
     this.el = el;
   }

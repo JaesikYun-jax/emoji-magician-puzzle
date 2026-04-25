@@ -51,8 +51,45 @@ export function migrateV2toV3(raw: SaveData): SaveData {
   return {
     ...raw,
     version: 3,
-    logic: raw.logic ?? { levelProgress: {} },
-    creativity: raw.creativity ?? { levelProgress: {} },
+    logic: raw.logic ?? { levelProgress: {}, streak: 0, clearCount: 0 },
+    creativity: raw.creativity ?? {
+      levelProgress: {},
+      totalClears: 0,
+      consecutiveClears: 0,
+      currentLevelIdx: 0,
+      meta: {
+        totalClears: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        lastPlayedAt: new Date().toISOString(),
+        earnedBadgeThresholds: [],
+        recentPuzzleIds: [],
+      },
+    },
+  };
+}
+
+/** v3 → v4: creativity.meta 필드 추가 */
+export function migrateV3toV4(raw: SaveData): SaveData {
+  const creativity = raw.creativity ?? { levelProgress: {} };
+  if (!creativity.meta) {
+    creativity.meta = {
+      totalClears: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      lastPlayedAt: new Date().toISOString(),
+      earnedBadgeThresholds: [],
+      recentPuzzleIds: [],
+    };
+  }
+  // recentPuzzleIds 하위 호환: meta가 존재하지만 필드가 없을 경우
+  if (!creativity.meta.recentPuzzleIds) {
+    creativity.meta.recentPuzzleIds = [];
+  }
+  return {
+    ...raw,
+    version: 4,
+    creativity,
   };
 }
 
@@ -69,6 +106,10 @@ export function runMigrations(raw: SaveData, targetVersion: number): SaveData {
 
   if (data.version < 3 && targetVersion >= 3) {
     data = migrateV2toV3(data);
+  }
+
+  if (data.version < 4 && targetVersion >= 4) {
+    data = migrateV3toV4(data);
   }
 
   return data;

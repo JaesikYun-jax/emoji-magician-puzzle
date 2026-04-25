@@ -300,6 +300,16 @@ export class MathMenu {
           </button>
         `).join('')}
       </div>
+      <button class="lt-banner" id="mm-arith-banner">
+        <span class="lt-banner-icon">🍉</span>
+        <div class="lt-banner-text">
+          <span class="lt-banner-title">과일 셈하기</span>
+          <span class="lt-banner-sub">이미지로 익히는 직관적 수연산</span>
+        </div>
+        <span class="lt-banner-arrow">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </button>
       <button class="lt-banner" id="mm-lt-banner">
         <span class="lt-banner-icon">🧪</span>
         <div class="lt-banner-text">
@@ -319,6 +329,10 @@ export class MathMenu {
 
     el.querySelector('#mm-lt-banner')!.addEventListener('click', () => {
       this.router.navigate({ to: 'level-test-math', subject: 'math' });
+    });
+
+    el.querySelector('#mm-arith-banner')!.addEventListener('click', () => {
+      this.router.navigate({ to: 'arithmetic-menu', subject: 'math' });
     });
 
     el.querySelectorAll('.mm-tab').forEach((tab) => {

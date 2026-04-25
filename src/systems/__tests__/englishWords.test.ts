@@ -31,8 +31,16 @@ describe('ENGLISH_WORDS 데이터 게이트', () => {
       expect(w).toHaveProperty('id');
       expect(w).toHaveProperty('english');
       expect(w).toHaveProperty('korean');
+      expect(w).toHaveProperty('emoji');
       expect(w).toHaveProperty('category');
       expect(w).toHaveProperty('difficulty');
+    }
+  });
+
+  it('모든 항목에 emoji 필드가 비어있지 않음', () => {
+    for (const w of ENGLISH_WORDS) {
+      expect(typeof w.emoji).toBe('string');
+      expect(w.emoji.length).toBeGreaterThan(0);
     }
   });
 
@@ -95,5 +103,61 @@ describe('ENGLISH_WORDS 데이터 게이트', () => {
     const ids = words.map(w => w.id);
     expect(ids).toContain('daily-apple');
     expect(ids).toContain('daily-cake');
+  });
+});
+
+// ── questionGenerator 통합 테스트 ─────────────────────────────────────────────
+import { getWordPool, generateQuestion } from '../english/questionGenerator';
+import type { EnglishDifficultyKey } from '../english/questionGenerator';
+
+describe('getWordPool — 난이도별 비어있지 않음', () => {
+  const difficulties: EnglishDifficultyKey[] = ['beginner', 'elementary', 'intermediate', 'advanced'];
+
+  for (const diff of difficulties) {
+    it(`getWordPool("${diff}") 가 빈 배열을 반환하지 않는다`, () => {
+      const pool = getWordPool(diff);
+      expect(pool.length).toBeGreaterThan(0);
+    });
+  }
+});
+
+describe('generateQuestion — 완전한 객체 반환', () => {
+  const difficulties: EnglishDifficultyKey[] = ['beginner', 'elementary', 'intermediate', 'advanced'];
+
+  for (const diff of difficulties) {
+    it(`generateQuestion("${diff}") 가 { word, choices, correctIdx } 형태를 반환한다`, () => {
+      const q = generateQuestion(diff);
+      expect(q).toHaveProperty('word');
+      expect(q).toHaveProperty('choices');
+      expect(q).toHaveProperty('correctIdx');
+    });
+
+    it(`generateQuestion("${diff}") — choices 가 정확히 4개`, () => {
+      const q = generateQuestion(diff);
+      expect(q.choices).toHaveLength(4);
+    });
+
+    it(`generateQuestion("${diff}") — 정답(word.korean)이 choices에 포함된다`, () => {
+      const q = generateQuestion(diff);
+      expect(q.choices).toContain(q.word.korean);
+    });
+
+    it(`generateQuestion("${diff}") — correctIdx 가 choices 안에서 올바른 인덱스를 가리킨다`, () => {
+      const q = generateQuestion(diff);
+      expect(q.choices[q.correctIdx]).toBe(q.word.korean);
+    });
+
+    it(`generateQuestion("${diff}") — word.korean(meaning)이 undefined/null/빈 문자열이 아니다`, () => {
+      const q = generateQuestion(diff);
+      expect(q.word.korean).toBeTruthy();
+      expect(q.word.korean.length).toBeGreaterThan(0);
+    });
+  }
+
+  it('generateQuestion — choices 에 중복 항목이 없다', () => {
+    for (let i = 0; i < 10; i++) {
+      const q = generateQuestion('beginner');
+      expect(new Set(q.choices).size).toBe(q.choices.length);
+    }
   });
 });

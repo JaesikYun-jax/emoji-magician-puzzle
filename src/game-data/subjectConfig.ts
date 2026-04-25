@@ -63,6 +63,15 @@ export interface LevelProgress {
   isUnlocked: boolean;
 }
 
+export interface CreativityMeta {
+  totalClears: number;
+  currentStreak: number;
+  bestStreak: number;
+  lastPlayedAt: string;
+  earnedBadgeThresholds: number[];
+  recentPuzzleIds: string[];   // 최근 플레이한 퍼즐 id (최대 20개)
+}
+
 export interface LevelTestResult {
   testedAt: number;
   recommendedLevelId: string;
@@ -78,6 +87,7 @@ export interface SaveData {
    * v1 : 최초 버전 (gamification 없음)
    * v2 : gamification 필드 추가, 14일 XP 롤링 윈도우
    * v3 : logic, creativity 필드 추가
+   * v4 : creativity 자동 진행 방식 (totalClears, consecutiveClears, currentLevelIdx)
    */
   version: number;
   math: { levelProgress: Record<string, LevelProgress>; levelTestResult?: LevelTestResult };
@@ -86,9 +96,17 @@ export interface SaveData {
   /** v2+ 에서만 존재. 없으면 마이그레이션 필요. */
   gamification?: import('../systems/gamification/types').GamificationState;
   /** v3+ : 논리 종목 저장 */
-  logic?: { levelProgress: Record<string, LevelProgress> };
-  /** v3+ : 창의 종목 저장 */
-  creativity?: { levelProgress: Record<string, LevelProgress> };
+  logic?: { levelProgress: Record<string, LevelProgress>; streak?: number; clearCount?: number };
+  /** v4+ : 창의 종목 저장 */
+  creativity?: {
+    levelProgress: Record<string, LevelProgress>;
+    meta?: CreativityMeta;
+    playerLevel?: number;
+    totalClears?: number;
+    streak?: number;
+    consecutiveClears?: number;
+    currentLevelIdx?: number;
+  };
 }
 
 export const SUBJECTS: SubjectConfig[] = [

@@ -20,7 +20,10 @@ export type ScreenId =
   | 'logic-menu'
   | 'creativity-menu'
   | 'game-logic'
-  | 'game-creativity';
+  | 'game-creativity'
+  | 'game-korean'
+  | 'arithmetic-menu'
+  | 'game-arithmetic';
 
 export interface NavigationPayload {
   to: ScreenId;
@@ -31,6 +34,7 @@ export interface NavigationPayload {
   /** replace: true — 현재 화면을 교체만 하고 히스토리 스택을 변경하지 않는다.
    *  게임 종료 후 메뉴로 돌아갈 때처럼 "게임 화면을 기록하지 않고 조용히 전환"할 때 사용. */
   replace?: boolean;
+  difficulty?: 'easy' | 'normal' | 'hard';
 }
 
 export interface NavigationState {
@@ -39,6 +43,7 @@ export interface NavigationState {
   subject: SubjectId | null;
   levelId: string | null;
   highlightLevelId?: string | null;
+  difficulty?: 'easy' | 'normal' | 'hard';
 }
 
 type ShowHideable = { show(...args: unknown[]): void; hide(): void };
@@ -66,7 +71,7 @@ export class AppRouter {
   }
 
   navigate(payload: NavigationPayload): void {
-    const { to, subject, levelId, highlightLevelId, skipHistory, replace } = payload;
+    const { to, subject, levelId, highlightLevelId, skipHistory, replace, difficulty } = payload;
 
     this.hideScreen(this.state.current);
 
@@ -76,12 +81,9 @@ export class AppRouter {
     } else if (!skipHistory) {
       // 일반 네비게이션: 현재 화면을 히스토리 스택에 추가
       this.historyStack.push(this.state.current);
-    } else {
-      // skipHistory: true 이면 현재 화면을 스택에 추가하지 않고,
-      // 스택 top(게임 진입 직전에 push된 항목)도 제거한다.
-      // 결과: back() 호출 시 게임 화면 이전 화면으로 올바르게 돌아간다.
-      this.historyStack.pop();
     }
+    // skipHistory: true 는 현재 화면을 스택에 push하지 않는 것으로 충분.
+    // 스택 top은 그대로 두어 back() 시 이전 화면으로 돌아간다.
 
     const stackTop = this.historyStack[this.historyStack.length - 1] ?? null;
 
@@ -91,13 +93,30 @@ export class AppRouter {
       subject: subject ?? this.state.subject,
       levelId: levelId ?? this.state.levelId,
       highlightLevelId: highlightLevelId ?? null,
+      difficulty: difficulty ?? this.state.difficulty,
     };
 
     this.showScreen(to);
   }
 
+  /**
+   * 히스토리 스택에서 targetId와 그 이후에 쌓인 항목을 모두 제거한다.
+   * 게임 완료 후 메뉴로 복귀할 때 이전 메뉴 항목이 스택에 중복으로 남는 것을 방지한다.
+   * 예: showMathMenu() 호출 전에 clearHistoryAfter('math-menu')를 실행하면
+   * math-menu → back() → math-menu 루프가 발생하지 않는다.
+   */
+  clearHistoryAfter(targetId: ScreenId): void {
+    const idx = this.historyStack.lastIndexOf(targetId);
+    if (idx !== -1) {
+      this.historyStack.splice(idx);
+    }
+  }
+
   back(): void {
-    if (this.historyStack.length === 0) return;
+    if (this.historyStack.length === 0) {
+      this.navigate({ to: 'brand-home', replace: true });
+      return;
+    }
     const target = this.historyStack.pop()!;
 
     this.hideScreen(this.state.current);

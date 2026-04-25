@@ -274,6 +274,24 @@ body {
   pointer-events: none;
   z-index: 100;
 }
+.hud-exit-btn {
+  pointer-events: all;
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.3);
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms, transform 100ms;
+  flex-shrink: 0;
+}
+.hud-exit-btn:active { transform: scale(0.88); background: rgba(255,255,255,0.22); }
 .hud-inner {
   display: flex;
   justify-content: space-around;
@@ -488,4 +506,180 @@ body {
 @keyframes card-pop {
   from{transform:scale(0.6);opacity:0}
   to{transform:scale(1);opacity:1}
+}
+
+/* ===================== Arithmetic Game ===================== */
+:root {
+  --arith-bg-grad: linear-gradient(135deg, #0369A1, #0EA5E9);
+  --arith-card-active-bg: rgba(255,255,255,0.22);
+  --arith-card-active-shadow: 0 8px 24px rgba(3,105,161,0.45);
+  --arith-card-lock-bg: rgba(0,0,0,0.28);
+  --arith-sheet-bg: #ffffff;
+  --arith-timer-full: #22D3EE;
+  --arith-timer-warn: #FBBF24;
+  --arith-timer-danger: #EF4444;
+  --arith-choice-bg: rgba(255,255,255,0.18);
+  --arith-correct-color: #22C55E;
+  --arith-wrong-color: #EF4444;
+}
+
+/* 레벨 메뉴 */
+.arith-menu { position:fixed; inset:0; overflow-y:auto; min-height:100vh; background:var(--arith-bg-grad); padding:0 0 env(safe-area-inset-bottom,16px); z-index:20; }
+.arith-menu__header { display:flex; align-items:center; gap:12px; padding:calc(env(safe-area-inset-top,0px) + 16px) 16px 8px; color:#fff; }
+.arith-menu__header h1 { flex:1; text-align:center; font-size:1.4rem; font-weight:700; margin:0; }
+.arith-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:8px 16px 32px; }
+
+.arith-card {
+  background: var(--arith-card-active-bg);
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: var(--arith-card-active-shadow);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 16px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer;
+  transition: transform 120ms, box-shadow 120ms;
+  animation: arithmetic-card-enter 350ms ease-out both;
+}
+.arith-card:active { transform: scale(0.93); }
+.arith-card--locked { background: var(--arith-card-lock-bg); border-color: rgba(255,255,255,0.1); box-shadow: none; cursor: default; }
+.arith-card--cleared { box-shadow: 0 8px 32px rgba(3,105,161,0.6); }
+.arith-card__emoji { font-size: 2.2rem; }
+.arith-card__level { font-size: 0.65rem; color: rgba(255,255,255,0.7); font-weight: 600; text-transform: uppercase; }
+.arith-card__name { font-size: 0.75rem; color: #fff; font-weight: 600; text-align: center; line-height: 1.2; }
+.arith-card__stars { font-size: 0.85rem; letter-spacing: 1px; }
+
+/* 바텀시트 */
+.arith-sheet__overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200;
+  display: flex; align-items: flex-end;
+}
+.arith-sheet {
+  background: var(--arith-sheet-bg);
+  border-radius: 24px 24px 0 0;
+  padding: 16px 20px calc(env(safe-area-inset-bottom,16px) + 16px);
+  width: 100%;
+  box-shadow: 0 -8px 40px rgba(3,105,161,0.35);
+}
+.arith-sheet__handle { width:40px; height:4px; background:#E2E8F0; border-radius:2px; margin:0 auto 16px; }
+.arith-sheet h2 { font-size:1.1rem; font-weight:700; text-align:center; margin:0 0 20px; color:#1E293B; }
+.arith-diff-btn {
+  display:flex; justify-content:space-between; align-items:center;
+  width:100%; padding:14px 16px; border-radius:12px; border:none;
+  margin-bottom:10px; cursor:pointer; font-size:1rem; font-weight:600;
+  color:#fff; transition: transform 100ms, filter 100ms;
+}
+.arith-diff-btn:active { transform:scale(0.97); filter:brightness(0.9); }
+.arith-diff-btn--easy   { background: #0EA5E9; }
+.arith-diff-btn--normal { background: #0369A1; }
+.arith-diff-btn--hard   { background: #1E3A5F; }
+.arith-diff-cancel {
+  width:100%; padding:12px; border:none; background:none;
+  color:#64748B; font-size:0.95rem; cursor:pointer; margin-top:4px;
+}
+
+/* 게임 화면 */
+.arith-game {
+  position: fixed; inset: 0;
+  background: var(--arith-bg-grad);
+  display: flex; flex-direction: column;
+  z-index: 10;
+}
+.arith-hud {
+  padding: calc(env(safe-area-inset-top,0px) + 12px) 16px 0;
+  display: flex; align-items: center; gap: 8px;
+  color: #fff; font-size: 0.9rem; font-weight: 600;
+}
+.arith-hud__progress { flex: 1; text-align: center; }
+.arith-timer-track {
+  height: 6px; background: rgba(255,255,255,0.25);
+  border-radius: 3px; margin: 8px 16px 0; overflow: hidden;
+}
+.arith-timer-bar {
+  height: 100%; border-radius: 3px;
+  background: var(--arith-timer-full);
+  transition: width 1s linear, background 0.3s;
+}
+.arith-timer-bar--warn { background: var(--arith-timer-warn); }
+.arith-timer-bar--danger { background: var(--arith-timer-danger); animation: timer-bar-danger 0.6s infinite; }
+
+.arith-question-card {
+  margin: 12px 16px 0;
+  padding: 16px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  overflow: hidden;
+}
+.arith-formula { font-size: 1.3rem; font-weight: 700; color: #fff; }
+.arith-visual { display:flex; flex-wrap:wrap; justify-content:center; gap:4px; padding:4px; }
+.arith-visual__item { transition: opacity 0.2s; }
+.arith-visual__item--strike { opacity: 0.25; text-decoration: line-through; }
+.arith-visual__op { font-size: 1.8rem; font-weight: 700; color: rgba(255,255,255,0.8); align-self:center; margin: 0 4px; }
+.arith-visual-row { display:flex; gap:4px; width:100%; justify-content:center; }
+
+.arith-choices {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:10px; padding:12px 16px calc(env(safe-area-inset-bottom,8px) + 12px);
+}
+.arith-choice {
+  background: var(--arith-choice-bg);
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  padding: 18px;
+  font-size: 1.6rem; font-weight: 700; color: #fff;
+  text-align: center; cursor: pointer;
+  transition: transform 100ms;
+}
+.arith-choice:active { transform: scale(0.95); }
+.arith-choice--correct { background: var(--arith-correct-color) !important; border-color: transparent; animation: choice-correct-flash 0.4s ease-out; }
+.arith-choice--wrong { background: var(--arith-wrong-color) !important; border-color: transparent; animation: choice-shake 0.3s ease-out; }
+.arith-choice--highlight { background: rgba(34,197,94,0.4) !important; }
+
+/* 애니메이션 */
+@keyframes arithmetic-card-enter {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+@keyframes sheet-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes sheet-slide-down {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+@keyframes choice-correct-flash {
+  0%  { transform: scale(1); }
+  40% { transform: scale(1.1); }
+  100%{ transform: scale(1); }
+}
+@keyframes choice-shake {
+  0%,100%{ transform: translateX(0); }
+  25%    { transform: translateX(-8px); }
+  75%    { transform: translateX(8px); }
+}
+@keyframes timer-bar-danger {
+  0%,100%{ opacity: 1; }
+  50%    { opacity: 0.55; }
+}
+@keyframes question-exit {
+  to { transform: translateY(-12px); opacity: 0; }
+}
+@keyframes question-enter {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes lock-shake {
+  0%,100%{ transform: translateX(0) rotate(0); }
+  20%    { transform: translateX(-6px) rotate(-5deg); }
+  60%    { transform: translateX(6px)  rotate(5deg); }
+}
+@keyframes emoji-pop-in {
+  from { transform: scale(0) rotate(-15deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg);  opacity: 1; }
 }

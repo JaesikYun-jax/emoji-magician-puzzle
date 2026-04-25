@@ -216,7 +216,8 @@ export class LevelTestMath {
     `;
 
     el.querySelector('.ltm-close-btn')!.addEventListener('click', () => {
-      appRouter.navigate({ to: 'math-menu', subject: 'math' });
+      // skipHistory: true — level-test-math를 히스토리에 남기지 않고 math-menu로 복귀
+      appRouter.navigate({ to: 'math-menu', subject: 'math', skipHistory: true });
     });
 
     this.container.appendChild(el);

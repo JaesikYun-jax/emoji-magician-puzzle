@@ -23,6 +23,8 @@ export type GameEvents = {
   'math:quiz:wrong': { totalAttempts: number };
   'math:quiz:levelUp': { grade: number; semester: number };
   'math:quiz:operationChange': { operation: import('./systems/math/UserMathStatus').MathOperation };
+  'english:levelClear': { score: number; stars: number; difficulty: string };
+  'arithmetic:levelClear': { stars: number; correctCount: number; totalCount: number };
 };
 
 type EventHandler<T> = (data: T) => void;

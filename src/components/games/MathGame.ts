@@ -10,6 +10,7 @@ import { gameBus } from '@/game-bus';
 import { appRouter } from '@/router/AppRouter';
 import type { MathLevelConfig } from '@/game-data/subjectConfig';
 import { t } from '@/i18n';
+import { confirmExit } from '@/utils/confirmExit';
 
 export class MathGame {
   private el: HTMLElement;
@@ -119,8 +120,10 @@ export class MathGame {
 
     const homeBtn = this.el.querySelector('#math-home-btn') as HTMLButtonElement;
     homeBtn.addEventListener('click', () => {
-      this.hide();
-      appRouter.navigate({ to: 'math-menu', subject: 'math', skipHistory: true });
+      confirmExit(() => {
+        this.stopTimer();
+        appRouter.back();
+      });
     });
 
     const grid = this.el.querySelector('#math-board') as HTMLElement;

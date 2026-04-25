@@ -231,6 +231,7 @@ export class LevelTestEnglish {
   private stageCorrect = 0;
   private currentQuestionIdx = 0;
   private stagesCleared = 0;
+  private totalCorrect = 0;
   private isProcessing = false;
   private resultLevelIndex = 1;
   private resultLabel = '입문';
@@ -286,6 +287,7 @@ export class LevelTestEnglish {
     this.stageCorrect = 0;
     this.currentQuestionIdx = 0;
     this.stagesCleared = 0;
+    this.totalCorrect = 0;
     this.isProcessing = false;
     this.resultLevelIndex = ENGLISH_STAGES[0].recommendedLevelIndex;
     this.resultLabel = ENGLISH_STAGES[0].label;
@@ -346,6 +348,7 @@ export class LevelTestEnglish {
     if (idx === q.correctIdx) {
       card.classList.add('lt-correct');
       this.stageCorrect++;
+      this.totalCorrect++;
       this.currentQuestionIdx++;
 
       setTimeout(() => {
@@ -403,7 +406,7 @@ export class LevelTestEnglish {
       recommendedLevelIndex: this.resultLevelIndex,
       stagesCleared: this.stagesCleared,
       totalQuestions: this.currentQuestionIdx,
-      correctCount: this.currentQuestionIdx,
+      correctCount: this.totalCorrect,
     };
     this.saveService.recordEnglishLevelTest(result);
     this.showResult(result);
@@ -433,7 +436,9 @@ export class LevelTestEnglish {
     `;
 
     overlay.querySelector('#lt-e-goto')!.addEventListener('click', () => {
-      this.router.navigate({ to: 'english-menu', subject: 'english' });
+      const stageIdx = Math.min(result.stagesCleared, ENGLISH_STAGES.length - 1);
+      const difficulty = ENGLISH_STAGES[stageIdx].difficulty;
+      this.router.navigate({ to: 'game-english', subject: 'english', levelId: difficulty });
     });
 
     overlay.querySelector('#lt-e-retry')!.addEventListener('click', () => {

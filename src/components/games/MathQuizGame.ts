@@ -5,6 +5,7 @@ import { generateNextQuestion, clearQuestionCache } from '../../systems/math/que
 import { recordAnswer, getTodayDate } from '../../systems/math/UserMathStatus';
 import { getNextRule } from '../../game-data/mathCurriculum';
 import type { NewMathQuestion } from '../../systems/math/questionGenerator';
+import { confirmExit } from '../../utils/confirmExit';
 
 export class MathQuizGame {
   private el: HTMLElement;
@@ -25,7 +26,7 @@ export class MathQuizGame {
       background: linear-gradient(135deg, #0369A1, #0EA5E9);
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       z-index: 10;
     `;
     container.appendChild(this.el);
@@ -83,7 +84,9 @@ export class MathQuizGame {
       font-size: 1.2rem;
       cursor: pointer;
     `;
-    homeBtn.addEventListener('click', () => this.exitToMenu());
+    homeBtn.addEventListener('click', () => {
+      confirmExit(() => this.exitToMenu());
+    });
     this.hudEl.appendChild(homeBtn);
 
     const pillsContainer = document.createElement('div');
@@ -103,9 +106,9 @@ export class MathQuizGame {
       border-radius: 24px;
       box-shadow: 0 8px 32px rgba(3,105,161,0.45);
       padding: 32px 24px;
-      width: calc(100vw - 32px);
+      width: min(calc(100vw - 32px), 360px);
       max-width: 380px;
-      margin-top: 64px;
+      margin-top: 80px;
     `;
     this.el.appendChild(this.cardEl);
   }
@@ -123,7 +126,7 @@ export class MathQuizGame {
 
   private exitToMenu(): void {
     this.hide();
-    appRouter.navigate({ to: 'math-menu', subject: 'math', skipHistory: true });
+    appRouter.back();
   }
 
   private nextQuestion(): void {

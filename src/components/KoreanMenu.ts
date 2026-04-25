@@ -56,14 +56,17 @@ const KOREAN_MENU_STYLE = `
   color: #64748B;
   line-height: 1.6;
 }
-#korean-menu .km-badge {
-  display: inline-block;
+#korean-menu .km-start-btn {
   background: #F43F5E;
   color: #fff;
-  font-size: 0.85rem;
-  font-weight: bold;
-  padding: 6px 16px;
+  border: none;
+  padding: 14px 32px;
   border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(244,63,94,0.40);
+  touch-action: manipulation;
 }
 `;
 
@@ -90,17 +93,19 @@ export class KoreanMenu {
         <span class="km-title">${t('subject.korean')}</span>
       </div>
       <div class="km-body">
-        <div class="km-icon">가</div>
-        <div class="km-coming-title">${t('subject.comingSoonMsg')}</div>
-        <p class="km-coming-sub">
-          ${t('subject.korean.detail')}
-        </p>
-        <span class="km-badge">Coming Soon</span>
+        <div class="km-icon">가나다</div>
+        <div class="km-coming-title">국어 자모 조합</div>
+        <p class="km-coming-sub">자음과 모음을 조합해 글자를 완성해요</p>
+        <button class="km-start-btn">자모 조합 게임 시작 →</button>
       </div>
     `;
 
     el.querySelector('.km-back-btn')!.addEventListener('click', () => {
       this.router.back();
+    });
+
+    el.querySelector('.km-start-btn')!.addEventListener('click', () => {
+      this.router.navigate({ to: 'game-korean', subject: 'korean' });
     });
 
     this.container.appendChild(el);

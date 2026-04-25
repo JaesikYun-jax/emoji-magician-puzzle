@@ -8,6 +8,8 @@ interface ResultData {
   levelId: number;
   pairsCompleted?: number;
   maxLevelId: number;
+  accuracy?: number;   // 0~100 정수
+  timeUsed?: number;   // 초 단위
 }
 
 const RESULT_STYLE = `
@@ -140,7 +142,7 @@ export class ResultScreen {
   show(data: ResultData): void {
     this.hide();
 
-    const { cleared, score, stars, levelId, pairsCompleted, maxLevelId } = data;
+    const { cleared, score, stars, levelId, pairsCompleted, maxLevelId, accuracy, timeUsed } = data;
 
     if (!document.getElementById('result-style')) {
       const style = document.createElement('style');
@@ -182,12 +184,12 @@ export class ResultScreen {
               <div class="sb-display rs-stat__val">${score.toLocaleString()}</div>
             </div>
             <div class="rs-stat">
-              <div class="rs-stat__label">★</div>
-              <div class="sb-display rs-stat__val">${stars}/3</div>
+              <div class="rs-stat__label">정답률</div>
+              <div class="sb-display rs-stat__val">${accuracy != null ? `${accuracy}%` : `${stars}/3별`}</div>
             </div>
             <div class="rs-stat">
-              <div class="rs-stat__label">Lv</div>
-              <div class="sb-display rs-stat__val">${levelId}</div>
+              <div class="rs-stat__label">시간</div>
+              <div class="sb-display rs-stat__val">${timeUsed != null ? `${Math.floor(timeUsed / 60)}:${String(timeUsed % 60).padStart(2, '0')}` : `Lv.${levelId}`}</div>
             </div>
           </div>
         </div>

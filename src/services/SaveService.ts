@@ -1,5 +1,6 @@
-import type { SaveData, LevelProgress, LevelTestResult } from '../game-data/subjectConfig';
+import type { SaveData, LevelProgress, LevelTestResult, CreativityMeta } from '../game-data/subjectConfig';
 import { MATH_LEVELS } from '../game-data/mathLevels';
+import { CREATIVITY_BADGES, getCreativityRank } from '../game-data/creativityLevels';
 import { type UserMathStatus, DEFAULT_STATUS, createDefaultStatus } from '../systems/math/UserMathStatus';
 import {
   type GamificationState,
@@ -65,8 +66,9 @@ const SAVE_KEY = 'sabakgam-save-v1';
  * 현재 저장 데이터 버전.
  * v1 → v2 : gamification 필드 추가 (자동 마이그레이션)
  * v2 → v3 : logic, creativity 필드 추가 (자동 마이그레이션)
+ * v3 → v4 : creativity 자동 진행 방식 (totalClears, consecutiveClears, currentLevelIdx)
  */
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 function getDefaultUnlockedMathIds(): string[] {
   const ops = ['addition', 'subtraction', 'multiplication'] as const;
@@ -92,8 +94,8 @@ function createDefaultSaveData(): SaveData {
     english: { levelProgress: {} },
     settings: { language: 'ko', soundEnabled: true, musicEnabled: true },
     gamification: createDefaultGamificationState(),
-    logic: { levelProgress: logicProgress },
-    creativity: { levelProgress: creativityProgress },
+    logic: { levelProgress: logicProgress, streak: 0, clearCount: 0 },
+    creativity: { levelProgress: creativityProgress, playerLevel: 1, totalClears: 0, streak: 0 },
   };
 }
 
@@ -145,10 +147,16 @@ export class SaveService {
       if (!parsed.logic.levelProgress['logic-1']) {
         parsed.logic.levelProgress['logic-1'] = { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true };
       }
+      // logic 신규 통계 필드 fallback
+      if (parsed.logic.streak == null) parsed.logic.streak = 0;
+      if (parsed.logic.clearCount == null) parsed.logic.clearCount = 0;
       // creativity level-1 default unlock
       if (!parsed.creativity.levelProgress['creativity-1']) {
         parsed.creativity.levelProgress['creativity-1'] = { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true };
       }
+      if (parsed.creativity.playerLevel === undefined) parsed.creativity.playerLevel = 1;
+      if (parsed.creativity.totalClears === undefined) parsed.creativity.totalClears = 0;
+      if (parsed.creativity.streak === undefined) parsed.creativity.streak = 0;
 
       return parsed;
     } catch {
@@ -284,7 +292,7 @@ export class SaveService {
   }
 
   recordLogicClear(levelId: string, stars: number, score: number): void {
-    if (!this.data.logic) this.data.logic = { levelProgress: {} };
+    if (!this.data.logic) this.data.logic = { levelProgress: {}, streak: 0, clearCount: 0 };
     const existing = this.getLogicProgress(levelId);
     this.data.logic.levelProgress[levelId] = {
       stars: Math.max(existing.stars, stars),
@@ -292,6 +300,9 @@ export class SaveService {
       playCount: existing.playCount + 1,
       isUnlocked: true,
     };
+    // streak 및 clearCount 업데이트
+    this.data.logic.streak = (this.data.logic.streak ?? 0) + 1;
+    this.data.logic.clearCount = (this.data.logic.clearCount ?? 0) + 1;
     // 다음 레벨 해금 — 번호 증가 방식 (logic-1, logic-2, ...)
     const match = levelId.match(/^logic-(\d+)$/);
     if (match) {
@@ -303,6 +314,39 @@ export class SaveService {
     this.save();
   }
 
+  recordLogicFail(): void {
+    if (!this.data.logic) this.data.logic = { levelProgress: {}, streak: 0, clearCount: 0 };
+    this.data.logic.streak = 0;
+    this.save();
+  }
+
+  getLogicStreak(): number {
+    return this.data.logic?.streak ?? 0;
+  }
+
+  getLogicClearCount(): number {
+    return this.data.logic?.clearCount ?? 0;
+  }
+
+  getCurrentLogicLevelId(): string {
+    const progress = this.data.logic?.levelProgress ?? {};
+    const clearedNums = Object.keys(progress)
+      .filter(id => {
+        const p = progress[id];
+        return p.stars > 0 || p.bestScore > 0;
+      })
+      .map(id => {
+        const m = id.match(/^logic-(\d+)$/);
+        return m ? parseInt(m[1], 10) : 0;
+      })
+      .filter(n => n > 0);
+
+    if (clearedNums.length === 0) return 'logic-1';
+    const maxCleared = Math.max(...clearedNums);
+    const nextNum = maxCleared + 1;
+    return nextNum <= 10 ? `logic-${nextNum}` : 'logic-10';
+  }
+
   // ── Creativity ─────────────────────────────────────────────────────────────
 
   getCreativityProgress(levelId: string): LevelProgress {
@@ -311,23 +355,133 @@ export class SaveService {
     };
   }
 
-  recordCreativityClear(levelId: string, stars: number, score: number): void {
+  recordCreativityClear(levelId: string, timeUsed: number): void {
     if (!this.data.creativity) this.data.creativity = { levelProgress: {} };
     const existing = this.getCreativityProgress(levelId);
     this.data.creativity.levelProgress[levelId] = {
-      stars: Math.max(existing.stars, stars),
-      bestScore: Math.max(existing.bestScore, score),
+      stars: 0,
+      bestScore: existing.bestScore === 0 ? timeUsed : Math.min(existing.bestScore, timeUsed),
       playCount: existing.playCount + 1,
       isUnlocked: true,
     };
-    const match = levelId.match(/^creativity-(\d+)$/);
-    if (match) {
-      const next = `creativity-${parseInt(match[1], 10) + 1}`;
-      if (!this.data.creativity.levelProgress[next]) {
-        this.data.creativity.levelProgress[next] = { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true };
-      }
-    }
+    // 진행 레벨 증가
+    const prev = this.data.creativity.playerLevel ?? 1;
+    this.data.creativity.playerLevel = prev + 1;
+    // 누적 클리어
+    this.data.creativity.totalClears = (this.data.creativity.totalClears ?? 0) + 1;
+    // 연속 성공
+    this.data.creativity.streak = (this.data.creativity.streak ?? 0) + 1;
     this.save();
+  }
+
+  recordCreativityFail(): void {
+    if (!this.data.creativity) this.data.creativity = { levelProgress: {} };
+    this.data.creativity.streak = 0;
+    this.save();
+  }
+
+  getCreativityStats(): { playerLevel: number; totalClears: number; streak: number } {
+    const c = this.data.creativity;
+    return {
+      playerLevel: c?.playerLevel ?? 1,
+      totalClears: c?.totalClears ?? 0,
+      streak: c?.streak ?? 0,
+    };
+  }
+
+  /**
+   * 창의 종목의 현재 플레이어 레벨 번호 반환 (1-based).
+   * playerLevel 필드를 우선 사용하고, 없으면 클리어 이력에서 계산.
+   */
+  getCreativityPlayerLevel(): number {
+    return this.data.creativity?.playerLevel ?? 1;
+  }
+
+  /** 창의 종목 총 클리어 횟수 */
+  getCreativityTotalClears(): number {
+    return this.data.creativity?.totalClears ?? 0;
+  }
+
+  /** 창의 종목 메타 조회 (자동 진행 방식 v4). meta가 없으면 기본값 반환. */
+  getCreativityMeta(): CreativityMeta {
+    return this.data.creativity?.meta ?? this._createDefaultCreativityMeta();
+  }
+
+  /**
+   * 창의 종목 클리어/실패 기록 (자동 진행 방식 v4).
+   * 성공 시 totalClears/currentStreak 증가, 실패 시 streak 리셋.
+   * 뱃지/랭크 변화도 함께 계산해서 반환.
+   */
+  recordCreativityClearV2(cleared: boolean): {
+    meta: CreativityMeta;
+    newBadge: { threshold: number; emoji: string; name: string } | null;
+    leveledUp: boolean;
+    newLevel: number;
+  } {
+    if (!this.data.creativity) {
+      this.data.creativity = { levelProgress: {} };
+    }
+    const meta: CreativityMeta = this.data.creativity.meta ?? this._createDefaultCreativityMeta();
+    if (!meta.recentPuzzleIds) meta.recentPuzzleIds = [];  // 하위 호환
+    const prevLevel = getCreativityRank(meta.totalClears).level;
+
+    let newBadge: { threshold: number; emoji: string; name: string } | null = null;
+    if (cleared) {
+      meta.totalClears += 1;
+      meta.currentStreak += 1;
+      if (meta.currentStreak > meta.bestStreak) meta.bestStreak = meta.currentStreak;
+
+      for (const b of CREATIVITY_BADGES) {
+        if (meta.totalClears >= b.threshold && !meta.earnedBadgeThresholds.includes(b.threshold)) {
+          meta.earnedBadgeThresholds.push(b.threshold);
+          if (!newBadge) newBadge = { threshold: b.threshold, emoji: b.emoji, name: b.name };
+        }
+      }
+    } else {
+      meta.currentStreak = 0;
+    }
+    meta.lastPlayedAt = new Date().toISOString();
+    this.data.creativity.meta = meta;
+    this.save();
+
+    const newLevel = getCreativityRank(meta.totalClears).level;
+    return {
+      meta: { ...meta, earnedBadgeThresholds: [...meta.earnedBadgeThresholds] },
+      newBadge,
+      leveledUp: newLevel > prevLevel,
+      newLevel,
+    };
+  }
+
+  /**
+   * 최근 플레이한 퍼즐 id 기록 (최대 20개 FIFO).
+   * 퍼즐 시작 또는 완료 시 호출.
+   */
+  addRecentCreativityPuzzleId(puzzleId: string): void {
+    if (!this.data.creativity) {
+      this.data.creativity = { levelProgress: {} };
+    }
+    const meta = this.data.creativity.meta ?? this._createDefaultCreativityMeta();
+    if (!meta.recentPuzzleIds) meta.recentPuzzleIds = [];
+    // 중복 제거 후 맨 뒤 추가
+    meta.recentPuzzleIds = meta.recentPuzzleIds.filter(id => id !== puzzleId);
+    meta.recentPuzzleIds.push(puzzleId);
+    if (meta.recentPuzzleIds.length > 20) {
+      meta.recentPuzzleIds = meta.recentPuzzleIds.slice(-20);
+    }
+    this.data.creativity.meta = meta;
+    this.save();
+  }
+
+  private _createDefaultCreativityMeta(): CreativityMeta {
+    return {
+      totalClears: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      lastPlayedAt: new Date().toISOString(),
+      earnedBadgeThresholds: [],
+      recentPuzzleIds: [],
+    };
   }
 }
 

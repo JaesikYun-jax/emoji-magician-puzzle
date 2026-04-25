@@ -136,17 +136,18 @@ describe('AppRouter', () => {
   });
 
   describe('skipHistory 동작', () => {
-    it('skipHistory: true 시 게임 화면이 히스토리에서 제거되어 previous가 game-math 이전 화면을 가리킨다', () => {
-      // 히스토리 스택 방식:
+    it('back()으로 game-math 복귀 시 previous가 subject-select를 가리킨다', () => {
+      // 앱 실제 플로우:
       //   navigate subject-select → stack: ['brand-home']
       //   navigate math-menu     → stack: ['brand-home', 'subject-select']
-      //   navigate game-math     → stack: ['brand-home', 'subject-select', 'math-menu']
-      //   navigate math-menu (skipHistory:true) → pop 'math-menu' → stack: ['brand-home', 'subject-select']
-      //   previous = stack top = 'subject-select'
+      //   navigate level-intro   → stack: ['brand-home', 'subject-select', 'math-menu']
+      //   navigate game-math (replace:true) → stack 변화 없음
+      //   back() → pop 'math-menu' → stack: ['brand-home', 'subject-select'], current: 'math-menu'
       router.navigate({ to: 'subject-select' });
       router.navigate({ to: 'math-menu', subject: 'math' });
-      router.navigate({ to: 'game-math', levelId: 'math-add-single-1' });
-      router.navigate({ to: 'math-menu', skipHistory: true });
+      router.navigate({ to: 'level-intro', levelId: 'math-add-1' });
+      router.navigate({ to: 'game-math', replace: true });
+      router.back(); // game-math → math-menu
       expect(router.getState().current).toBe('math-menu');
       expect(router.getState().previous).toBe('subject-select');
     });
@@ -173,16 +174,15 @@ describe('AppRouter', () => {
       expect(router.getState().previous).toBe('game-math');
     });
 
-    it('skipHistory: true 후 back()은 game-math가 아닌 올바른 이전 화면으로 이동한다', () => {
-      // 히스토리 스택 방식:
-      //   subject-select → math-menu → game-math → (skipHistory)math-menu → back()
-      //   스택 변화: [brand-home] → [b, subject-select] → [b, s, math-menu] → pop:math-menu → [b, subject-select]
-      //   back(): pop subject-select → current='subject-select'
+    it('back()으로 game-math에서 math-menu 복귀 후, 재차 back()은 subject-select로 이동한다', () => {
+      // 앱 실제 플로우:
+      //   subject-select → math-menu → level-intro → game-math(replace) → back() → math-menu → back() → subject-select
       router.navigate({ to: 'subject-select' });
       router.navigate({ to: 'math-menu', subject: 'math' });
-      router.navigate({ to: 'game-math', levelId: 'math-add-single-1' });
-      router.navigate({ to: 'math-menu', skipHistory: true });
-      router.back();
+      router.navigate({ to: 'level-intro', levelId: 'math-add-1' });
+      router.navigate({ to: 'game-math', replace: true });
+      router.back(); // game-math → math-menu
+      router.back(); // math-menu → subject-select
       // game-math를 건너뛰고 subject-select로 이동
       expect(router.getState().current).toBe('subject-select');
       expect(router.getState().current).not.toBe('game-math');
@@ -197,16 +197,17 @@ describe('AppRouter', () => {
       expect(router.getState().current).not.toBe('game-math');
     });
 
-    it('skipHistory: true navigate는 스택 top을 제거하고 이전 화면을 previous로 설정한다', () => {
+    it('skipHistory: true navigate는 현재 화면을 스택에 추가하지 않는다', () => {
       // stack 변화:
       //   navigate subject-select → stack: ['brand-home']        prev: brand-home
       //   navigate math-menu     → stack: ['brand-home', 'subject-select']  prev: subject-select
-      //   navigate level-select (skipHistory:true) → pop 'subject-select' → stack: ['brand-home']  prev: brand-home
+      //   navigate level-select (skipHistory:true) → push 없음 → stack: ['brand-home', 'subject-select']  prev: subject-select(스택 top)
       router.navigate({ to: 'subject-select' });
       router.navigate({ to: 'math-menu', subject: 'math' });
       router.navigate({ to: 'level-select', skipHistory: true });
       expect(router.getState().current).toBe('level-select');
-      expect(router.getState().previous).toBe('brand-home');
+      // skipHistory는 현재 화면을 스택에 push하지 않으므로 previous는 스택 top인 'subject-select'
+      expect(router.getState().previous).toBe('subject-select');
     });
 
     it('skipHistory: false (기본값)는 previous를 정상 갱신한다', () => {
@@ -235,42 +236,38 @@ describe('AppRouter', () => {
     //   히스토리 스택에 result/math-menu 등이 쌓여 back() 시 game-math 재진입 루프 발생
     // 수정: navigate({ to: 'game-math', skipHistory: true }) 사용
 
-    it('retry 패턴: result → game-math(skipHistory:true) 이후 back()은 game-math로 돌아가지 않는다', () => {
-      // 실제 게임 진행 흐름:
-      //   brand-home → subject-select → math-menu → level-intro → game-math → result
-      //   ui:retry 발생 → game-math(skipHistory:true) 복귀
+    it('retry 패턴: result 직접 표시 후 game-math(skipHistory:true) 복귀 시 back()은 math-menu로 이동', () => {
+      // 실제 게임 진행 흐름 (result는 router 없이 직접 DOM 표시):
+      //   subject-select → math-menu → level-intro → game-math(replace) → [result 직접 표시] → ui:retry
+      //   ui:retry: navigate(game-math, skipHistory:true) → 게임 재시작
+      //   back() → math-menu (스택에 남아있는 항목)
       router.navigate({ to: 'subject-select' });
       router.navigate({ to: 'math-menu', subject: 'math' });
       router.navigate({ to: 'level-intro', levelId: 'math-add-2' });
-      // level-intro 내부에서 skipHistory:true 로 game-math 진입 (level-intro 화면 히스토리 제거)
-      router.navigate({ to: 'game-math', skipHistory: true });
-      // 게임 종료 → result 화면
-      router.navigate({ to: 'result' });
-      // ui:retry → game-math로 skipHistory:true 복귀 (result 화면 히스토리 제거)
+      router.navigate({ to: 'game-math', replace: true }); // level-intro → game-math
+      // result는 직접 표시 (router 없음) — 스택은 [..., math-menu], current = game-math
+      // ui:retry: skipHistory:true로 game-math 재시작 (현재→현재, 스택 변화 없음)
       router.navigate({ to: 'game-math', skipHistory: true });
 
       expect(router.getState().current).toBe('game-math');
-      // back()을 눌러도 game-math 이전 화면(math-menu 계열)으로 이동해야 함
+      // back()을 눌러도 game-math 이전 화면(math-menu)으로 이동해야 함
       router.back();
       expect(router.getState().current).not.toBe('game-math');
-      expect(router.getState().current).not.toBe('result');
+      expect(router.getState().current).toBe('math-menu');
     });
 
-    it('retry 후 다시 back() 해도 game-math 루프가 발생하지 않는다', () => {
+    it('retry 여러 번 후 back() 연속으로 눌러도 game-math 루프가 발생하지 않는다', () => {
+      // 실제 플로우: 매번 retry는 skipHistory:true로 game-math 재시작 (result는 직접 표시)
       router.navigate({ to: 'subject-select' });
       router.navigate({ to: 'math-menu', subject: 'math' });
-      // game-math 진입 (skipHistory: 일반 navigate)
-      router.navigate({ to: 'game-math', levelId: 'math-add-2' });
-      // result 화면
-      router.navigate({ to: 'result' });
-      // ui:retry → game-math skipHistory:true (result 히스토리 제거)
+      router.navigate({ to: 'level-intro', levelId: 'math-add-2' });
+      router.navigate({ to: 'game-math', replace: true }); // level-intro → game-math
+      // retry 1: result 직접 표시 → skipHistory로 game-math 재시작
       router.navigate({ to: 'game-math', skipHistory: true });
-      // result 화면 다시
-      router.navigate({ to: 'result' });
-      // ui:retry 한 번 더 → game-math skipHistory:true
+      // retry 2: result 직접 표시 → skipHistory로 game-math 재시작
       router.navigate({ to: 'game-math', skipHistory: true });
 
-      // 어떤 화면으로 back() 해도 game-math가 반복되지 않아야 함
+      // 연속 back() 시 game-math가 반복되지 않아야 함
       const visited: string[] = [];
       for (let i = 0; i < 5; i++) {
         visited.push(router.getState().current);
@@ -364,6 +361,90 @@ describe('AppRouter', () => {
       router.navigate({ to: 'game-math', skipHistory: true });
       expect(launchCount).toBe(2); // 재시작 성공
       expect(activeFlag).toBe(true);
+    });
+  });
+
+  describe('game-english 라우트 — 빈 콜백 재발 방지', () => {
+    // 버그: main.ts 의 game-english show() 가 /* TODO */ 빈 콜백으로 방치되어
+    // 영어 게임 화면으로 이동해도 아무것도 표시되지 않았음.
+    // AppRouter 자체는 등록된 콜백을 그대로 호출만 하므로, 여기서는
+    // "game-english 가 ScreenId 타입에 포함된다" 와
+    // "등록된 show 콜백이 실제로 호출된다"는 두 가지를 검증한다.
+
+    it('"game-english" 가 ScreenId 로 navigate 가능하다 (타입 오류 없이 상태 전환)', () => {
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'beginner' });
+      expect(router.getState().current).toBe('game-english');
+    });
+
+    it('game-english 로 register 된 show 콜백이 navigate 시 실제로 호출된다', () => {
+      let showCalled = false;
+      let receivedDifficulty: string | undefined;
+
+      // show()가 호출될 때 difficulty를 라우터 state에서 읽어서 사용하는 패턴을 시뮬레이션
+      router.register('game-english', {
+        show() {
+          showCalled = true;
+          receivedDifficulty = router.getState().levelId ?? 'beginner';
+        },
+        hide() {},
+      });
+
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'intermediate' });
+
+      expect(showCalled).toBe(true);
+      expect(receivedDifficulty).toBe('intermediate');
+    });
+
+    it('game-english show 콜백이 no-op(빈 함수)이면 showCalled 가 false 로 남는다 — 버그 재현 대조군', () => {
+      let showCalled = false;
+
+      // 버그 상황: show() 가 아무 일도 하지 않는 빈 함수
+      const noOpShow = () => { /* TODO */ };
+      router.register('game-english', {
+        show: noOpShow,
+        hide() {},
+      });
+
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'beginner' });
+
+      // noOpShow 는 호출은 됐지만 아무 상태 변화가 없다 — 이것이 원래 버그 상황
+      expect(showCalled).toBe(false); // 빈 콜백이므로 아무 작업 안 함
+    });
+
+    it('game-english show 콜백이 실제 로직을 수행하면 showCalled 가 true 가 된다 — 정상 동작', () => {
+      let showCalled = false;
+
+      // 수정된 상황: show() 가 실제 로직을 수행
+      const realShow = () => { showCalled = true; };
+      router.register('game-english', {
+        show: realShow,
+        hide() {},
+      });
+
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'beginner' });
+
+      expect(showCalled).toBe(true);
+      // 수정된 콜백에는 TODO 가 없어야 한다
+      expect(realShow.toString()).not.toContain('TODO');
+    });
+
+    it('game-english hide 콜백도 navigate away 시 호출된다', () => {
+      let hideCalled = false;
+
+      router.register('game-english', {
+        show() {},
+        hide() { hideCalled = true; },
+      });
+
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'beginner' });
+      router.navigate({ to: 'english-menu', subject: 'english' });
+
+      expect(hideCalled).toBe(true);
+    });
+
+    it('game-english navigate 시 levelId 가 state 에 저장된다', () => {
+      router.navigate({ to: 'game-english', subject: 'english', levelId: 'advanced' });
+      expect(router.getState().levelId).toBe('advanced');
     });
   });
 

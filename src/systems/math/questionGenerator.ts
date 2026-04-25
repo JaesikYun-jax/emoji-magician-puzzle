@@ -98,7 +98,7 @@ function _generateNewDistractors(
   const distractors = new Set<number>();
   const [resMin, resMax] = rule.resultRange;
 
-  const spread = mode === 'easy' ? [10, 25] : mode === 'normal' ? [2, 8] : [1, 3];
+  const spread = mode === 'easy' ? [3, 8] : mode === 'normal' ? [2, 5] : [1, 3];
 
   let attempts = 0;
   while (distractors.size < 3 && attempts < 100) {
@@ -124,7 +124,8 @@ function _generateNewDistractors(
       }
     }
     if (distractors.size < 3) distractors.add(answer + 1);
-    if (distractors.size < 3) distractors.add(answer - 1);
+    if (distractors.size < 3 && answer - 1 > 0) distractors.add(answer - 1);
+    if (distractors.size < 3) distractors.add(answer + 2);
   }
 
   return Array.from(distractors).slice(0, 3);
