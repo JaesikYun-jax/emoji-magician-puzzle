@@ -50,6 +50,7 @@ export const en = {
   'brand.hero.cta': 'Start Now',
   'brand.hero.scrollHint': 'Learn more',
   'brand.hero.badge': 'Smashing Private Tutoring Costs',
+  'brand.hero.habitBadge': '10 minutes before bedtime, every day',
 
   'brand.story.eyebrow': 'A Story of Two Dads',
   'brand.story.title': 'We Were Just Dads at First',

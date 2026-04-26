@@ -50,6 +50,7 @@ export const ko = {
   'brand.hero.cta': '지금 시작하기',
   'brand.hero.scrollHint': '더 알아보기',
   'brand.hero.badge': '사교육비 박살내는 게임',
+  'brand.hero.habitBadge': '매일 자기 전 10분 게임으로',
 
   'brand.story.eyebrow': '두 아빠의 이야기',
   'brand.story.title': '우리도 처음엔 그냥 아빠였습니다',

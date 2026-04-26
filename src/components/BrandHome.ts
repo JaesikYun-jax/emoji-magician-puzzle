@@ -55,6 +55,28 @@ const BRAND_HOME_STYLE = `
 .bh-hero__headline {
   font-size: 48px; margin-top: 14px; text-align: center; line-height: 1.18;
 }
+.bh-hero__habit-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 18px; align-self: center;
+  background: linear-gradient(135deg, rgba(217,249,157,0.18) 0%, rgba(253,230,138,0.14) 100%);
+  border: 1.5px solid rgba(217,249,157,0.50);
+  border-radius: 999px; padding: 9px 22px;
+  font-family: var(--f-sans); font-size: 13px; font-weight: 800;
+  color: #D9F99D; letter-spacing: 0.01em;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 24px rgba(217,249,157,0.18), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.bh-hero__habit-badge__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #D9F99D; flex-shrink: 0;
+  box-shadow: 0 0 8px #D9F99D, 0 0 14px rgba(217,249,157,0.6);
+  animation: sb-badge-pulse 2.2s ease-in-out infinite;
+}
+@keyframes sb-badge-pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.75); }
+}
+
 .bh-hero__sub {
   font-size: 13px; color: rgba(255,255,255,0.70); line-height: 1.6;
   margin-top: 14px; text-align: center; max-width: 300px; margin-inline: auto;
@@ -634,6 +656,10 @@ export class BrandHome {
             생각하고, <em style="color:#FDE68A">계산하고</em>,<br/>
             <em style="color:#FB7185">외우는 힘</em>을 키워라
           </h1>
+          <div class="bh-hero__habit-badge">
+            <span class="bh-hero__habit-badge__dot"></span>
+            🌙 매일 자기 전 10분 게임으로
+          </div>
           <p class="bh-hero__sub">멘사 테스트 기반 두뇌 훈련. 더 잘 생각하고, 더 빠르게 계산하고, 더 오래 기억하도록.</p>
 
           <div class="bh-stage">
