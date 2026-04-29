@@ -35,7 +35,7 @@ import { G1_LEVELS } from './game-data/g1Levels';
 import { getEqFillLevel } from './game-data/equationFillLevels';
 import { getPatternLevel } from './game-data/patternFinderLevels';
 import { getLogicLevel } from './game-data/logicLevels';
-import { selectWallPuzzle } from './systems/creativity/wallPuzzleSelector';
+import { selectWallPuzzle, selectWallPuzzleByTier } from './systems/creativity/wallPuzzleSelector';
 import { saveService, userMathStatusService } from './services/SaveService';
 
 // ── 1. DOM 루트 ─────────────────────────────────────────────────────────────
@@ -348,11 +348,17 @@ appRouter.register('game-odd-one-out', {
 });
 
 // ── 8-g. game-creativity 화면 ────────────────────────────────────────────────
-// 레벨 선택 없음 — 플레이어의 누적 클리어 수에 따라 난이도를 자동 생성한다.
+// state.levelId가 'wall-tier-N' 형식이면 해당 티어로 강제 선택,
+// 아니면 플레이어의 누적 클리어 수 + streak에 따라 난이도를 자동 생성한다.
 appRouter.register('game-creativity', {
   show() {
     const meta = saveService.getCreativityMeta();
-    const cfg  = selectWallPuzzle(meta.totalClears, meta.recentPuzzleIds ?? []);
+    const state = appRouter.getState();
+    const tierMatch = state.levelId?.match(/^wall-tier-([1-5])$/);
+    const tier = tierMatch ? Number(tierMatch[1]) as 1 | 2 | 3 | 4 | 5 : null;
+    const cfg = tier
+      ? selectWallPuzzleByTier(tier, meta.recentPuzzleIds ?? [])
+      : selectWallPuzzle(meta.totalClears, meta.recentPuzzleIds ?? [], meta.currentStreak ?? 0);
     saveService.addRecentCreativityPuzzleId(cfg.id);
     creativityGame.show(cfg);
   },

@@ -11,9 +11,11 @@ import {
   createPathState,
   tryMove,
   getAvailableNeighbors,
+  isSolvable,
 } from '../creativity/hamiltonianPath';
 import {
   selectWallPuzzle,
+  selectWallPuzzleByTier,
   getTierForClears,
 } from '../creativity/wallPuzzleSelector';
 import {
@@ -221,6 +223,41 @@ describe('문제은행 선택 - wallPuzzleSelector', () => {
 });
 
 // ────────────────────────────────────────────────
+// 2-b. selectWallPuzzleByTier 테스트
+// ────────────────────────────────────────────────
+describe('selectWallPuzzleByTier', () => {
+  it.each([1, 2, 3, 4, 5] as const)(
+    'tier=%i → puzzle.tier === %i',
+    (t) => {
+      const puzzle = selectWallPuzzleByTier(t, []);
+      expect(puzzle.tier).toBe(t);
+    },
+  );
+
+  it('풀 전체 id가 recentPuzzleIds에 있어도 undefined 아닌 퍼즐 반환 (3중 폴백)', () => {
+    const allTier1Ids = ALL_WALL_PUZZLES.filter(p => p.tier === 1).map(p => p.id);
+    const puzzle = selectWallPuzzleByTier(1, allTier1Ids);
+    expect(puzzle).toBeDefined();
+    expect(puzzle.id).toBeTruthy();
+    expect(puzzle.tier).toBe(1);
+  });
+
+  it('직전 ID와 다른 퍼즐을 우선 반환 (10회 반복 통계)', () => {
+    // tier 1 퍼즐이 2개 이상이어야 의미 있음 — 데이터 유효성 사전 확인
+    const tier1Pool = ALL_WALL_PUZZLES.filter(p => p.tier === 1);
+    if (tier1Pool.length < 2) return; // 풀이 1개뿐이면 스킵
+
+    const lastId = tier1Pool[0].id;
+    const results = Array.from({ length: 10 }, () =>
+      selectWallPuzzleByTier(1, [lastId]),
+    );
+    // 10회 중 적어도 1회는 lastId와 다른 퍼즐이 나와야 함
+    const hasDifferent = results.some(p => p.id !== lastId);
+    expect(hasDifferent).toBe(true);
+  });
+});
+
+// ────────────────────────────────────────────────
 // 3. 문제은행 데이터 유효성 - wallPuzzles.ts
 // ────────────────────────────────────────────────
 describe('문제은행 데이터 유효성 - wallPuzzles', () => {
@@ -322,6 +359,23 @@ describe('문제은행 데이터 유효성 - wallPuzzles', () => {
         });
       });
     });
+  });
+
+  describe('wallPuzzles 클리어 가능성 검증', () => {
+    it.each(ALL_WALL_PUZZLES.map(p => [p.id, p] as [string, typeof p]))(
+      '퍼즐 %s 는 클리어 가능해야 한다',
+      (_, puzzle) => {
+        const solvable = isSolvable({
+          cols: puzzle.cols,
+          rows: puzzle.rows,
+          blocked: puzzle.blocked,
+          walls: puzzle.walls,
+          startCell: puzzle.startCell,
+          endCell: puzzle.endCell,
+        });
+        expect(solvable).toBe(true);
+      },
+    );
   });
 
   describe('timeLimit 유효성', () => {
