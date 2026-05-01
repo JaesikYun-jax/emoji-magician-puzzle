@@ -126,13 +126,8 @@ export class KoreanGame {
     `;
 
     const backBtn = document.createElement('button');
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-    backBtn.style.cssText = `
-      width: 30px; height: 30px; border-radius: 50%;
-      background: rgba(255,255,255,0.12); border: none;
-      color: #fff; display: grid; place-items: center;
-      cursor: pointer; flex-shrink: 0; touch-action: manipulation;
-    `;
+    backBtn.className = 'game-exit-btn';
+    backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     backBtn.addEventListener('pointerdown', () => appRouter.back());
     pill.appendChild(backBtn);
 
@@ -482,14 +477,7 @@ export class KoreanGame {
 
     const retryBtn = document.createElement('button');
     retryBtn.textContent = '다시 하기';
-    retryBtn.style.cssText = `
-      width: 100%; padding: 16px;
-      background: #FDE68A; border: none;
-      border-radius: 999px;
-      color: #9F1239; font-size: 1rem; font-weight: 800;
-      cursor: pointer; touch-action: manipulation;
-      box-shadow: 0 8px 24px rgba(253,230,138,0.40);
-    `;
+    retryBtn.className = 'result-btn result-btn--primary';
     retryBtn.addEventListener('pointerdown', () => {
       this.show();
     });
@@ -497,14 +485,7 @@ export class KoreanGame {
 
     const backBtn = document.createElement('button');
     backBtn.textContent = '국어 메뉴로';
-    backBtn.style.cssText = `
-      width: 100%; padding: 14px;
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.28);
-      border-radius: 999px;
-      color: #fff; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; touch-action: manipulation;
-    `;
+    backBtn.className = 'result-btn result-btn--ghost';
     backBtn.addEventListener('pointerdown', () => appRouter.back());
     overlay.appendChild(backBtn);
 

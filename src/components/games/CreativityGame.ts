@@ -9,6 +9,7 @@
  */
 
 import { appRouter } from '../../router/AppRouter';
+import { confirmExit } from '../../utils/confirmExit';
 import {
   createPathState,
   tryMove,
@@ -138,15 +139,11 @@ export class CreativityGame {
     `;
 
     const homeBtn = document.createElement('button');
-    homeBtn.textContent = '🏠';
-    homeBtn.style.cssText = `
-      background: rgba(255,255,255,0.15);
-      border: 1.5px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      width: 40px; height: 40px;
-      color: #fff; font-size: 1.2rem; cursor: pointer; flex-shrink: 0;
-    `;
-    homeBtn.addEventListener('click', () => this._exitToMenu());
+    homeBtn.className = 'game-exit-btn';
+    homeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    homeBtn.addEventListener('pointerdown', () => {
+      confirmExit(() => this._exitToMenu());
+    });
     hud.appendChild(homeBtn);
 
     this.progressEl = document.createElement('div');
@@ -738,18 +735,9 @@ export class CreativityGame {
 
       // 다음 퍼즐 버튼
       const nextBtn = document.createElement('button');
-      nextBtn.textContent = '다음 퍼즐 ▶';
-      nextBtn.style.cssText = `
-        display: block; width: 100%;
-        padding: 14px;
-        background: linear-gradient(135deg, #FB923C, #EA580C);
-        border: none; border-radius: 16px;
-        color: #fff; font-size: 1rem; font-weight: 900;
-        box-shadow: 0 4px 20px rgba(234,88,12,0.50);
-        cursor: pointer; margin-bottom: 10px;
-        touch-action: manipulation;
-        transition: transform 100ms;
-      `;
+      nextBtn.textContent = '다음 퍼즐';
+      nextBtn.className = 'result-btn result-btn--primary';
+      nextBtn.style.marginBottom = '10px';
       nextBtn.addEventListener('click', () => {
         overlay.remove();
         const updatedMeta = saveService.getCreativityMeta();
@@ -758,26 +746,12 @@ export class CreativityGame {
         this.levelConfig = newConfig;
         this._reset(newConfig);
       });
-      nextBtn.addEventListener('pointerdown', () => { nextBtn.style.transform = 'scale(0.95)'; });
-      nextBtn.addEventListener('pointerup', () => { nextBtn.style.transform = ''; });
       card.appendChild(nextBtn);
 
       const menuBtn = document.createElement('button');
-      menuBtn.textContent = '🏠 메뉴로';
-      menuBtn.style.cssText = `
-        display: block; width: 100%;
-        padding: 14px;
-        background: rgba(255,255,255,0.12);
-        border: 1.5px solid rgba(255,255,255,0.25);
-        border-radius: 16px;
-        color: #fff; font-size: 1rem; font-weight: 700;
-        cursor: pointer;
-        touch-action: manipulation;
-        transition: transform 100ms;
-      `;
+      menuBtn.textContent = '메뉴로';
+      menuBtn.className = 'result-btn result-btn--ghost';
       menuBtn.addEventListener('click', () => this._exitToMenu());
-      menuBtn.addEventListener('pointerdown', () => { menuBtn.style.transform = 'scale(0.95)'; });
-      menuBtn.addEventListener('pointerup', () => { menuBtn.style.transform = ''; });
       card.appendChild(menuBtn);
 
       // 레벨업 모달 (결과 카드 후 1000ms 뒤)
@@ -800,17 +774,9 @@ export class CreativityGame {
       card.appendChild(failSub);
 
       const retryBtn = document.createElement('button');
-      retryBtn.textContent = '🔄 다시 하기';
-      retryBtn.style.cssText = `
-        display: block; width: 100%;
-        padding: 14px;
-        background: linear-gradient(135deg, #FB923C, #EA580C);
-        border: none; border-radius: 16px;
-        color: #fff; font-size: 1rem; font-weight: 900;
-        box-shadow: 0 4px 20px rgba(234,88,12,0.50);
-        cursor: pointer; margin-bottom: 10px;
-        touch-action: manipulation;
-      `;
+      retryBtn.textContent = '다시 하기';
+      retryBtn.className = 'result-btn result-btn--primary';
+      retryBtn.style.marginBottom = '10px';
       retryBtn.addEventListener('click', () => {
         overlay.remove();
         if (this.levelConfig) this._reset(this.levelConfig);
@@ -818,17 +784,8 @@ export class CreativityGame {
       card.appendChild(retryBtn);
 
       const menuBtn = document.createElement('button');
-      menuBtn.textContent = '🏠 메뉴로';
-      menuBtn.style.cssText = `
-        display: block; width: 100%;
-        padding: 14px;
-        background: rgba(255,255,255,0.12);
-        border: 1.5px solid rgba(255,255,255,0.25);
-        border-radius: 16px;
-        color: #fff; font-size: 1rem; font-weight: 700;
-        cursor: pointer;
-        touch-action: manipulation;
-      `;
+      menuBtn.textContent = '메뉴로';
+      menuBtn.className = 'result-btn result-btn--ghost';
       menuBtn.addEventListener('click', () => this._exitToMenu());
       card.appendChild(menuBtn);
     }

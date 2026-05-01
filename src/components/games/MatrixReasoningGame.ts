@@ -252,9 +252,9 @@ export class MatrixReasoningGame {
 
     this.el.innerHTML = `
       <div class="mr-header">
-        <button class="mr-back-btn" aria-label="back">
+        <button class="mr-back-btn game-exit-btn" aria-label="back">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-            <path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
         <div class="mr-progress" id="mr-progress">0 / ${cfg.totalRounds}</div>
@@ -466,8 +466,8 @@ export class MatrixReasoningGame {
       <div class="mr-result-title">${t(titleKey)}</div>
       <div class="mr-result-score">${scoreText}</div>
       <div class="mr-result-btns">
-        <button class="mr-result-btn mr-result-btn--retry">${t('matrix.result.retry')}</button>
-        <button class="mr-result-btn mr-result-btn--menu">${t('matrix.result.menu')}</button>
+        <button class="result-btn result-btn--ghost mr-result-btn--retry">${t('matrix.result.retry')}</button>
+        <button class="result-btn result-btn--ghost mr-result-btn--menu">${t('matrix.result.menu')}</button>
       </div>
     `;
 

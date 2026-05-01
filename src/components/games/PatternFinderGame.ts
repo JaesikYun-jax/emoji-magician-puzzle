@@ -11,6 +11,7 @@
  */
 
 import { appRouter } from '../../router/AppRouter';
+import { confirmExit } from '../../utils/confirmExit';
 import { generatePatternSequence, calcPatternStars } from '../../systems/math/patternFinderGenerator';
 import type { PatternSequence } from '../../systems/math/patternFinderGenerator';
 import type { PatternLevelConfig } from '../../game-data/patternFinderLevels';
@@ -155,21 +156,17 @@ export class PatternFinderGame {
     hud.style.cssText = `
       position: relative; z-index: 10;
       width: 100%; max-width: 480px;
-      padding: 10px 16px 0;
+      padding: calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;
       display: flex; align-items: center; justify-content: space-between;
       flex-shrink: 0; box-sizing: border-box;
     `;
 
     const homeBtn = document.createElement('button');
-    homeBtn.textContent = '🏠';
-    homeBtn.style.cssText = `
-      background: rgba(255,255,255,0.15);
-      border: 1.5px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      width: 38px; height: 38px;
-      color: #fff; font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
-    `;
-    homeBtn.addEventListener('click', () => this._exitToMenu());
+    homeBtn.className = 'game-exit-btn';
+    homeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    homeBtn.addEventListener('pointerdown', () => {
+      confirmExit(() => this._exitToMenu());
+    });
     hud.appendChild(homeBtn);
 
     this.progressEl = document.createElement('div');
@@ -443,7 +440,7 @@ export class PatternFinderGame {
   private _renderTimer(): void {
     const secs = Math.ceil(this.timeRemaining);
     this.timerEl.textContent = `⏱ ${secs}초`;
-    this.timerEl.style.color = secs <= 10 ? '#FCA5A5' : '#fff';
+    this.timerEl.style.color = secs <= 10 ? 'var(--color-danger)' : '#fff';
     this.timerEl.style.borderColor = secs <= 10
       ? 'rgba(239,68,68,0.5)'
       : 'rgba(255,255,255,0.3)';
@@ -547,17 +544,9 @@ export class PatternFinderGame {
 
     // 다시 하기 버튼
     const retryBtn = document.createElement('button');
-    retryBtn.textContent = '🔄 다시 하기';
-    retryBtn.style.cssText = `
-      display: block; width: 100%;
-      padding: 14px;
-      background: rgba(255,255,255,0.20);
-      border: 1.5px solid rgba(255,255,255,0.35);
-      border-radius: 16px;
-      color: #fff; font-size: 1rem; font-weight: 700;
-      cursor: pointer; margin-bottom: 12px;
-      touch-action: manipulation;
-    `;
+    retryBtn.textContent = '다시 하기';
+    retryBtn.className = 'result-btn result-btn--ghost';
+    retryBtn.style.marginBottom = '12px';
     retryBtn.addEventListener('click', () => {
       overlay.remove();
       this._reset(cfg);
@@ -567,18 +556,8 @@ export class PatternFinderGame {
 
     // 메뉴로 버튼
     const menuBtn = document.createElement('button');
-    menuBtn.textContent = '🏠 메뉴로';
-    menuBtn.style.cssText = `
-      display: block; width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.85));
-      border: none;
-      border-radius: 16px;
-      color: #fff; font-size: 1rem; font-weight: 900;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(245,158,11,0.45);
-      touch-action: manipulation;
-    `;
+    menuBtn.textContent = '메뉴로';
+    menuBtn.className = 'result-btn result-btn--ghost';
     menuBtn.addEventListener('click', () => this._exitToMenu());
     card.appendChild(menuBtn);
 
