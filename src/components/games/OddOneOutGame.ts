@@ -135,7 +135,7 @@ const OOO_STYLES = `
 }
 #odd-one-out-game .ooo-shape-cell.wrong {
   background: rgba(239,68,68,0.40); border-color: #EF4444;
-  animation: mr-shake 280ms ease;
+  animation: ooo-shake 280ms ease;
 }
 #odd-one-out-game .ooo-shape-cell.dimmed {
   opacity: 0.35; transform: scale(0.92);
@@ -164,7 +164,7 @@ const OOO_STYLES = `
   position: absolute; inset: 0;
   background: rgba(4,47,46,0.85); backdrop-filter: blur(8px);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; z-index: 10; animation: mr-result-in 400ms ease;
+  gap: 16px; z-index: 10; animation: ooo-result-in 400ms ease;
 }
 #odd-one-out-game .ooo-result-stars { display: flex; gap: 12px; font-size: 40px; }
 #odd-one-out-game .ooo-result-title { font-size: 22px; font-weight: 700; color: #fff; }
@@ -192,12 +192,12 @@ const OOO_STYLES = `
   45%  { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
-@keyframes mr-shake {
+@keyframes ooo-shake {
   0%, 100% { transform: translateX(0); }
   25%       { transform: translateX(-8px); }
   75%       { transform: translateX(8px); }
 }
-@keyframes mr-result-in {
+@keyframes ooo-result-in {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
@@ -278,9 +278,9 @@ export class OddOneOutGame {
 
     this.el.innerHTML = `
       <div class="ooo-header">
-        <button class="ooo-back-btn" aria-label="back">
+        <button class="ooo-back-btn game-exit-btn" aria-label="back">
           <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-            <path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
         <div class="ooo-progress" id="ooo-progress">0 / ${cfg.totalRounds}</div>
@@ -503,8 +503,8 @@ export class OddOneOutGame {
       <div class="ooo-result-title">${t(titleKey)}</div>
       <div class="ooo-result-score">${scoreText}</div>
       <div class="ooo-result-btns">
-        <button class="ooo-result-btn--retry">${t('oddone.result.retry')}</button>
-        <button class="ooo-result-btn--menu">${t('oddone.result.menu')}</button>
+        <button class="result-btn result-btn--ghost ooo-result-btn--retry">${t('oddone.result.retry')}</button>
+        <button class="result-btn result-btn--ghost ooo-result-btn--menu">${t('oddone.result.menu')}</button>
       </div>
     `;
 

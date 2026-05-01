@@ -10,6 +10,10 @@ interface ResultData {
   maxLevelId: number;
   accuracy?: number;   // 0~100 정수
   timeUsed?: number;   // 초 단위
+  titleKey?: string;   // 결과 화면 제목 i18n 키 (없으면 기본값)
+  subjectGrad?: string; // 종목별 그라디언트 CSS 값 (없으면 보라 기본값)
+  statLabels?: { a?: string; b?: string; c?: string }; // 통계 라벨 커스터마이즈
+  nextFn?: () => void; // 다음 레벨 버튼 (있을 때만 표시)
 }
 
 const RESULT_STYLE = `
@@ -142,7 +146,7 @@ export class ResultScreen {
   show(data: ResultData): void {
     this.hide();
 
-    const { cleared, score, stars, levelId, pairsCompleted, maxLevelId, accuracy, timeUsed } = data;
+    const { cleared, score, stars, levelId, pairsCompleted, maxLevelId, accuracy, timeUsed, subjectGrad, statLabels, nextFn } = data;
 
     if (!document.getElementById('result-style')) {
       const style = document.createElement('style');
@@ -156,7 +160,11 @@ export class ResultScreen {
     const eyebrowText = cleared
       ? `Level Cleared · Lv.${levelId}`
       : t('result.timeoverMessage', { n: String(pairsCompleted ?? 0) });
-    const hasNext = cleared && levelId > 0 && levelId < maxLevelId;
+    const hasNext = nextFn != null || (cleared && levelId > 0 && levelId < maxLevelId);
+
+    const labelA = statLabels?.a ?? t('result.finalScore');
+    const labelB = statLabels?.b ?? '정답률';
+    const labelC = statLabels?.c ?? '시간';
 
     const confettiSvg = `
       <svg class="rs-confetti" viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice">
@@ -180,15 +188,15 @@ export class ResultScreen {
         <div class="rs-stat-card">
           <div class="rs-stat-grid">
             <div class="rs-stat">
-              <div class="rs-stat__label">${t('result.finalScore')}</div>
+              <div class="rs-stat__label">${labelA}</div>
               <div class="sb-display rs-stat__val">${score.toLocaleString()}</div>
             </div>
             <div class="rs-stat">
-              <div class="rs-stat__label">정답률</div>
+              <div class="rs-stat__label">${labelB}</div>
               <div class="sb-display rs-stat__val">${accuracy != null ? `${accuracy}%` : `${stars}/3별`}</div>
             </div>
             <div class="rs-stat">
-              <div class="rs-stat__label">시간</div>
+              <div class="rs-stat__label">${labelC}</div>
               <div class="sb-display rs-stat__val">${timeUsed != null ? `${Math.floor(timeUsed / 60)}:${String(timeUsed % 60).padStart(2, '0')}` : `Lv.${levelId}`}</div>
             </div>
           </div>
@@ -209,14 +217,22 @@ export class ResultScreen {
       this.bus.emit('ui:retry', {});
     });
     el.querySelector('.rs-next')?.addEventListener('click', () => {
-      const nextId = String(levelId + 1);
       this.hide();
-      this.bus.emit('ui:nextLevel', { levelId: nextId });
+      if (nextFn) {
+        nextFn();
+      } else {
+        const nextId = String(levelId + 1);
+        this.bus.emit('ui:nextLevel', { levelId: nextId });
+      }
     });
     el.querySelector('.rs-menu')?.addEventListener('click', () => {
       this.hide();
       this.bus.emit('ui:mainMenu', {});
     });
+
+    if (subjectGrad) {
+      el.style.setProperty('--result-grad', subjectGrad);
+    }
 
     this.container.appendChild(el);
     this.el = el;

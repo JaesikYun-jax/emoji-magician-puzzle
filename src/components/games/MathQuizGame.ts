@@ -74,17 +74,9 @@ export class MathQuizGame {
     `;
 
     const homeBtn = document.createElement('button');
-    homeBtn.textContent = '🏠';
-    homeBtn.style.cssText = `
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      width: 40px; height: 40px;
-      color: white;
-      font-size: 1.2rem;
-      cursor: pointer;
-    `;
-    homeBtn.addEventListener('click', () => {
+    homeBtn.className = 'game-exit-btn';
+    homeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    homeBtn.addEventListener('pointerdown', () => {
       confirmExit(() => this.exitToMenu());
     });
     this.hudEl.appendChild(homeBtn);
