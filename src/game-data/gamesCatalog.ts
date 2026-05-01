@@ -207,6 +207,47 @@ export const GAMES_CATALOG: GameDefinition[] = [
       ],
     },
   },
+  {
+    id: 'creativity-reasoning',
+    subjectId: 'creativity',
+    labelKo: '추리 5문',
+    labelEn: 'Reasoning Five',
+    descriptionKo: '공통점과 다른 하나를 추리해요',
+    descriptionEn: 'Reason out commonalities and odd-ones-out',
+    icon: '🔍',
+    routeId: 'game-reasoning',
+    isDefault: false,
+    difficultySettings: {
+      paramKey: 'difficulty',
+      panelLabel: '난이도 선택',
+      options: [
+        { id: 'easy',   label: '쉬움' },
+        { id: 'normal', label: '보통' },
+        { id: 'hard',   label: '어려움' },
+      ],
+    },
+  },
+  // reasoning 분야
+  {
+    id: 'reasoning-five',
+    subjectId: 'reasoning',
+    labelKo: '추리 5문',
+    labelEn: 'Reasoning Five',
+    descriptionKo: '공통점과 다른 하나를 추리해요',
+    descriptionEn: 'Reason out commonalities and odd-ones-out',
+    icon: '🔍',
+    routeId: 'game-reasoning',
+    isDefault: true,
+    difficultySettings: {
+      paramKey: 'difficulty',
+      panelLabel: '난이도 선택',
+      options: [
+        { id: 'easy',   label: '쉬움' },
+        { id: 'normal', label: '보통' },
+        { id: 'hard',   label: '어려움' },
+      ],
+    },
+  },
 ];
 
 export function getGamesBySubject(subjectId: string): GameDefinition[] {

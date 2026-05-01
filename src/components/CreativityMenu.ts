@@ -9,16 +9,6 @@ import { getCreativityRank } from '../game-data/creativityLevels';
 import { t } from '../i18n';
 import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
-import { PlacementTest } from './PlacementTest';
-import type { PlacementQuestion } from './PlacementTest';
-
-const CREATIVITY_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
-  { id: 'cp1', questionText: '다음 중 "과일"과 관계없는 것은?', choices: ['사과', '바나나', '당근', '포도'], correctIndex: 2, emoji: '🍎' },
-  { id: 'cp2', questionText: '바다, 강, 호수, 수영장의 공통점은?', choices: ['모두 짜다', '모두 물이 있다', '모두 크다', '모두 차갑다'], correctIndex: 1, emoji: '🌊' },
-  { id: 'cp3', questionText: '"개, 고양이, 토끼, 닭" 에서 다른 하나는?', choices: ['개', '고양이', '닭', '토끼'], correctIndex: 2, emoji: '🐾' },
-  { id: 'cp4', questionText: '봄, 여름, 가을, 겨울의 공통점은?', choices: ['모두 춥다', '모두 계절이다', '모두 덥다', '모두 짧다'], correctIndex: 1, emoji: '🍂' },
-  { id: 'cp5', questionText: '피아노, 기타, 바이올린, 축구공 중 다른 하나는?', choices: ['피아노', '기타', '바이올린', '축구공'], correctIndex: 3, emoji: '🎵' },
-];
 
 const CREATIVITY_HOME_STYLE = `
 #creativity-home {
@@ -370,9 +360,9 @@ export class CreativityMenu {
 
       <div class="ch-content">
         <div class="ch-info-card">
-          <div class="ch-info-mark" aria-hidden="true">🧱</div>
-          <span class="ch-info-title">창의 <em>연상 퀴즈</em></span>
-          <span class="ch-info-sub">단어를 4개 그룹으로 연결하는 연상 퍼즐<br/>창의력과 어휘력을 함께 키워요</span>
+          <div class="ch-info-mark" aria-hidden="true">💡</div>
+          <span class="ch-info-title">창의 <em>퀴즈</em></span>
+          <span class="ch-info-sub">벽퍼즐로 단어를 묶고, 추리로 공통점을 찾아요<br/>창의력과 어휘력을 함께 키워요</span>
           <div class="ch-info-stats">
             <div class="ch-info-stat">
               <span class="ch-info-stat-num">${meta.totalClears}회</span>
@@ -402,23 +392,7 @@ export class CreativityMenu {
     });
 
     el.querySelector('#ch-start-btn')!.addEventListener('pointerdown', () => {
-      if (!this.saveService.isPlacementDone('creativity')) {
-        const placement = new PlacementTest(this.container, this.router, this.saveService);
-        placement.show({
-          subjectId: 'creativity',
-          subjectLabelKo: '창의',
-          subjectLabelEn: 'Creativity',
-          questions: CREATIVITY_PLACEMENT_QUESTIONS,
-          gradientCss: 'linear-gradient(165deg, #431407, #7C2D12, #C2410C)',
-          onComplete: (_score) => {
-            placement.hide();
-            this.router.navigate({ to: 'game-creativity', subject: 'creativity' });
-          },
-          onBack: () => { placement.hide(); },
-        });
-      } else {
-        this.router.navigate({ to: 'game-creativity', subject: 'creativity' });
-      }
+      this.router.navigate({ to: 'game-creativity', subject: 'creativity' });
     });
 
     this.container.appendChild(el);

@@ -21,11 +21,11 @@ describe('SubjectSelect — Sabak card grid', () => {
     vi.useRealTimers();
   });
 
-  it('renders 5 subject cards in canonical order', () => {
+  it('renders 6 subject cards in canonical order', () => {
     const cards = container.querySelectorAll<HTMLElement>('.ss-card');
-    expect(cards).toHaveLength(5);
+    expect(cards).toHaveLength(6);
     const ids = Array.from(cards).map(c => c.dataset['subject']);
-    expect(ids).toEqual(['math', 'english', 'korean', 'logic', 'creativity']);
+    expect(ids).toEqual(['math', 'english', 'korean', 'logic', 'creativity', 'reasoning']);
   });
 
   it('each card has icon + info + arrow', () => {

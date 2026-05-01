@@ -74,6 +74,7 @@ const SUBJECT_SELECT_STYLE = `
 #subject-select .ss-card[data-subject="korean"]     .ss-card__glow { background: #F43F5E; }
 #subject-select .ss-card[data-subject="logic"]      .ss-card__glow { background: #6366F1; }
 #subject-select .ss-card[data-subject="creativity"] .ss-card__glow { background: #F97316; }
+#subject-select .ss-card[data-subject="reasoning"]  .ss-card__glow { background: #14B8A6; }
 
 #subject-select .ss-card__icon {
   width: 58px; height: 58px; border-radius: 18px; background: #fff;
@@ -132,7 +133,7 @@ const SUBJECT_SELECT_STYLE = `
 `;
 
 interface SubjectCard {
-  id: 'math' | 'english' | 'korean' | 'logic' | 'creativity';
+  id: 'math' | 'english' | 'korean' | 'logic' | 'creativity' | 'reasoning';
   nameKey: string;
   subKey: string;
   glyph: string;
@@ -148,6 +149,7 @@ const SUBJECT_CARDS: SubjectCard[] = [
   { id: 'korean',     nameKey: 'subject.korean',     subKey: 'subject.korean.sub',     glyph: '📚', color: '#F43F5E', levels: 28, badge: 'NEW', disabled: true },
   { id: 'logic',      nameKey: 'subject.logic',      subKey: 'subject.logic.sub',      glyph: '🧩', color: '#6366F1', levels: 32 },
   { id: 'creativity', nameKey: 'subject.creativity', subKey: 'subject.creativity.sub', glyph: '🎨', color: '#F97316', levels: 24, badge: 'NEW' },
+  { id: 'reasoning', nameKey: 'subject.reasoning', subKey: 'subject.reasoning.sub', glyph: '🔍', color: '#14B8A6', levels: 30 },
 ];
 
 const ARROW_SVG = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
@@ -212,6 +214,7 @@ export class SubjectSelect {
         else if (subject === 'english')   this.router.navigate({ to: 'english-menu', subject: 'english' });
         else if (subject === 'logic')     this.router.navigate({ to: 'logic-menu', subject: 'logic' });
         else if (subject === 'creativity')this.router.navigate({ to: 'creativity-menu', subject: 'creativity' });
+        else if (subject === 'reasoning') this.router.navigate({ to: 'reasoning-menu', subject: 'reasoning' });
       });
     });
 
