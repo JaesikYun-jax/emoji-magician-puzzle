@@ -64,6 +64,7 @@ function getPraiseMessage(totalClears: number, streak: number): string {
 export class CreativityGame {
   private el: HTMLElement;
   private levelConfig: CreativityLevelConfig | null = null;
+  private forcedTier: 1 | 2 | 3 | 4 | 5 | null = null;
   private pathState: PathState | null = null;
   private timerId: ReturnType<typeof setInterval> | null = null;
   private timeRemaining = 0;
@@ -98,8 +99,9 @@ export class CreativityGame {
     this._buildUI();
   }
 
-  show(levelConfig: CreativityLevelConfig): void {
+  show(levelConfig: CreativityLevelConfig, forcedTier?: 1 | 2 | 3 | 4 | 5): void {
     this.levelConfig = levelConfig;
+    this.forcedTier = forcedTier ?? null;
     this.el.style.display = 'flex';
     if (levelConfig.id && levelConfig.id !== '__auto__') {
       saveService.addRecentCreativityPuzzleId(levelConfig.id);
@@ -751,7 +753,7 @@ export class CreativityGame {
       nextBtn.addEventListener('click', () => {
         overlay.remove();
         const updatedMeta = saveService.getCreativityMeta();
-        const newConfig = selectWallPuzzle(updatedMeta.totalClears, updatedMeta.recentPuzzleIds ?? [], updatedMeta.currentStreak ?? 0);
+        const newConfig = selectWallPuzzle(updatedMeta.totalClears, updatedMeta.recentPuzzleIds ?? [], updatedMeta.currentStreak ?? 0, this.forcedTier ?? undefined);
         saveService.addRecentCreativityPuzzleId(newConfig.id);
         this.levelConfig = newConfig;
         this._reset(newConfig);

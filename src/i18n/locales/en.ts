@@ -219,8 +219,27 @@ export const en = {
 
   // Creativity subject
   'subject.creativity': 'Creativity',
-  'subject.creativity.sub': 'One-Stroke Drawing · Path Puzzle',
-  'subject.creativity.detail': 'Draw a single path that visits<br>every cell exactly once!',
+  'subject.creativity.sub': 'Wall Puzzle · Reasoning Quiz',
+  'subject.creativity.detail': 'Group words and find what they share<br>to grow creativity and vocabulary!',
+
+  // Reasoning subject
+  'subject.reasoning': 'Reasoning',
+  'subject.reasoning.sub': 'Commonality · Odd One Out',
+  'subject.reasoning.detail': 'Find what words share in common<br>or spot the odd one out!',
+
+  // Reasoning menu
+  'reasoning.menu.infoTitle': 'Reasoning Quiz',
+  'reasoning.menu.infoSub': 'Find answers through commonalities and differences',
+
+  // Reasoning game strings
+  'reasoning.title': 'Reasoning Quiz',
+  'reasoning.commonality': 'What do they share?',
+  'reasoning.oddOneOut': 'Which is different?',
+  'reasoning.result.perfect': '🎊 Perfect!',
+  'reasoning.result.great': '⭐ Great job!',
+  'reasoning.result.keep': '😅 Try again!',
+  'reasoning.result.retry': '🔄 Try Again',
+  'reasoning.result.menu': '🏠 Reasoning Menu',
 
   // Logic game
   'logic.title': 'Pattern Sequence',
@@ -237,8 +256,8 @@ export const en = {
   'logic.timeOver': '⏰ Time Up!',
 
   // Creativity game
-  'creativity.title': 'One-Stroke Path',
-  'creativity.subtitle': 'Visit every cell exactly once!',
+  'creativity.title': 'Creativity Quiz',
+  'creativity.subtitle': 'Grow creativity and vocabulary through words!',
   'creativity.drag.hint': 'Tap a cell to trace the path',
   'creativity.complete': '🎉 Complete!',
   'creativity.invalid': "Can't go that way!",
@@ -356,8 +375,8 @@ export const en = {
   'logic.menu.infoSub': 'Find answers by reasoning through rules and patterns',
 
   // Creativity menu
-  'creativity.menu.infoTitle': 'Creative Association Quiz',
-  'creativity.menu.infoSub': 'Connect words into 4 groups in an association puzzle',
+  'creativity.menu.infoTitle': 'Creativity Quiz',
+  'creativity.menu.infoSub': 'Build vocabulary with wall puzzle and reasoning',
 
   // Matrix Reasoning
   'matrix.title': 'Matrix Reasoning',
@@ -448,4 +467,22 @@ export const en = {
   'badge.creativity.5': 'Wave Conqueror',
   'badge.creativity.6': 'Diamond Will',
   'badge.creativity.7': "Master's Crown",
+
+  // ── Admin ────────────────────────────────────────────────────────────────
+  'admin.title': 'Admin',
+  'admin.bankViewer': 'Question Bank Viewer',
+  'admin.tab.reasoning': 'Reasoning Five',
+  'admin.filter.all': 'All',
+  'admin.filter.easy': 'Easy',
+  'admin.filter.normal': 'Normal',
+  'admin.filter.hard': 'Hard',
+  'admin.col.id': 'ID',
+  'admin.col.kind': 'Type',
+  'admin.col.difficulty': 'Difficulty',
+  'admin.col.prompt': 'Question',
+  'admin.col.choices': 'Choices (correct ✓)',
+  'admin.col.correctIndex': 'Answer #',
+  'admin.kind.commonality': 'Commonality',
+  'admin.kind.oddOneOut': 'Odd One Out',
+  'admin.back': 'Back',
 };

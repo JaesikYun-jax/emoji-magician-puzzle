@@ -164,6 +164,10 @@ const HOME_B_STYLE = `
   background: linear-gradient(145deg, #C2410C 0%, #F97316 100%);
   box-shadow: 0 8px 32px rgba(194,65,12,0.45);
 }
+#home-b .hb-subject-card.reasoning {
+  background: linear-gradient(145deg, #115E59 0%, #14B8A6 100%);
+  box-shadow: 0 8px 32px rgba(20,184,166,0.45);
+}
 #home-b .hb-subject-card.korean {
   background: linear-gradient(145deg, #9F1239 0%, #F43F5E 100%);
   box-shadow: 0 8px 32px rgba(159,18,57,0.40);
@@ -274,11 +278,11 @@ const HOME_B_STYLE = `
 // ── 종목 카드 정의 ────────────────────────────────────────────────────────────
 
 interface SubjectCardDef {
-  id: 'math' | 'english' | 'logic' | 'creativity' | 'korean';
+  id: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning' | 'korean';
   emoji: string;
   nameKo: string;
   nameEn: string;
-  targetScreen: 'math-menu' | 'english-menu' | 'logic-menu' | 'creativity-menu' | null;
+  targetScreen: 'math-menu' | 'english-menu' | 'logic-menu' | 'creativity-menu' | 'reasoning-menu' | null;
   available: boolean;
 }
 
@@ -287,6 +291,7 @@ const SUBJECT_CARDS: SubjectCardDef[] = [
   { id: 'english',    emoji: '🔤', nameKo: '영어',      nameEn: 'English',    targetScreen: 'english-menu',    available: true  },
   { id: 'logic',      emoji: '🧩', nameKo: '논리',      nameEn: 'Logic',      targetScreen: 'logic-menu',      available: true  },
   { id: 'creativity', emoji: '🎨', nameKo: '창의',      nameEn: 'Creativity', targetScreen: 'creativity-menu', available: true  },
+  { id: 'reasoning',  emoji: '🔍', nameKo: '추리',      nameEn: 'Reasoning',  targetScreen: 'reasoning-menu',  available: true  },
   { id: 'korean',     emoji: '가나', nameKo: '국어',    nameEn: 'Korean',     targetScreen: null,              available: false },
 ];
 
@@ -446,6 +451,10 @@ export class HomeB {
         const stats = this.saveService.getCreativityStats();
         return { level: stats.playerLevel, stars: stats.totalClears };
       }
+      case 'reasoning': {
+        const p = this.saveService.getSubjectProgress('reasoning');
+        return { level: Math.max(1, p.level), stars: p.totalClears };
+      }
       default:
         return { level: 1, stars: 0 };
     }
@@ -466,6 +475,7 @@ export class HomeB {
              : card.id === 'english' ? 'english'
              : card.id === 'logic' ? 'logic'
              : card.id === 'creativity' ? 'creativity'
+             : card.id === 'reasoning' ? 'reasoning'
              : 'korean',
     });
   }

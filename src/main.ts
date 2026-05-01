@@ -19,6 +19,8 @@ import { EquationFillGame } from './components/games/EquationFillGame';
 import { PatternFinderGame } from './components/games/PatternFinderGame';
 import { LogicMenu } from './components/LogicMenu';
 import { CreativityMenu } from './components/CreativityMenu';
+import { ReasoningMenu } from './components/ReasoningMenu';
+import { ReasoningGame } from './components/games/ReasoningGame';
 import { LogicGame } from './components/games/LogicGame';
 import { CreativityGame } from './components/games/CreativityGame';
 import { EnglishGame } from './components/games/EnglishGame';
@@ -28,6 +30,7 @@ import { ArithmeticMenu } from './components/ArithmeticMenu';
 import { MatrixReasoningGame } from './components/games/MatrixReasoningGame';
 import { OddOneOutGame } from './components/games/OddOneOutGame';
 import { SentenceOrderingGame } from './components/games/SentenceOrderingGame';
+import { AdminPage } from './components/AdminPage';
 import { getMatrixLevel, getFirstMatrixLevelId } from './game-data/matrixReasoningLevels';
 import { getOddOneOutLevel, getFirstOddLevelId } from './game-data/oddOneOutLevels';
 import { appRouter } from './router/AppRouter';
@@ -80,6 +83,10 @@ const creativityContainer = document.createElement('div');
 creativityContainer.id = 'creativity-container';
 app.appendChild(creativityContainer);
 
+const reasoningContainer = document.createElement('div');
+reasoningContainer.id = 'reasoning-container';
+app.appendChild(reasoningContainer);
+
 const englishContainer = document.createElement('div');
 englishContainer.id = 'english-container';
 app.appendChild(englishContainer);
@@ -102,6 +109,7 @@ const logicGame = new LogicGame(logicContainer);
 const matrixGame = new MatrixReasoningGame(matrixContainer);
 const oddOneOutGame = new OddOneOutGame(oddOneOutContainer);
 const creativityGame = new CreativityGame(creativityContainer);
+const reasoningGame = new ReasoningGame(reasoningContainer, appRouter, saveService);
 const englishGame = new EnglishGame(englishContainer);
 const koreanGame = new KoreanGame(koreanContainer);
 const arithmeticGame = new ArithmeticGame(app);
@@ -117,12 +125,14 @@ const koreanMenu     = new KoreanMenu(app, appRouter);
 const englishMenu    = new EnglishMenu(app, appRouter, saveService);
 const logicMenu = new LogicMenu(app, appRouter, saveService);
 const creativityMenu = new CreativityMenu(app, appRouter, saveService);
+const reasoningMenu = new ReasoningMenu(app, appRouter, saveService);
 const arithmeticMenu = new ArithmeticMenu(app, appRouter);
 const levelTestMath  = new LevelTestMath(app);
 const levelTestEnglish = new LevelTestEnglish(app, appRouter, saveService);
 const levelIntro    = new LevelIntro(app, gameBus);
 const hud           = new HUD(app);
 const resultScreen  = new ResultScreen(app, gameBus);
+const adminPage     = new AdminPage(app, appRouter);
 
 // ── 5. 라우터 등록 ────────────────────────────────────────────────────────────
 appRouter.register('brand-home',         brandHome);
@@ -134,6 +144,12 @@ appRouter.register('korean-menu',        koreanMenu);
 appRouter.register('english-menu',       englishMenu);
 appRouter.register('logic-menu',         logicMenu);
 appRouter.register('creativity-menu',    creativityMenu);
+appRouter.register('reasoning-menu', reasoningMenu);
+appRouter.register('admin', adminPage);
+appRouter.register('game-reasoning', {
+  show() { reasoningGame.show(); },
+  hide() { reasoningGame.hide(); },
+});
 // 진단은 PlacementTest로 이전됨, 레거시 호환용
 appRouter.register('level-test-math',    levelTestMath);
 // 진단은 PlacementTest로 이전됨, 레거시 호환용
@@ -352,9 +368,15 @@ appRouter.register('game-odd-one-out', {
 appRouter.register('game-creativity', {
   show() {
     const meta = saveService.getCreativityMeta();
-    const cfg  = selectWallPuzzle(meta.totalClears, meta.recentPuzzleIds ?? []);
+    const diff = appRouter.getState().difficulty;
+    const forcedTier: 1 | 2 | 3 | 4 | 5 | undefined =
+      diff === 'easy'   ? 2 :
+      diff === 'normal' ? 3 :
+      diff === 'hard'   ? 4 :
+      undefined;
+    const cfg = selectWallPuzzle(meta.totalClears, meta.recentPuzzleIds ?? [], 0, forcedTier);
     saveService.addRecentCreativityPuzzleId(cfg.id);
-    creativityGame.show(cfg);
+    creativityGame.show(cfg, forcedTier);
   },
   hide() {
     creativityGame.hide();
@@ -500,8 +522,13 @@ gameBus.on('ui:mainMenu', () => {
 });
 
 // ── 13. 초기 화면 ─────────────────────────────────────────────────────────────
-// 항상 brand-home 랜딩부터 시작. CTA 버튼 클릭 시 프로필 유무에 따라 분기.
-appRouter.navigate({ to: 'brand-home', replace: true });
+// #admin 해시로 접근하면 관리자 페이지를 바로 표시
+if (window.location.hash === '#admin') {
+  appRouter.navigate({ to: 'admin', replace: true });
+} else {
+  // 일반 진입: brand-home 랜딩부터 시작. CTA 버튼 클릭 시 프로필 유무에 따라 분기.
+  appRouter.navigate({ to: 'brand-home', replace: true });
+}
 
 // ── 14. 브라우저/Android 뒤로가기 버튼 처리 ───────────────────────────────────
 // 초기 synthetic 히스토리 항목 추가 — popstate 트리거를 위한 앵커
@@ -517,6 +544,7 @@ const GAME_SCREENS = new Set([
   'game-matrix-reasoning',
   'game-odd-one-out',
   'game-sentence-order',
+  'game-reasoning',
   'level-intro', // 수박 게임 카운트다운 포함
 ]);
 

@@ -1,7 +1,7 @@
 import type { EnglishCategory, EnglishDifficulty } from './english/categories';
 export type { EnglishCategory, EnglishDifficulty };
 
-export type SubjectId = 'math' | 'english' | 'korean' | 'logic' | 'creativity';
+export type SubjectId = 'math' | 'english' | 'korean' | 'logic' | 'creativity' | 'reasoning';
 
 // ── 프로필 ──────────────────────────────────────────────────────────────────
 
@@ -138,6 +138,8 @@ export interface SaveData {
     currentLevelIdx?: number;
     progress?: SubjectProgressData;
   };
+  /** v7+ : 추리 종목 저장 */
+  reasoning?: { levelProgress: Record<string, LevelProgress>; streak?: number; clearCount?: number; progress?: SubjectProgressData };
 }
 
 export const SUBJECTS: SubjectConfig[] = [
@@ -184,6 +186,15 @@ export const SUBJECTS: SubjectConfig[] = [
     iconPath: '/src/assets/svg/icon-creativity.svg',
     colorPrimary: '#F97316',
     colorLight: '#FFEDD5',
+    isAvailable: true,
+  },
+  {
+    id: 'reasoning',
+    nameKo: '추리',
+    nameEn: 'Reasoning',
+    iconPath: '/src/assets/svg/icon-reasoning.svg',
+    colorPrimary: '#14B8A6',
+    colorLight: '#CCFBF1',
     isAvailable: true,
   },
 ];

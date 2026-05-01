@@ -34,8 +34,9 @@ export function selectWallPuzzle(
   totalClears: number,
   recentPuzzleIds: string[],
   currentStreak = 0,
+  forcedTier?: 1 | 2 | 3 | 4 | 5,
 ): WallPuzzle {
-  const tier = getTierForClears(totalClears, currentStreak);
+  const tier = forcedTier ?? getTierForClears(totalClears, currentStreak);
   let pool: WallPuzzle[] = ALL_WALL_PUZZLES.filter(p => p.tier === tier);
 
   // Tier 5 퍼즐이 없으면 Tier 4로 폴백

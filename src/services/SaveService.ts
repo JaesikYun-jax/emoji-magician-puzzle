@@ -70,8 +70,9 @@ const SAVE_KEY = 'sabakgam-save-v1';
  * v3 → v4 : creativity 자동 진행 방식 (totalClears, consecutiveClears, currentLevelIdx)
  * v4 → v5 : 아이 프로필 (nickname + ageGroup) 추가
  * v5 → v6 : 각 분야에 SubjectProgressData (XP/레벨/진단) 추가
+ * v6 → v7 : 추리(reasoning) 종목 필드 추가
  */
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 
 function getDefaultUnlockedMathIds(): string[] {
   const ops = ['addition', 'subtraction', 'multiplication'] as const;
@@ -100,6 +101,7 @@ function createDefaultSaveData(): SaveData {
     logic: { levelProgress: logicProgress, streak: 0, clearCount: 0 },
     creativity: { levelProgress: creativityProgress, playerLevel: 1, totalClears: 0, streak: 0 },
     profile: null,
+    reasoning: { levelProgress: { 'reasoning-1': { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true } }, streak: 0, clearCount: 0 },
   };
 }
 
@@ -166,6 +168,12 @@ export class SaveService {
       }
       if (parsed.creativity.meta && parsed.creativity.meta.maxDifficultyTier == null) {
         parsed.creativity.meta.maxDifficultyTier = 0;
+      }
+
+      // reasoning 필드 보장
+      if (!parsed.reasoning) parsed.reasoning = { levelProgress: {}, streak: 0, clearCount: 0 };
+      if (!parsed.reasoning.levelProgress['reasoning-1']) {
+        parsed.reasoning.levelProgress['reasoning-1'] = { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true };
       }
 
       return parsed;
@@ -524,16 +532,17 @@ export class SaveService {
   }
 
   /** 분야의 SubjectProgressData를 가져옴. 없으면 기본값 반환 */
-  getSubjectProgress(subjectId: 'math' | 'english' | 'logic' | 'creativity'): SubjectProgressData {
+  getSubjectProgress(subjectId: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning'): SubjectProgressData {
     const data = this.data;
     if (subjectId === 'logic') return data.logic?.progress ?? this._defaultProgress();
     if (subjectId === 'creativity') return data.creativity?.progress ?? this._defaultProgress();
+    if (subjectId === 'reasoning') return data.reasoning?.progress ?? this._defaultProgress();
     return data[subjectId].progress ?? this._defaultProgress();
   }
 
   /** 분야의 SubjectProgressData를 업데이트 */
   updateSubjectProgress(
-    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    subjectId: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning',
     updater: (prev: SubjectProgressData) => SubjectProgressData,
   ): void {
     const prev = this.getSubjectProgress(subjectId);
@@ -548,13 +557,16 @@ export class SaveService {
     } else if (subjectId === 'creativity') {
       if (!this.data.creativity) this.data.creativity = { levelProgress: {} };
       this.data.creativity.progress = next;
+    } else if (subjectId === 'reasoning') {
+      if (!this.data.reasoning) this.data.reasoning = { levelProgress: {} };
+      this.data.reasoning.progress = next;
     }
     this.save();
   }
 
   /** XP 획득 + 클리어 기록 (게임 종료 시 호출) */
   recordSubjectClear(
-    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    subjectId: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning',
     xpGained: number,
     isCorrect: boolean,
   ): SubjectProgressData {
@@ -573,7 +585,7 @@ export class SaveService {
 
   /** 진단(Placement) 완료 기록 */
   recordPlacementDone(
-    subjectId: 'math' | 'english' | 'logic' | 'creativity',
+    subjectId: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning',
     correctCount: number,
     totalQuestions: number,
   ): void {
@@ -587,7 +599,7 @@ export class SaveService {
   }
 
   /** 진단 완료 여부 */
-  isPlacementDone(subjectId: 'math' | 'english' | 'logic' | 'creativity'): boolean {
+  isPlacementDone(subjectId: 'math' | 'english' | 'logic' | 'creativity' | 'reasoning'): boolean {
     return this.getSubjectProgress(subjectId).placementDone;
   }
 }

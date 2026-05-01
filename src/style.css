@@ -51,6 +51,15 @@
   --shadow-creativity: 0 8px 32px rgba(249, 115, 22, 0.45);
   --shadow-creativity-sm: 0 4px 16px rgba(249, 115, 22, 0.35);
 
+  /* Reasoning (추리 — 청록) */
+  --color-reasoning-700: #0F766E;
+  --color-reasoning-600: #14B8A6;
+  --color-reasoning-400: #2DD4BF;
+  --grad-reasoning: linear-gradient(135deg, #14B8A6, #2DD4BF);
+  --grad-reasoning-deep: linear-gradient(165deg, #134E4A 0%, #0F766E 55%, #14B8A6 100%);
+  --shadow-reasoning: 0 8px 32px rgba(20, 184, 166, 0.45);
+  --shadow-reasoning-sm: 0 4px 16px rgba(20, 184, 166, 0.35);
+
   /* 공통 */
   --color-gold: #FBBF24;
   --color-danger: #EF4444;
@@ -99,6 +108,10 @@
   --creative-700: #C2410C;
   --creative-500: #F97316;
   --creative-300: #FDBA74;
+
+  --reasoning-700: #0F766E;
+  --reasoning-500: #14B8A6;
+  --reasoning-300: #5EEAD4;
 
   --gold: #FBBF24;
   --lime: #D9F99D;
