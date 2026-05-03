@@ -147,6 +147,7 @@ export class AppRouter {
   showScreen(id: ScreenId): void {
     const screen = this.screens[id];
     if (screen) screen.show();
+    document.body.dataset['screen'] = id;
   }
 
   hideScreen(id: ScreenId): void {

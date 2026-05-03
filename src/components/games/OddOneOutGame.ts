@@ -360,6 +360,10 @@ export class OddOneOutGame {
 
       item.appendChild(cell);
       item.appendChild(badge);
+      // E2E 테스트용 DEV-only 정답 마킹
+      if (import.meta.env.DEV && i === problem.oddIndex) {
+        item.dataset['correct'] = 'true';
+      }
       item.addEventListener('pointerdown', () => this._onShapeSelected(i, problem, cell, rowEl));
       rowEl.appendChild(item);
     });

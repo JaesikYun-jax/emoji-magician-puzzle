@@ -434,6 +434,10 @@ export class EnglishGame {
       btn.className = 'eng-choice-btn';
       btn.textContent = choice;
       btn.dataset['idx'] = String(idx);
+      // E2E 테스트용 DEV-only 정답 마킹
+      if (import.meta.env.DEV && idx === q.correctIdx) {
+        btn.dataset['correct'] = 'true';
+      }
       btn.style.cssText = `
         padding: 18px 12px;
         border-radius: 18px;
@@ -506,6 +510,8 @@ export class EnglishGame {
     this.el.style.overflowY = 'auto';
 
     const overlay = document.createElement('div');
+    overlay.dataset['gameResult'] = 'true';
+    overlay.dataset['cleared'] = pct >= 50 ? 'true' : 'false';
     overlay.style.cssText = `
       display: flex;
       flex-direction: column;
