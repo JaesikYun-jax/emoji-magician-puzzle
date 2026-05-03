@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { REASONING_QUESTIONS, pickRound } from '../../game-data/reasoningQuestions';
 
 describe('REASONING_QUESTIONS pool integrity', () => {
-  it('should have exactly 30 questions', () => {
-    expect(REASONING_QUESTIONS).toHaveLength(30);
+  it('should have at least 30 questions', () => {
+    expect(REASONING_QUESTIONS.length).toBeGreaterThanOrEqual(30);
   });
 
   it('each question should have exactly 4 choices', () => {
@@ -24,14 +24,14 @@ describe('REASONING_QUESTIONS pool integrity', () => {
     expect(uniqueIds.size).toBe(ids.length);
   });
 
-  it('should have 15 commonality questions', () => {
+  it('should have at least 15 commonality questions', () => {
     const count = REASONING_QUESTIONS.filter(q => q.kind === 'commonality').length;
-    expect(count).toBe(15);
+    expect(count).toBeGreaterThanOrEqual(15);
   });
 
-  it('should have 15 oddOneOut questions', () => {
+  it('should have at least 15 oddOneOut questions', () => {
     const count = REASONING_QUESTIONS.filter(q => q.kind === 'oddOneOut').length;
-    expect(count).toBe(15);
+    expect(count).toBeGreaterThanOrEqual(15);
   });
 
   it('each question should have a non-empty prompt', () => {

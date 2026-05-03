@@ -62,6 +62,7 @@ export class ReasoningGame {
     if (this.difficulty === 'easy')   return '쉬움';
     if (this.difficulty === 'normal') return '보통';
     if (this.difficulty === 'hard')   return '어려움';
+    if (this.difficulty === 'expert') return '최상급';
     return '';
   }
 
@@ -86,6 +87,17 @@ export class ReasoningGame {
       ">
         <div style="text-align:center; margin-bottom:24px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <button id="rg-exit" style="
+              background:rgba(255,255,255,0.15);
+              border:1px solid rgba(255,255,255,0.25);
+              border-radius:8px;
+              color:#fff;
+              font-size:14px;
+              padding:4px 10px;
+              cursor:pointer;
+              font-family:inherit;
+              line-height:1;
+            ">✕</button>
             <span style="font-size:11px;opacity:0.65;letter-spacing:1px;text-transform:uppercase;">
               추리 퀴즈${diffLabel ? ` · ${diffLabel}` : ''}
             </span>
@@ -136,6 +148,18 @@ export class ReasoningGame {
         const chosen = parseInt((e.currentTarget as HTMLElement).dataset['index'] ?? '0', 10);
         this._onChoose(chosen);
       });
+    });
+
+    this.el.querySelector('#rg-exit')?.addEventListener('pointerdown', () => {
+      if (confirm('퀴즈를 종료하고 메뉴로 돌아갈까요?')) {
+        this.hide();
+        const originSubject = this.router.getState().subject;
+        if (originSubject === 'creativity') {
+          this.router.navigate({ to: 'creativity-menu', subject: 'creativity', replace: true });
+        } else {
+          this.router.navigate({ to: 'reasoning-menu', subject: 'reasoning', replace: true });
+        }
+      }
     });
   }
 

@@ -6,10 +6,11 @@
  *  easy   : 직관적인 공통점/차이점, 초등 저학년 수준
  *  normal : 개념적 분류가 필요한 문제, 초등 중학년 수준
  *  hard   : 혼동 유발 보기 포함, 초등 고학년~중학생 수준
+ *  expert : 과학/사회 개념 기반, 중학생 이상 수준
  */
 
 export type ReasoningKind = 'commonality' | 'oddOneOut';
-export type ReasoningDifficulty = 'easy' | 'normal' | 'hard';
+export type ReasoningDifficulty = 'easy' | 'normal' | 'hard' | 'expert';
 
 export interface ReasoningQuestion {
   id: string;
@@ -214,6 +215,190 @@ export const REASONING_BANK: ReasoningQuestion[] = [
     id: 'oo-15', kind: 'oddOneOut', difficulty: 'hard',
     prompt: '사과, 배, 수박, 당근 중 과일이 아닌 것은?',
     choices: ['사과', '배', '수박', '당근'],
+    correctIndex: 3,
+  },
+
+  // ── 추가 easy 공통점 ×3 ──────────────────────────────────────────────────
+  {
+    id: 'co-e01', kind: 'commonality', difficulty: 'easy',
+    prompt: '신발, 양말, 슬리퍼, 부츠의 공통점은?',
+    choices: ['모두 가죽이다', '모두 발에 신는 것이다', '모두 비싸다', '모두 따뜻하다'],
+    correctIndex: 1,
+  },
+  {
+    id: 'co-e02', kind: 'commonality', difficulty: 'easy',
+    prompt: '강아지, 고양이, 새, 물고기의 공통점은?',
+    choices: ['모두 털이 있다', '모두 날 수 있다', '모두 동물이다', '모두 소리를 낸다'],
+    correctIndex: 2,
+  },
+  {
+    id: 'co-e03', kind: 'commonality', difficulty: 'easy',
+    prompt: '사막, 초원, 밀림, 극지방의 공통점은?',
+    choices: ['모두 덥다', '모두 사람이 산다', '모두 지구의 자연환경이다', '모두 동물이 없다'],
+    correctIndex: 2,
+  },
+
+  // ── 추가 easy 다른 하나 ×3 ───────────────────────────────────────────────
+  {
+    id: 'oo-e01', kind: 'oddOneOut', difficulty: 'easy',
+    prompt: '바나나, 레몬, 해바라기, 하늘 중 노란색이 아닌 것은?',
+    choices: ['바나나', '레몬', '해바라기', '하늘'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-e02', kind: 'oddOneOut', difficulty: 'easy',
+    prompt: '강아지, 고양이, 소, 독수리 중 날 수 있는 것은?',
+    choices: ['강아지', '고양이', '소', '독수리'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-e03', kind: 'oddOneOut', difficulty: 'easy',
+    prompt: '빨강, 파랑, 노랑, 동그라미 중 모양인 것은?',
+    choices: ['빨강', '파랑', '노랑', '동그라미'],
+    correctIndex: 3,
+  },
+
+  // ── 추가 normal 공통점 ×3 ────────────────────────────────────────────────
+  {
+    id: 'co-n01', kind: 'commonality', difficulty: 'normal',
+    prompt: '눈, 얼음, 서리, 우박의 공통점은?',
+    choices: ['모두 차갑다', '모두 봄에 볼 수 있다', '모두 물이 얼어 생긴다', '모두 땅에 쌓인다'],
+    correctIndex: 2,
+  },
+  {
+    id: 'co-n02', kind: 'commonality', difficulty: 'normal',
+    prompt: '소설, 신문, 잡지, 만화책의 공통점은?',
+    choices: ['모두 그림이 있다', '모두 매일 나온다', '모두 읽는 것이다', '모두 두껍다'],
+    correctIndex: 2,
+  },
+  {
+    id: 'co-n03', kind: 'commonality', difficulty: 'normal',
+    prompt: '축구화, 농구화, 운동화, 등산화의 공통점은?',
+    choices: ['모두 흰색이다', '모두 신발이다', '모두 실내에서 신는다', '모두 가죽이다'],
+    correctIndex: 1,
+  },
+
+  // ── 추가 normal 다른 하나 ×3 ─────────────────────────────────────────────
+  {
+    id: 'oo-n01', kind: 'oddOneOut', difficulty: 'normal',
+    prompt: '고등어, 참치, 연어, 오징어 중 뼈가 없는 것은?',
+    choices: ['고등어', '참치', '연어', '오징어'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-n02', kind: 'oddOneOut', difficulty: 'normal',
+    prompt: '수성, 금성, 지구, 달 중 태양 주위를 도는 행성이 아닌 것은?',
+    choices: ['수성', '금성', '지구', '달'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-n03', kind: 'oddOneOut', difficulty: 'normal',
+    prompt: '코끼리, 기린, 하마, 독수리 중 포유류가 아닌 것은?',
+    choices: ['코끼리', '기린', '하마', '독수리'],
+    correctIndex: 3,
+  },
+
+  // ── 추가 hard 공통점 ×3 ──────────────────────────────────────────────────
+  {
+    id: 'co-h01', kind: 'commonality', difficulty: 'hard',
+    prompt: '세포, 원자, 분자, 입자의 공통점은?',
+    choices: ['모두 눈에 보인다', '모두 물질을 이루는 단위이다', '모두 생물에만 있다', '모두 똑같은 크기이다'],
+    correctIndex: 1,
+  },
+  {
+    id: 'co-h02', kind: 'commonality', difficulty: 'hard',
+    prompt: '민주주의, 공화주의, 사회주의, 자본주의의 공통점은?',
+    choices: ['모두 자유롭다', '모두 정치·경제 이념이다', '모두 투표를 한다', '모두 같은 결과를 낳는다'],
+    correctIndex: 1,
+  },
+  {
+    id: 'co-h03', kind: 'commonality', difficulty: 'hard',
+    prompt: '심장, 폐, 위, 신장의 공통점은?',
+    choices: ['모두 가슴에 있다', '모두 쌍으로 있다', '모두 우리 몸의 기관이다', '모두 근육으로만 이루어져 있다'],
+    correctIndex: 2,
+  },
+
+  // ── 추가 hard 다른 하나 ×3 ───────────────────────────────────────────────
+  {
+    id: 'oo-h01', kind: 'oddOneOut', difficulty: 'hard',
+    prompt: '원심력, 중력, 마찰력, 탄성력 중 물체를 잡아당기는 힘이 아닌 것은?',
+    choices: ['원심력', '중력', '마찰력', '탄성력'],
+    correctIndex: 0,
+  },
+  {
+    id: 'oo-h02', kind: 'oddOneOut', difficulty: 'hard',
+    prompt: '산소, 질소, 이산화탄소, 설탕 중 공기 중에 있는 성분이 아닌 것은?',
+    choices: ['산소', '질소', '이산화탄소', '설탕'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-h03', kind: 'oddOneOut', difficulty: 'hard',
+    prompt: '베토벤, 모차르트, 바흐, 피카소 중 음악가가 아닌 것은?',
+    choices: ['베토벤', '모차르트', '바흐', '피카소'],
+    correctIndex: 3,
+  },
+
+  // ── expert 공통점 ×5 ──────────────────────────────────────────────────────
+  {
+    id: 'co-x01', kind: 'commonality', difficulty: 'expert',
+    prompt: '개구리, 두꺼비, 도롱뇽, 영원의 공통점은?',
+    choices: ['모두 물에서만 산다', '모두 독이 있다', '모두 양서류이다', '모두 겨울잠을 잔다'],
+    correctIndex: 2,
+  },
+  {
+    id: 'co-x02', kind: 'commonality', difficulty: 'expert',
+    prompt: '시, 소설, 희곡, 수필의 공통점은?',
+    choices: ['모두 길이가 길다', '모두 주인공이 있다', '모두 운율이 있다', '모두 문학 장르이다'],
+    correctIndex: 3,
+  },
+  {
+    id: 'co-x03', kind: 'commonality', difficulty: 'expert',
+    prompt: '지진, 홍수, 화산 폭발, 태풍의 공통점은?',
+    choices: ['모두 바다에서 발생한다', '모두 자연재해이다', '모두 계절에 따라 생긴다', '모두 사전에 예측 가능하다'],
+    correctIndex: 1,
+  },
+  {
+    id: 'co-x04', kind: 'commonality', difficulty: 'expert',
+    prompt: '원자, 분자, 이온, 전자의 공통점은?',
+    choices: ['모두 양전하를 띤다', '모두 원소이다', '모두 물질을 이루는 입자이다', '모두 눈에 보인다'],
+    correctIndex: 2,
+  },
+  {
+    id: 'co-x05', kind: 'commonality', difficulty: 'expert',
+    prompt: '삼각형, 사각형, 오각형, 육각형의 공통점은?',
+    choices: ['모두 각도의 합이 360도이다', '모두 변의 길이가 같다', '모두 다각형이다', '모두 대각선이 있다'],
+    correctIndex: 2,
+  },
+
+  // ── expert 다른 하나 ×5 ───────────────────────────────────────────────────
+  {
+    id: 'oo-x01', kind: 'oddOneOut', difficulty: 'expert',
+    prompt: '태양, 시리우스, 북극성, 달 중 스스로 빛을 내지 않는 것은?',
+    choices: ['태양', '시리우스', '북극성', '달'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-x02', kind: 'oddOneOut', difficulty: 'expert',
+    prompt: '나트륨(Na), 칼슘(Ca), 철(Fe), 소금(NaCl) 중 홑원소 물질이 아닌 것은?',
+    choices: ['나트륨', '칼슘', '철', '소금'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-x03', kind: 'oddOneOut', difficulty: 'expert',
+    prompt: '개구리, 두꺼비, 도롱뇽, 도마뱀 중 파충류인 것은?',
+    choices: ['개구리', '두꺼비', '도롱뇽', '도마뱀'],
+    correctIndex: 3,
+  },
+  {
+    id: 'oo-x04', kind: 'oddOneOut', difficulty: 'expert',
+    prompt: '뼈, 근육, 피부, 혈액 중 결합 조직이 아닌 것은?',
+    choices: ['뼈', '근육', '피부', '혈액'],
+    correctIndex: 2,
+  },
+  {
+    id: 'oo-x05', kind: 'oddOneOut', difficulty: 'expert',
+    prompt: '삼권분립, 법치주의, 기본권 보장, 군주제 중 민주주의 원리가 아닌 것은?',
+    choices: ['삼권분립', '법치주의', '기본권 보장', '군주제'],
     correctIndex: 3,
   },
 ];
