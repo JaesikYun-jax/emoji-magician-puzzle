@@ -291,6 +291,8 @@ export const ko = {
   'arithmetic.level8.label': '곱셈 심화',
   'arithmetic.level9.label': '종합 훈련',
   'arithmetic.level10.label': '사칙연산 마스터',
+  'arithmetic.level11.label': '큰 수 도전',
+  'arithmetic.level12.label': '수학 마법사',
   'arithmetic.sheet.title': '난이도 선택',
   'arithmetic.diff.easy': '쉬움',
   'arithmetic.diff.normal': '보통',

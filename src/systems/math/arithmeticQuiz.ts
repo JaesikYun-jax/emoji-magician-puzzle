@@ -9,9 +9,9 @@ export interface DifficultyConfig {
 }
 
 export const DIFFICULTY_CONFIGS: Record<Difficulty, DifficultyConfig> = {
-  easy:   { id: 'easy',   timePerQuestion: 30, choiceSpread: 5 },
-  normal: { id: 'normal', timePerQuestion: 20, choiceSpread: 3 },
-  hard:   { id: 'hard',   timePerQuestion: 15, choiceSpread: 1 },
+  easy:   { id: 'easy',   timePerQuestion: 30, choiceSpread: 10 },
+  normal: { id: 'normal', timePerQuestion: 20, choiceSpread: 5 },
+  hard:   { id: 'hard',   timePerQuestion: 10, choiceSpread: 2 },
 };
 
 export interface ArithmeticQuestion {
@@ -95,7 +95,7 @@ export function generateArithmeticQuestion(
       break;
     }
     case 'mul': {
-      const mulMax = Math.min(10, rMax);
+      const mulMax = Math.min(rMax, 30);
       const mulMin = Math.max(2, rMin);
       operandA = randInt(mulMin, mulMax);
       // ensure product <= rMax

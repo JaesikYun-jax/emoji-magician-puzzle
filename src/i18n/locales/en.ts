@@ -291,6 +291,8 @@ export const en = {
   'arithmetic.level8.label': 'Multiplication Plus',
   'arithmetic.level9.label': 'Mixed Practice',
   'arithmetic.level10.label': 'All Four Operations',
+  'arithmetic.level11.label': 'Big Number Challenge',
+  'arithmetic.level12.label': 'Math Wizard',
   'arithmetic.sheet.title': 'Select Difficulty',
   'arithmetic.diff.easy': 'Easy',
   'arithmetic.diff.normal': 'Normal',

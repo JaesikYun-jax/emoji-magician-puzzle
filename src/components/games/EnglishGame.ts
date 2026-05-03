@@ -130,7 +130,7 @@ export class EnglishGame {
     if (words.length < 4) {
       words = ENGLISH_WORDS;
     }
-    this.session = buildQuizSession(words, 10);
+    this.session = buildQuizSession(words, 10, diff);
     this.currentIdx = 0;
     this.correctCount = 0;
     this.isProcessing = false;
