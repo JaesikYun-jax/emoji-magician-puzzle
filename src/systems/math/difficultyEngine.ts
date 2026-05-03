@@ -59,7 +59,14 @@ export function computeDifficultyParams(status: UserMathStatus): DifficultyParam
   const streakMultiplier = Math.min(1.0 + streak * 0.05, 2.0);
 
   const totalAnswered = status.areaHistory[currentRule.id]?.totalAnswered ?? 0;
-  const timeLimitMs = totalAnswered >= 30 ? 8000 : null;
+  const TIME_BY_GRADE: Record<string, number> = {
+    'g1s1': 12000, 'g1s2': 10000,
+    'g2s1': 9000,  'g2s2': 8000,
+    'g3s1': 7000,  'g3s2': 6000,
+  };
+  const gradeKey = `g${currentRule.grade}s${currentRule.semester}`;
+  const limitBase = TIME_BY_GRADE[gradeKey] ?? 8000;
+  const timeLimitMs = totalAnswered >= 10 ? limitBase : null;
 
   return { ruleWeights, operandScaleFactor, distractorMode, timeLimitMs, streakMultiplier };
 }
