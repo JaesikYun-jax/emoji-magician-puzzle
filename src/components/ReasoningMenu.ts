@@ -400,7 +400,7 @@ export class ReasoningMenu {
       const forced = ds ? (this._forcedOverrides.get(game.id) ?? null) : null;
       if (forced && ds) {
         if (ds.paramKey === 'difficulty') {
-          this.router.navigate({ to: game.routeId as ScreenId, subject: 'reasoning', difficulty: forced as 'easy' | 'normal' | 'hard' });
+          this.router.navigate({ to: game.routeId as ScreenId, subject: 'reasoning', difficulty: forced as 'easy' | 'normal' | 'hard' | 'expert' });
         } else {
           this.router.navigate({ to: game.routeId as ScreenId, subject: 'reasoning', levelId: forced });
         }

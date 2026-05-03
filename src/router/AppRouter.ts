@@ -43,7 +43,7 @@ export interface NavigationPayload {
   /** replace: true — 현재 화면을 교체만 하고 히스토리 스택을 변경하지 않는다.
    *  게임 종료 후 메뉴로 돌아갈 때처럼 "게임 화면을 기록하지 않고 조용히 전환"할 때 사용. */
   replace?: boolean;
-  difficulty?: 'easy' | 'normal' | 'hard';
+  difficulty?: 'easy' | 'normal' | 'hard' | 'expert';
 }
 
 export interface NavigationState {
@@ -52,7 +52,7 @@ export interface NavigationState {
   subject: SubjectId | null;
   levelId: string | null;
   highlightLevelId?: string | null;
-  difficulty?: 'easy' | 'normal' | 'hard';
+  difficulty?: 'easy' | 'normal' | 'hard' | 'expert';
 }
 
 type ShowHideable = { show(...args: unknown[]): void; hide(): void };
