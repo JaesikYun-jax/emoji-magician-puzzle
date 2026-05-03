@@ -46,35 +46,28 @@ interface ChoicesResult {
 
 function buildChoices(answer: number, spread: number): ChoicesResult {
   const distractors = new Set<number>();
-  let tries = 0;
-  while (distractors.size < 3 && tries < 200) {
-    tries++;
-    const delta = randInt(1, Math.max(1, spread));
-    const candidate = answer + (Math.random() < 0.5 ? delta : -delta);
-    if (candidate > 0 && candidate !== answer) {
-      distractors.add(candidate);
-    }
+  const maxAttempts = 200;
+  let attempts = 0;
+  // spread 범위 내에서 가까운 오답 우선 생성 (양방향 균등)
+  while (distractors.size < 3 && attempts < maxAttempts) {
+    attempts++;
+    const delta = randInt(1, Math.max(spread, 3));
+    const sign = Math.random() < 0.5 ? 1 : -1;
+    const candidate = answer + sign * delta;
+    if (candidate > 0 && candidate !== answer) distractors.add(candidate);
   }
-  // 부족하면 단순 offset으로 채움
-  let offset = 1;
-  while (distractors.size < 3) {
-    if (answer + offset !== answer) distractors.add(answer + offset);
-    if (distractors.size < 3 && answer - offset > 0 && answer - offset !== answer) {
-      distractors.add(answer - offset);
-    }
-    offset++;
-  }
-
-  const pool = [answer, ...Array.from(distractors).slice(0, 3)];
-
-  // Fisher-Yates 셔플
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = randInt(0, i);
-    [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+  // 폴백: 양방향 교대
+  for (let i = 1; distractors.size < 3; i++) {
+    const plus = answer + i;
+    const minus = answer - i;
+    if (plus !== answer && plus > 0) distractors.add(plus);
+    if (distractors.size < 3 && minus > 0 && minus !== answer) distractors.add(minus);
   }
 
-  const correctIndex = pool.indexOf(answer);
-  return { choices: pool, correctIndex };
+  const all = [answer, ...Array.from(distractors).slice(0, 3)];
+  const sorted = all.sort((a, b) => a - b); // 오름차순 반환
+  const correctIndex = sorted.indexOf(answer);
+  return { choices: sorted, correctIndex };
 }
 
 interface BlankResult {

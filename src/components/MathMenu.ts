@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
 import { PlacementTest } from './PlacementTest';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 import type { PlacementQuestion } from './PlacementTest';
 
 const MATH_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
@@ -360,6 +361,7 @@ export class MathMenu {
     const pct = progress.levelProgressPercent;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'math-menu';
     el.innerHTML = `
       <span class="mm-decor mm-decor--1" aria-hidden="true">∑</span>
@@ -589,7 +591,7 @@ export class MathMenu {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

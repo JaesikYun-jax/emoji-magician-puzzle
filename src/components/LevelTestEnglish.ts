@@ -3,6 +3,7 @@ import type { SaveService } from '../services/SaveService';
 import { ENGLISH_WORDS } from '../game-data/englishWords';
 import type { LevelTestResult } from '../game-data/subjectConfig';
 import type { EnglishDifficulty } from '../game-data/english/categories';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const ENGLISH_STAGES: Array<{
   categories: string[];
@@ -254,6 +255,7 @@ export class LevelTestEnglish {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'level-test-english';
     el.style.position = 'relative';
     el.innerHTML = `
@@ -452,7 +454,7 @@ export class LevelTestEnglish {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

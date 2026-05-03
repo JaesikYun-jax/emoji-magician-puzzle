@@ -65,7 +65,7 @@ function buildChoices(answer: number, spread: number): { choices: number[]; corr
   let attempts = 0;
   while (raw.length < 3 && attempts < 80) {
     attempts++;
-    const offset = randInt(1, Math.max(spread, 3));
+    const offset = randInt(1, Math.max(spread, 2));
     const sign = Math.random() < 0.5 ? 1 : -1;
     const d = answer + sign * offset;
     if (d > 0 && !used.has(d)) {
@@ -73,18 +73,15 @@ function buildChoices(answer: number, spread: number): { choices: number[]; corr
       raw.push(d);
     }
   }
-  // 부족하면 순차 증가로 채운다
+  // 폴백: 양방향 교대로 채운다
   for (let i = 1; raw.length < 3; i++) {
-    const d = answer + i;
-    if (!used.has(d)) { used.add(d); raw.push(d); }
+    const plus = answer + i;
+    const minus = answer - i;
+    if (!used.has(plus)) { used.add(plus); raw.push(plus); }
+    if (raw.length < 3 && minus > 0 && !used.has(minus)) { used.add(minus); raw.push(minus); }
   }
 
-  const choices = [answer, ...raw.slice(0, 3)];
-  // Fisher-Yates 셔플
-  for (let i = choices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [choices[i], choices[j]] = [choices[j]!, choices[i]!];
-  }
+  const choices = [answer, ...raw.slice(0, 3)].sort((a, b) => a - b); // 오름차순 정렬
   const correctIndex = choices.indexOf(answer);
   return { choices, correctIndex };
 }

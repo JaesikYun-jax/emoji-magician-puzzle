@@ -4,6 +4,7 @@ import { t } from '../i18n';
 import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
 import { PlacementTest } from './PlacementTest';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 import type { PlacementQuestion } from './PlacementTest';
 
 const ENGLISH_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
@@ -333,6 +334,7 @@ export class EnglishMenu {
     const pct = progress.levelProgressPercent;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'english-menu';
     el.innerHTML = `
       <span class="em-decor em-decor--1" aria-hidden="true">Aa</span>
@@ -586,7 +588,7 @@ export class EnglishMenu {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

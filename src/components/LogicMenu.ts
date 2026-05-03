@@ -10,6 +10,7 @@ import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
 import { PlacementTest } from './PlacementTest';
 import type { PlacementQuestion } from './PlacementTest';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const LOGIC_PLACEMENT_QUESTIONS: PlacementQuestion[] = [
   { id: 'lp1', questionText: '1, 2, 4, 8, __ 다음은?', choices: ['12', '14', '16', '18'], correctIndex: 2, emoji: '🔢' },
@@ -350,6 +351,7 @@ export class LogicMenu {
     const pct = progress.levelProgressPercent;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'logic-menu';
     el.innerHTML = `
       <span class="lm-decor lm-decor--1" aria-hidden="true">∑</span>
@@ -584,7 +586,7 @@ export class LogicMenu {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

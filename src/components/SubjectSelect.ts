@@ -1,5 +1,6 @@
 import type { AppRouter } from '../router/AppRouter';
 import { t } from '../i18n';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const SUBJECT_SELECT_STYLE = `
 #subject-select {
@@ -172,6 +173,7 @@ export class SubjectSelect {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'subject-select';
     el.innerHTML = `
       <div class="ss-header">
@@ -224,7 +226,7 @@ export class SubjectSelect {
 
   hide(): void {
     if (this.toastTimer !== null) { clearTimeout(this.toastTimer); this.toastTimer = null; }
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
   }
 
   private showToast(message: string): void {

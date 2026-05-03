@@ -9,6 +9,7 @@ import { getCreativityRank } from '../game-data/creativityLevels';
 import { t } from '../i18n';
 import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const CREATIVITY_HOME_STYLE = `
 #creativity-home {
@@ -329,6 +330,7 @@ export class CreativityMenu {
     const pct = progress.levelProgressPercent;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'creativity-home';
     el.innerHTML = `
       <span class="ch-decor ch-decor--1" aria-hidden="true">⌒</span>
@@ -542,7 +544,7 @@ export class CreativityMenu {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }
