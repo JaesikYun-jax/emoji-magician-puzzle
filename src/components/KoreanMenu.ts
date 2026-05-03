@@ -1,5 +1,6 @@
 import type { AppRouter } from '../router/AppRouter';
 import { t } from '../i18n';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const KOREAN_MENU_STYLE = `
 #korean-menu {
@@ -86,6 +87,7 @@ export class KoreanMenu {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'korean-menu';
     el.innerHTML = `
       <div class="km-header">
@@ -114,7 +116,7 @@ export class KoreanMenu {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

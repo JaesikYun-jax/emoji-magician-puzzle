@@ -179,23 +179,14 @@ export class LogicGame {
 
     // 뒤로 버튼
     const backBtn = document.createElement('button');
-    backBtn.style.cssText = `
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: #fff;
-      display: grid; place-items: center;
-      cursor: pointer; flex-shrink: 0;
-      touch-action: manipulation;
-    `;
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-    backBtn.addEventListener('click', () => {
+    backBtn.className = 'game-exit-btn';
+    backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    backBtn.addEventListener('pointerdown', () => {
+      this._stopTimer();
       confirmExit(
         () => this._exitToMenu(),
         () => this._resumeTimer(),
       );
-      this._stopTimer();
     });
     hudPill.appendChild(backBtn);
 
@@ -618,10 +609,10 @@ export class LogicGame {
     const mins = Math.floor(secs / 60);
     const s = secs % 60;
     this.timerTextEl.textContent = `${mins}:${String(s).padStart(2, '0')}`;
-    this.timerTextEl.style.color = secs <= 10 ? '#FCA5A5' : '#fff';
+    this.timerTextEl.style.color = secs <= 10 ? 'var(--color-danger)' : '#fff';
     const ratio = Math.max(0, this.timeRemaining / this.levelConfig.timeLimit);
     this.timerBarInnerEl.style.width = `${ratio * 100}%`;
-    this.timerBarInnerEl.style.background = secs <= 10 ? '#FCA5A5' : '#FDE68A';
+    this.timerBarInnerEl.style.background = secs <= 10 ? 'var(--color-danger)' : '#FDE68A';
   }
 
   private _startTimer(): void {
@@ -754,17 +745,9 @@ export class LogicGame {
 
     // 다시 하기 버튼
     const retryBtn = document.createElement('button');
-    retryBtn.textContent = '🔄 다시 하기';
-    retryBtn.style.cssText = `
-      display: block; width: 100%;
-      padding: 14px;
-      background: rgba(255,255,255,0.16);
-      border: 1.5px solid rgba(255,255,255,0.30);
-      border-radius: 16px;
-      color: #fff; font-size: 1rem; font-weight: 700;
-      cursor: pointer; margin-bottom: 10px;
-      touch-action: manipulation;
-    `;
+    retryBtn.textContent = '다시 하기';
+    retryBtn.className = 'result-btn result-btn--ghost';
+    retryBtn.style.marginBottom = '10px';
     retryBtn.addEventListener('click', () => {
       overlay.remove();
       this._reset(cfg);
@@ -780,18 +763,9 @@ export class LogicGame {
 
       if (nextId) {
         const nextBtn = document.createElement('button');
-        nextBtn.textContent = '▶ 다음 단계';
-        nextBtn.style.cssText = `
-          display: block; width: 100%;
-          padding: 14px;
-          background: linear-gradient(135deg, rgba(16,185,129,0.85), rgba(5,150,105,0.85));
-          border: none;
-          border-radius: 16px;
-          color: #fff; font-size: 1rem; font-weight: 900;
-          cursor: pointer; margin-bottom: 10px;
-          box-shadow: 0 4px 20px rgba(16,185,129,0.40);
-          touch-action: manipulation;
-        `;
+        nextBtn.textContent = '다음 단계';
+        nextBtn.className = 'result-btn result-btn--primary';
+        nextBtn.style.marginBottom = '10px';
         nextBtn.addEventListener('click', () => {
           overlay.remove();
           this.hide();
@@ -801,18 +775,9 @@ export class LogicGame {
       } else {
         // 마지막 레벨 클리어 시 처음부터 버튼
         const restartBtn = document.createElement('button');
-        restartBtn.textContent = '🔁 처음부터';
-        restartBtn.style.cssText = `
-          display: block; width: 100%;
-          padding: 14px;
-          background: linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.85));
-          border: none;
-          border-radius: 16px;
-          color: #fff; font-size: 1rem; font-weight: 900;
-          cursor: pointer; margin-bottom: 10px;
-          box-shadow: 0 4px 20px rgba(251,191,36,0.40);
-          touch-action: manipulation;
-        `;
+        restartBtn.textContent = '처음부터';
+        restartBtn.className = 'result-btn result-btn--primary';
+        restartBtn.style.marginBottom = '10px';
         restartBtn.addEventListener('click', () => {
           overlay.remove();
           this.hide();
@@ -824,18 +789,8 @@ export class LogicGame {
 
     // 메뉴로 버튼
     const menuBtn = document.createElement('button');
-    menuBtn.textContent = '🏠 메뉴로';
-    menuBtn.style.cssText = `
-      display: block; width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, rgba(167,139,250,0.85), rgba(99,102,241,0.85));
-      border: none;
-      border-radius: 16px;
-      color: #fff; font-size: 1rem; font-weight: 900;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(99,102,241,0.45);
-      touch-action: manipulation;
-    `;
+    menuBtn.textContent = '메뉴로';
+    menuBtn.className = 'result-btn result-btn--ghost';
     menuBtn.addEventListener('click', () => this._exitToMenu());
     card.appendChild(menuBtn);
 

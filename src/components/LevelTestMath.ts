@@ -2,6 +2,7 @@ import { appRouter } from '../router/AppRouter';
 import { userMathStatusService } from '../services/SaveService';
 import { type UserMathStatus, createDefaultStatus, initFromLevelTest } from '../systems/math/UserMathStatus';
 import { MATH_CURRICULUM } from '../game-data/mathCurriculum';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 // ── 진단 테스트용 문제 정의 ─────────────────────────────────────────────────
 interface DiagQuestion {
@@ -205,6 +206,7 @@ export class LevelTestMath {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'level-test-math';
     el.style.position = 'relative';
     el.innerHTML = `
@@ -427,7 +429,7 @@ export class LevelTestMath {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
   }

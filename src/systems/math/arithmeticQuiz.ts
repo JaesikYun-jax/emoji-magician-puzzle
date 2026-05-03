@@ -47,27 +47,24 @@ const OP_SYMBOL: Record<ArithmeticOp, '+' | '-' | '×' | '÷'> = {
 export function generateChoices(answer: number, spread: number): number[] {
   const choices = new Set<number>([answer]);
   let attempts = 0;
+  // spread를 최대 편차 상한으로 사용 (hard일수록 정답에 가까운 오답)
   while (choices.size < 4 && attempts < 200) {
     attempts++;
-    // spread를 최대 offset으로 사용해 정답 근처 보기 생성
-    const offset = randInt(1, spread);
+    const offset = randInt(1, Math.max(spread, 2));
     const sign = Math.random() < 0.5 ? 1 : -1;
     const candidate = answer + sign * offset;
     if (candidate > 0 && !choices.has(candidate)) {
       choices.add(candidate);
     }
   }
-  // fallback: 정답 인접 숫자로 채우기 (1,2,3... 순서 아님)
-  let fallbackOffset = 1;
+  // 폴백: 양방향 교대로 채운다
+  let filler = 1;
   while (choices.size < 4) {
-    const c1 = answer + fallbackOffset;
-    const c2 = answer - fallbackOffset;
-    if (c1 > 0 && !choices.has(c1)) choices.add(c1);
-    if (choices.size < 4 && c2 > 0 && !choices.has(c2)) choices.add(c2);
-    fallbackOffset++;
+    if (answer + filler > 0 && !choices.has(answer + filler)) choices.add(answer + filler);
+    if (choices.size < 4 && answer - filler > 0 && !choices.has(answer - filler)) choices.add(answer - filler);
+    filler++;
   }
-  // 오름차순 정렬
-  return [...choices].sort((a, b) => a - b);
+  return Array.from(choices).sort((a, b) => a - b); // 오름차순 반환
 }
 
 export function generateArithmeticQuestion(

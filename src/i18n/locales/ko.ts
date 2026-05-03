@@ -50,6 +50,7 @@ export const ko = {
   'brand.hero.cta': '지금 시작하기',
   'brand.hero.scrollHint': '더 알아보기',
   'brand.hero.badge': '사교육비 박살내는 게임',
+  'brand.hero.habitBadge': '매일 자기 전 10분 게임으로',
 
   'brand.story.eyebrow': '두 아빠의 이야기',
   'brand.story.title': '우리도 처음엔 그냥 아빠였습니다',
@@ -218,8 +219,27 @@ export const ko = {
 
   // 창의 종목
   'subject.creativity': '창의',
-  'subject.creativity.sub': '한붓그리기 · 경로 퍼즐',
-  'subject.creativity.detail': '모든 칸을 한 번에 지나가는<br>신기한 경로를 그려봐요!',
+  'subject.creativity.sub': '벽퍼즐 · 추리 퀴즈',
+  'subject.creativity.detail': '단어를 묶고 공통점을 찾으며<br>창의력과 어휘력을 키워요!',
+
+  // 추리 종목
+  'subject.reasoning': '추리',
+  'subject.reasoning.sub': '공통점 · 다른 하나 찾기',
+  'subject.reasoning.detail': '단어들의 공통점이나<br>다른 하나를 추리해 봐요!',
+
+  // 추리 메뉴
+  'reasoning.menu.infoTitle': '추리 퀴즈',
+  'reasoning.menu.infoSub': '공통점과 차이점으로 정답을 찾아요',
+
+  // 추리 게임 내 문구
+  'reasoning.title': '추리 퀴즈',
+  'reasoning.commonality': '공통점은?',
+  'reasoning.oddOneOut': '다른 하나는?',
+  'reasoning.result.perfect': '🎊 완벽해요!',
+  'reasoning.result.great': '⭐ 잘했어요!',
+  'reasoning.result.keep': '😅 다시 도전!',
+  'reasoning.result.retry': '🔄 다시 도전하기',
+  'reasoning.result.menu': '🏠 추리 메뉴로',
 
   // 논리 게임 내 문구
   'logic.title': '패턴 이어가기',
@@ -236,8 +256,8 @@ export const ko = {
   'logic.timeOver': '⏰ 시간 초과!',
 
   // 창의 게임 내 문구
-  'creativity.title': '한붓그리기',
-  'creativity.subtitle': '모든 칸을 한 번씩 지나가요!',
+  'creativity.title': '창의 퀴즈',
+  'creativity.subtitle': '단어로 키우는 창의력과 어휘력!',
   'creativity.drag.hint': '칸을 눌러 경로를 그려요',
   'creativity.complete': '🎉 완성!',
   'creativity.invalid': '그 방향으로는 갈 수 없어요',
@@ -355,8 +375,8 @@ export const ko = {
   'logic.menu.infoSub': '규칙과 패턴을 추론해 답을 찾아요',
 
   // 창의 메뉴
-  'creativity.menu.infoTitle': '창의 연상 퀴즈',
-  'creativity.menu.infoSub': '단어를 4개 그룹으로 연결하는 퍼즐',
+  'creativity.menu.infoTitle': '창의 퀴즈',
+  'creativity.menu.infoSub': '벽퍼즐과 추리로 어휘력을 키워요',
 
   // 행렬 추론
   'matrix.title': '행렬 추론',
@@ -447,4 +467,22 @@ export const ko = {
   'badge.creativity.5': '파도 정복자',
   'badge.creativity.6': '다이아 의지',
   'badge.creativity.7': '마스터의 왕관',
+
+  // ── Admin ────────────────────────────────────────────────────────────────
+  'admin.title': '관리자',
+  'admin.bankViewer': '문제 은행 뷰어',
+  'admin.tab.reasoning': '추리 5문',
+  'admin.filter.all': '전체',
+  'admin.filter.easy': '쉬움',
+  'admin.filter.normal': '보통',
+  'admin.filter.hard': '어려움',
+  'admin.col.id': 'ID',
+  'admin.col.kind': '종류',
+  'admin.col.difficulty': '난이도',
+  'admin.col.prompt': '문제',
+  'admin.col.choices': '선택지 (정답 ✓)',
+  'admin.col.correctIndex': '정답 번호',
+  'admin.kind.commonality': '공통점',
+  'admin.kind.oddOneOut': '다른 하나',
+  'admin.back': '뒤로',
 };

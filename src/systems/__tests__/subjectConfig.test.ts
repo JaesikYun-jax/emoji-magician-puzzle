@@ -3,8 +3,8 @@ import { SUBJECTS } from '../../game-data/subjectConfig';
 import type { SubjectConfig } from '../../game-data/subjectConfig';
 
 describe('SUBJECTS', () => {
-  it('contains exactly 5 items', () => {
-    expect(SUBJECTS).toHaveLength(5);
+  it('contains exactly 6 items', () => {
+    expect(SUBJECTS).toHaveLength(6);
   });
 
   it('contains math, english, korean IDs in that order', () => {

@@ -1,5 +1,6 @@
 import type { AppRouter } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 /* =========================================================================
    BrandHome — Sabak "사교육비 박살" HomeA
@@ -55,6 +56,28 @@ const BRAND_HOME_STYLE = `
 .bh-hero__headline {
   font-size: 48px; margin-top: 14px; text-align: center; line-height: 1.18;
 }
+.bh-hero__habit-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 18px; align-self: center;
+  background: linear-gradient(135deg, rgba(217,249,157,0.18) 0%, rgba(253,230,138,0.14) 100%);
+  border: 1.5px solid rgba(217,249,157,0.50);
+  border-radius: 999px; padding: 9px 22px;
+  font-family: var(--f-sans); font-size: 13px; font-weight: 800;
+  color: #D9F99D; letter-spacing: 0.01em;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 24px rgba(217,249,157,0.18), inset 0 1px 0 rgba(255,255,255,0.10);
+}
+.bh-hero__habit-badge__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #D9F99D; flex-shrink: 0;
+  box-shadow: 0 0 8px #D9F99D, 0 0 14px rgba(217,249,157,0.6);
+  animation: sb-badge-pulse 2.2s ease-in-out infinite;
+}
+@keyframes sb-badge-pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.75); }
+}
+
 .bh-hero__sub {
   font-size: 13px; color: rgba(255,255,255,0.70); line-height: 1.6;
   margin-top: 14px; text-align: center; max-width: 300px; margin-inline: auto;
@@ -133,11 +156,12 @@ const BRAND_HOME_STYLE = `
   display: grid; place-items: center;
 }
 .bh-orb--wiggle .bh-orb__inner { animation: sb-wiggle 500ms ease; }
-.bh-orb[data-id="math"]     { animation: sb-orbit-0   44s linear infinite; }
-.bh-orb[data-id="english"]  { animation: sb-orbit-72  44s linear infinite; }
-.bh-orb[data-id="korean"]   { animation: sb-orbit-144 44s linear infinite; }
-.bh-orb[data-id="logic"]    { animation: sb-orbit-216 44s linear infinite; }
-.bh-orb[data-id="creative"] { animation: sb-orbit-288 44s linear infinite; }
+.bh-orb[data-id="math"]      { animation: sb-orbit-0   44s linear infinite; }
+.bh-orb[data-id="english"]  { animation: sb-orbit-60  44s linear infinite; }
+.bh-orb[data-id="korean"]   { animation: sb-orbit-120 44s linear infinite; }
+.bh-orb[data-id="logic"]    { animation: sb-orbit-180 44s linear infinite; }
+.bh-orb[data-id="creative"] { animation: sb-orbit-240 44s linear infinite; }
+.bh-orb[data-id="reasoning"]{ animation: sb-orbit-300 44s linear infinite; }
 
 /* Hero CTA */
 .bh-hero__cta-wrap { padding: 0 0 22px; position: relative; z-index: 3; }
@@ -218,7 +242,8 @@ const BRAND_HOME_STYLE = `
 .bh-subject-card[data-id="english"]  { background: linear-gradient(160deg,#047857 0%,#10B981 100%); }
 .bh-subject-card[data-id="korean"]   { background: linear-gradient(160deg,#9F1239 0%,#F43F5E 100%); }
 .bh-subject-card[data-id="logic"]    { background: linear-gradient(160deg,#3730A3 0%,#6366F1 100%); }
-.bh-subject-card[data-id="creative"] { background: linear-gradient(160deg,#C2410C 0%,#F97316 100%); }
+.bh-subject-card[data-id="creative"]   { background: linear-gradient(160deg,#C2410C 0%,#F97316 100%); }
+.bh-subject-card[data-id="reasoning"] { background: linear-gradient(160deg,#134E4A 0%,#14B8A6 100%); }
 .bh-subject-card__glow {
   position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%;
   background: rgba(255,255,255,0.12); filter: blur(30px);
@@ -327,10 +352,11 @@ const BRAND_HOME_STYLE = `
 }
 /* Orbs evenly spaced 72° apart, all sharing duration so spacing stays fixed */
 @keyframes sb-orbit-0   { from { transform: rotate(0deg)   translate(140px) rotate(-0deg)   } to { transform: rotate(360deg) translate(140px) rotate(-360deg) } }
-@keyframes sb-orbit-72  { from { transform: rotate(72deg)  translate(140px) rotate(-72deg)  } to { transform: rotate(432deg) translate(140px) rotate(-432deg) } }
-@keyframes sb-orbit-144 { from { transform: rotate(144deg) translate(140px) rotate(-144deg) } to { transform: rotate(504deg) translate(140px) rotate(-504deg) } }
-@keyframes sb-orbit-216 { from { transform: rotate(216deg) translate(140px) rotate(-216deg) } to { transform: rotate(576deg) translate(140px) rotate(-576deg) } }
-@keyframes sb-orbit-288 { from { transform: rotate(288deg) translate(140px) rotate(-288deg) } to { transform: rotate(648deg) translate(140px) rotate(-648deg) } }
+@keyframes sb-orbit-60  { from { transform: rotate(60deg)  translate(140px) rotate(-60deg)  } to { transform: rotate(420deg) translate(140px) rotate(-420deg) } }
+@keyframes sb-orbit-120 { from { transform: rotate(120deg) translate(140px) rotate(-120deg) } to { transform: rotate(480deg) translate(140px) rotate(-480deg) } }
+@keyframes sb-orbit-180 { from { transform: rotate(180deg) translate(140px) rotate(-180deg) } to { transform: rotate(540deg) translate(140px) rotate(-540deg) } }
+@keyframes sb-orbit-240 { from { transform: rotate(240deg) translate(140px) rotate(-240deg) } to { transform: rotate(600deg) translate(140px) rotate(-600deg) } }
+@keyframes sb-orbit-300 { from { transform: rotate(300deg) translate(140px) rotate(-300deg) } to { transform: rotate(660deg) translate(140px) rotate(-660deg) } }
 
 @keyframes sb-mascot-shake-2 {
   0%,100% { transform: scale(1) rotate(0) }
@@ -418,6 +444,16 @@ function svgSubjectIcon(id: string, color: string): string {
         <circle cx="20" cy="20" r="17" fill="${color}"/>
         <path d="M20 9 Q23 17 31 20 Q23 23 20 31 Q17 23 9 20 Q17 17 20 9 Z" fill="#FDE68A" stroke="${stroke}" stroke-width="2.4" stroke-linejoin="round"/>
         <circle cx="20" cy="20" r="2" fill="${stroke}"/>
+      </svg>`;
+    case 'reasoning':
+      return `<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">
+        <circle cx="20" cy="20" r="17" fill="${color}"/>
+        <circle cx="20" cy="20" r="8" fill="none" stroke="${stroke}" stroke-width="2.4"/>
+        <circle cx="20" cy="20" r="2.5" fill="${stroke}"/>
+        <line x1="20" y1="12" x2="20" y2="9" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="20" y1="28" x2="20" y2="31" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="12" y1="20" x2="9" y2="20" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <line x1="28" y1="20" x2="31" y2="20" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
       </svg>`;
   }
   return '';
@@ -561,10 +597,27 @@ const SUBJECT_CARDS = [
       <circle cx="120" cy="20" r="7" fill="none" stroke="#FDE68A" stroke-width="2"/>
     </svg>`,
   },
+  {
+    id: 'reasoning', name: '추리', tagline: '공통점 · 다른 하나',
+    skills: ['분류', '추론', '카테고리', '연결'],
+    caption: '4개의 단어 중 다른 하나는?',
+    demo: () => `<div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+      <div style="display:flex;gap:8px;">
+        ${['사과', '바나나', '포도', '당근'].map((w, i) => `<div style="
+          padding:8px 12px;border-radius:10px;
+          background:${i === 3 ? '#CCFBF1' : 'rgba(255,255,255,0.92)'};
+          color:${i === 3 ? '#134E4A' : '#0C4A6E'};
+          font-family:var(--f-kr);font-weight:700;font-size:13px;
+          box-shadow:0 4px 10px rgba(0,0,0,0.15);
+          ${i === 3 ? 'border:2px solid #14B8A6;' : ''}">${w}</div>`).join('')}
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.7);">→ <strong style="color:#CCFBF1">당근</strong>이 다른 하나예요!</div>
+    </div>`,
+  },
 ];
 
 const ORB_COLORS: Record<string, string> = {
-  math: '#7DD3FC', english: '#86EFAC', korean: '#FDA4AF', logic: '#A5B4FC', creative: '#FDBA74',
+  math: '#7DD3FC', english: '#86EFAC', korean: '#FDA4AF', logic: '#A5B4FC', creative: '#FDBA74', reasoning: '#5EEAD4',
 };
 
 const ARROW_RIGHT = `<svg width="18" height="18" viewBox="0 0 20 20" fill="none">
@@ -594,6 +647,7 @@ export class BrandHome {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'brand-home';
     el.innerHTML = this.renderMarkup();
 
@@ -606,7 +660,7 @@ export class BrandHome {
 
   hide(): void {
     if (this.frenzyTimer) { clearTimeout(this.frenzyTimer); this.frenzyTimer = null; }
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
     this.mascotEl = null;
     this.tapTimes = [];
   }
@@ -634,6 +688,10 @@ export class BrandHome {
             생각하고, <em style="color:#FDE68A">계산하고</em>,<br/>
             <em style="color:#FB7185">외우는 힘</em>을 키워라
           </h1>
+          <div class="bh-hero__habit-badge">
+            <span class="bh-hero__habit-badge__dot"></span>
+            🌙 매일 자기 전 10분 게임으로
+          </div>
           <p class="bh-hero__sub">멘사 테스트 기반 두뇌 훈련. 더 잘 생각하고, 더 빠르게 계산하고, 더 오래 기억하도록.</p>
 
           <div class="bh-stage">
@@ -645,7 +703,7 @@ export class BrandHome {
               ${svgMascot(1, false)}
               <div class="bh-mascot__hint">✦ tap me</div>
             </div>
-            ${['math','english','korean','logic','creative'].map(id => `
+            ${['math','english','korean','logic','creative','reasoning'].map(id => `
               <button class="bh-orb" data-id="${id}" aria-label="${id}" type="button">
                 <div class="bh-orb__inner" style="filter:drop-shadow(0 4px 14px ${ORB_COLORS[id]}88);">
                   ${svgSubjectIcon(id, ORB_COLORS[id]!)}

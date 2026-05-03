@@ -34,8 +34,9 @@ export function selectWallPuzzle(
   totalClears: number,
   recentPuzzleIds: string[],
   currentStreak = 0,
+  forcedTier?: 1 | 2 | 3 | 4 | 5,
 ): WallPuzzle {
-  const tier = getTierForClears(totalClears, currentStreak);
+  const tier = forcedTier ?? getTierForClears(totalClears, currentStreak);
   let pool: WallPuzzle[] = ALL_WALL_PUZZLES.filter(p => p.tier === tier);
 
   // Tier 5 퍼즐이 없으면 Tier 4로 폴백
@@ -44,6 +45,45 @@ export function selectWallPuzzle(
   }
 
   const excludeCount = getExcludeCount(pool.length);
+  const excluded = new Set(recentPuzzleIds.slice(-excludeCount));
+
+  let candidates = pool.filter(p => !excluded.has(p.id));
+
+  // Fallback 1: 절반만 제외
+  if (candidates.length === 0) {
+    const half = new Set(recentPuzzleIds.slice(-Math.floor(excludeCount / 2)));
+    candidates = pool.filter(p => !half.has(p.id));
+  }
+  // Fallback 2: 직전 1개만 제외
+  if (candidates.length === 0) {
+    const last = recentPuzzleIds[recentPuzzleIds.length - 1];
+    candidates = pool.filter(p => p.id !== last);
+  }
+  // Fallback 3: 전체 풀
+  if (candidates.length === 0) {
+    candidates = pool;
+  }
+
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+/**
+ * 특정 티어를 강제 지정하여 퍼즐 선택.
+ * "이 게임만 하기"에서 사용자가 티어를 직접 고른 경우에 사용.
+ * 제외 로직은 selectWallPuzzle과 동일한 3중 폴백 구조.
+ */
+export function selectWallPuzzleByTier(
+  tier: 1 | 2 | 3 | 4 | 5,
+  recentPuzzleIds: string[],
+): WallPuzzle {
+  let pool: WallPuzzle[] = ALL_WALL_PUZZLES.filter(p => p.tier === tier);
+
+  // tier 5 퍼즐이 없으면 tier 4로 폴백
+  if (pool.length === 0 && tier === 5) {
+    pool = ALL_WALL_PUZZLES.filter(p => p.tier === 4);
+  }
+
+  const excludeCount = Math.min(10, Math.max(6, Math.floor(pool.length / 2)));
   const excluded = new Set(recentPuzzleIds.slice(-excludeCount));
 
   let candidates = pool.filter(p => !excluded.has(p.id));

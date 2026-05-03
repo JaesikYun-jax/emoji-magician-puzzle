@@ -93,9 +93,10 @@ export const WALL_PUZZLES_TIER4: WallPuzzle[] = [
   },
   {
     // 6×4 뱀: startCell=(0,0), endCell=(0,3)
+    // FIXED: walls 수정 - 이전에 불가능했던 퍼즐 ({x:0,y:1,dir:'d'}는 뱀 경로 행1→행2 전환 간선 차단)
     id:'t4-p02', tier:4, subject:'creativity',
     cols:6, rows:4, blocked:[],
-    walls:[{x:2,y:0,dir:'d'},{x:0,y:1,dir:'d'},{x:4,y:2,dir:'d'}],
+    walls:[{x:2,y:0,dir:'d'},{x:1,y:1,dir:'d'},{x:4,y:2,dir:'d'}],
     timeLimit:180, starThresholds:[180,100,55],
     startCell:{x:0,y:0}, endCell:{x:0,y:3},
   },
@@ -121,9 +122,10 @@ export const WALL_PUZZLES_TIER4: WallPuzzle[] = [
   },
   {
     // 6×5 뱀: startCell=(0,0), endCell=(5,4) — blocked 없음, 벽 4개, 30칸
+    // FIXED: walls 수정 - 이전에 불가능했던 퍼즐 ({x:0,y:1,dir:'d'}는 뱀 경로 행1→행2 전환 간선 차단)
     id:'t4-p06', tier:4, subject:'creativity',
     cols:6, rows:5, blocked:[],
-    walls:[{x:2,y:0,dir:'d'},{x:0,y:1,dir:'d'},{x:4,y:2,dir:'d'},{x:1,y:3,dir:'d'}],
+    walls:[{x:2,y:0,dir:'d'},{x:3,y:3,dir:'d'},{x:4,y:2,dir:'d'},{x:1,y:3,dir:'d'}],
     timeLimit:210, starThresholds:[210,115,60],
     startCell:{x:0,y:0}, endCell:{x:5,y:4},
   },
@@ -211,16 +213,20 @@ export const WALL_PUZZLES_TIER4_HARD: WallPuzzle[] = [
     timeLimit:195, starThresholds:[195,105,55],
   },
   {
-    // 6×6, blocked 2 대각 코너 → 32칸 계단
+    // 6×6, blocked 2 (좌상단 + 우하단 인접) → 34칸
+    // FIXED: (5,5)→(5,4)로 변경 — blocked 2칸이 같은 체커보드 parity(둘 다 짝수)여서
+    // 수학적으로 해밀턴 경로가 불가능했음. (0,0)=even, (5,4)=odd로 패리티 수정.
     id:'t4-p15', tier:4, subject:'creativity',
-    cols:6, rows:6, blocked:[{x:0,y:0},{x:5,y:5}],
+    cols:6, rows:6, blocked:[{x:0,y:0},{x:5,y:4}],
     walls:[{x:2,y:1,dir:'d'},{x:4,y:2,dir:'d'},{x:1,y:3,dir:'d'},{x:3,y:4,dir:'d'},{x:2,y:0,dir:'r'}],
     timeLimit:235, starThresholds:[235,128,66],
   },
   {
-    // 6×6, blocked 2 반대 대각 → 34칸
+    // 6×6, blocked 2 반대 패턴 → 34칸
+    // FIXED: (5,0)→(4,0)으로 변경 — (5,0)=odd, (0,5)=odd 로 둘 다 홀수 패리티라
+    // 수학적으로 해밀턴 경로가 불가능했음. (4,0)=even, (0,5)=odd로 패리티 수정.
     id:'t4-p16', tier:4, subject:'creativity',
-    cols:6, rows:6, blocked:[{x:5,y:0},{x:0,y:5}],
+    cols:6, rows:6, blocked:[{x:4,y:0},{x:0,y:5}],
     walls:[{x:1,y:0,dir:'d'},{x:3,y:1,dir:'d'},{x:2,y:2,dir:'d'},{x:4,y:3,dir:'d'},{x:1,y:4,dir:'d'}],
     timeLimit:235, starThresholds:[235,128,66],
   },
@@ -275,9 +281,10 @@ export const WALL_PUZZLES_TIER5: WallPuzzle[] = [
   },
   {
     // 6×6 L자 (상단 우측 2x2 blocked) → 32칸 — startCell=(0,0), endCell=(0,5)
+    // FIXED: walls 수정 - 이전에 불가능했던 퍼즐 ({x:0,y:3,dir:'r'}는 뱀 경로에서 (1,3)→(0,3) 차단)
     id:'t5-p03', tier:5, subject:'creativity',
     cols:6, rows:6, blocked:[{x:4,y:0},{x:5,y:0},{x:4,y:1},{x:5,y:1}],
-    walls:[{x:0,y:0,dir:'d'},{x:2,y:1,dir:'d'},{x:1,y:2,dir:'d'},{x:3,y:3,dir:'d'},{x:2,y:4,dir:'d'},{x:0,y:3,dir:'r'}],
+    walls:[{x:0,y:0,dir:'d'},{x:2,y:1,dir:'d'},{x:1,y:2,dir:'d'},{x:3,y:3,dir:'d'},{x:2,y:4,dir:'d'},{x:4,y:3,dir:'d'}],
     timeLimit:215, starThresholds:[215,118,60],
     startCell:{x:0,y:0}, endCell:{x:0,y:5},
   },
@@ -305,9 +312,12 @@ export const WALL_PUZZLES_TIER5: WallPuzzle[] = [
   },
   {
     // 6×6, blocked 2 + walls 7개 (최대 미로 난이도)
+    // FIXED: (5,5)→(4,5)로 변경 + 상단 벽 2개 제거
+    // 원래 (0,0)/(5,5) 같은 패리티(불가)였고, 패리티 수정 후에도
+    // {x:1,y:0,d} + {x:3,y:0,r}가 (1,0)을 차수 1 데드엔드로 만들어 경로 불가. 해당 2개 제거.
     id:'t5-p07', tier:5, subject:'creativity',
-    cols:6, rows:6, blocked:[{x:0,y:0},{x:5,y:5}],
-    walls:[{x:1,y:0,dir:'d'},{x:3,y:1,dir:'d'},{x:0,y:2,dir:'d'},{x:4,y:2,dir:'d'},{x:2,y:3,dir:'d'},{x:1,y:4,dir:'d'},{x:3,y:0,dir:'r'}],
+    cols:6, rows:6, blocked:[{x:0,y:0},{x:4,y:5}],
+    walls:[{x:3,y:1,dir:'d'},{x:0,y:2,dir:'d'},{x:4,y:2,dir:'d'},{x:2,y:3,dir:'d'},{x:1,y:4,dir:'d'}],
     timeLimit:240, starThresholds:[240,130,68],
   },
   {

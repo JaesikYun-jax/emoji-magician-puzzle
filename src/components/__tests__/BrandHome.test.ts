@@ -35,18 +35,18 @@ describe('BrandHome — Sabak HomeA', () => {
     expect(container.querySelector('.bh-parent')).toBeTruthy();
   });
 
-  it('renders 5 orbiting subject orbs with unique ids', () => {
+  it('renders 6 orbiting subject orbs with unique ids', () => {
     const orbs = container.querySelectorAll<HTMLElement>('.bh-orb');
-    expect(orbs).toHaveLength(5);
+    expect(orbs).toHaveLength(6);
     const ids = Array.from(orbs).map(o => o.dataset['id']);
-    expect(new Set(ids)).toEqual(new Set(['math', 'english', 'korean', 'logic', 'creative']));
+    expect(new Set(ids)).toEqual(new Set(['math', 'english', 'korean', 'logic', 'creative', 'reasoning']));
   });
 
-  it('renders 5 subject preview cards in horizontal scroller', () => {
+  it('renders 6 subject preview cards in horizontal scroller', () => {
     const cards = container.querySelectorAll('.bh-subject-card');
-    expect(cards).toHaveLength(5);
+    expect(cards).toHaveLength(6);
     const ids = Array.from(cards).map(c => (c as HTMLElement).dataset['id']);
-    expect(ids).toEqual(['math', 'english', 'korean', 'logic', 'creative']);
+    expect(ids).toEqual(['math', 'english', 'korean', 'logic', 'creative', 'reasoning']);
   });
 
   it('mascot starts in frenzy level 1, not smashed', () => {

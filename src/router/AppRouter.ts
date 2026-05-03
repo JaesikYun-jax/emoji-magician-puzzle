@@ -29,7 +29,10 @@ export type ScreenId =
   | 'game-arithmetic'
   | 'game-matrix-reasoning'
   | 'game-odd-one-out'
-  | 'game-sentence-order';
+  | 'game-sentence-order'
+  | 'reasoning-menu'
+  | 'game-reasoning'
+  | 'admin';
 
 export interface NavigationPayload {
   to: ScreenId;

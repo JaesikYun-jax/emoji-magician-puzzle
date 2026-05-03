@@ -51,6 +51,15 @@
   --shadow-creativity: 0 8px 32px rgba(249, 115, 22, 0.45);
   --shadow-creativity-sm: 0 4px 16px rgba(249, 115, 22, 0.35);
 
+  /* Reasoning (추리 — 청록) */
+  --color-reasoning-700: #0F766E;
+  --color-reasoning-600: #14B8A6;
+  --color-reasoning-400: #2DD4BF;
+  --grad-reasoning: linear-gradient(135deg, #14B8A6, #2DD4BF);
+  --grad-reasoning-deep: linear-gradient(165deg, #134E4A 0%, #0F766E 55%, #14B8A6 100%);
+  --shadow-reasoning: 0 8px 32px rgba(20, 184, 166, 0.45);
+  --shadow-reasoning-sm: 0 4px 16px rgba(20, 184, 166, 0.35);
+
   /* 공통 */
   --color-gold: #FBBF24;
   --color-danger: #EF4444;
@@ -99,6 +108,10 @@
   --creative-700: #C2410C;
   --creative-500: #F97316;
   --creative-300: #FDBA74;
+
+  --reasoning-700: #0F766E;
+  --reasoning-500: #14B8A6;
+  --reasoning-300: #5EEAD4;
 
   --gold: #FBBF24;
   --lime: #D9F99D;
@@ -591,7 +604,8 @@ body {
   color: #fff; font-size: 0.9rem; font-weight: 600;
 }
 .arith-hud__progress { flex: 1; text-align: center; }
-.arith-timer-track {
+/* .arith-timer-track, .arith-timer-bar: progress bar 방식 → pill 방식으로 교체됨 */
+/*.arith-timer-track {
   height: 6px; background: rgba(255,255,255,0.25);
   border-radius: 3px; margin: 8px 16px 0; overflow: hidden;
 }
@@ -601,7 +615,7 @@ body {
   transition: width 1s linear, background 0.3s;
 }
 .arith-timer-bar--warn { background: var(--arith-timer-warn); }
-.arith-timer-bar--danger { background: var(--arith-timer-danger); animation: timer-bar-danger 0.6s infinite; }
+.arith-timer-bar--danger { background: var(--arith-timer-danger); animation: timer-bar-danger 0.6s infinite; }*/
 
 .arith-question-card {
   margin: 12px 16px 0;
@@ -609,7 +623,7 @@ body {
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.25);
   backdrop-filter: blur(12px);
-  border-radius: 20px;
+  border-radius: 24px;
   flex: 1;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   overflow: hidden;
@@ -629,9 +643,9 @@ body {
   background: var(--arith-choice-bg);
   border: 1px solid rgba(255,255,255,0.3);
   backdrop-filter: blur(8px);
-  border-radius: 14px;
-  padding: 18px;
-  font-size: 1.6rem; font-weight: 700; color: #fff;
+  border-radius: 18px;
+  min-height: 68px;
+  font-size: 1.55rem; font-weight: 800; color: #fff;
   text-align: center; cursor: pointer;
   transition: transform 100ms;
 }
@@ -765,3 +779,314 @@ body {
   border: 1px solid rgba(167, 139, 250, 0.60);
   color: #C4B5FD;
 }
+
+/* ============================================================
+   GAME UI — 공통 컴포넌트 (UI Consistency Unification)
+   ============================================================ */
+
+/* ---- 종료 버튼 ---- */
+.game-exit-btn {
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  pointer-events: all;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.30);
+  background: rgba(255,255,255,0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms, transform 100ms;
+}
+.game-exit-btn:hover  { background: rgba(255,255,255,0.22); }
+.game-exit-btn:active { transform: scale(0.88); background: rgba(255,255,255,0.28); }
+
+/* ---- HUD 바 ---- */
+.game-hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: calc(env(safe-area-inset-top,0px) + 12px) 16px 10px;
+  pointer-events: none;
+  z-index: 100;
+}
+.game-hud__bar {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 8px 14px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  pointer-events: all;
+}
+.game-hud__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.game-hud__title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.game-hud__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.game-hud__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.game-hud__stat-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  opacity: 0.70;
+  text-transform: uppercase;
+}
+.game-hud__stat-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FDE68A;
+  font-variant-numeric: tabular-nums;
+}
+.game-hud__stat-value.is-urgent {
+  color: var(--color-danger);
+  animation: hud-urgent-pulse 480ms ease infinite alternate;
+}
+@keyframes hud-urgent-pulse {
+  from { transform: scale(1); }
+  to   { transform: scale(1.18); }
+}
+
+/* ---- 진행 표시 ---- */
+.game-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.game-progress__bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.20);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.game-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #FDE68A;
+  transition: width 350ms ease;
+}
+.game-progress__label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.80);
+  white-space: nowrap;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ---- 결과화면 ---- */
+.result-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: screen-enter 280ms ease forwards;
+  background: var(--result-grad,
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(253,230,138,0.18), transparent 60%),
+    linear-gradient(165deg, #4C1D95 0%, #6D28D9 50%, #7C3AED 100%)
+  );
+}
+.result-screen__content {
+  position: relative;
+  z-index: 1;
+  padding: calc(env(safe-area-inset-top,0px) + 54px) 26px
+           calc(env(safe-area-inset-bottom,0px) + 36px);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
+}
+.result-stars {
+  display: flex;
+  gap: 14px;
+  margin-top: 28px;
+  align-items: flex-end;
+}
+.result-star {
+  opacity: 0;
+  filter: drop-shadow(0 8px 16px rgba(251,191,36,0.55));
+  animation: star-pop 500ms cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.result-star[data-idx="0"] { animation-delay: 100ms; }
+.result-star[data-idx="1"] { animation-delay: 300ms; }
+.result-star[data-idx="2"] { animation-delay: 500ms; }
+.result-star--empty {
+  filter: grayscale(100%) opacity(0.28);
+  animation-delay: 0ms !important;
+}
+.result-stat-card {
+  margin-top: 36px;
+  width: 100%;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 24px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 22px 26px;
+}
+.result-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 14px;
+}
+.result-stat {
+  text-align: center;
+}
+.result-stat__label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  font-weight: 700;
+}
+.result-stat__value {
+  font-size: 26px;
+  margin-top: 4px;
+  color: #FDE68A;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.result-actions {
+  margin-top: auto;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+.result-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  border: none;
+  border-radius: 999px;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 150ms;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-btn:active { transform: scale(0.96); }
+.result-btn--primary {
+  background: #D9F99D;
+  color: #2E1065;
+  box-shadow: 0 10px 30px rgba(217,249,157,0.35);
+}
+.result-btn--ghost {
+  flex: 1;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+.result-btn-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* ---- 공통 애니메이션 통일 ---- */
+@keyframes tile-correct {
+  0%   { transform: scale(1);    opacity: 1; }
+  40%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(0.8);  opacity: 0; }
+}
+@keyframes fall-in {
+  0%   { transform: translateY(-60px); opacity: 0; }
+  70%  { transform: translateY(4px);   opacity: 1; }
+  100% { transform: translateY(0);     opacity: 1; }
+}
+
+/* ===== 화면 트랜지션 (entry + exit) =====
+ * 모든 메뉴/허브 화면 컴포넌트의 root 에 .screen-root 클래스를 부여하면
+ * 자동으로 entry + 자식 stagger + exit 트랜지션이 적용된다.
+ * 신규 컴포넌트는 show() 의 createElement 직후 el.classList.add('screen-root') 호출.
+ * 게임 컨테이너에는 부여하지 않아 LevelIntro 카운트다운과 충돌 안 함.
+ * 검증: src/components/__tests__/screenTransitions.test.ts
+ */
+
+@keyframes screen-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes child-rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes screen-leave {
+  from { opacity: 1; transform: translateY(0)     scale(1); }
+  to   { opacity: 0; transform: translateY(-12px) scale(0.985); }
+}
+
+.screen-root {
+  animation: screen-rise 360ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.screen-root > * {
+  animation: child-rise 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+.screen-root > *:nth-child(2) { animation-delay: 150ms; }
+.screen-root > *:nth-child(3) { animation-delay: 220ms; }
+.screen-root > *:nth-child(n+4) { animation-delay: 290ms; }
+
+.screen-leaving {
+  animation: screen-leave 220ms ease-in forwards !important;
+  pointer-events: none;
+}
+.screen-leaving > * {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-root,
+  .screen-root > * {
+    animation: rm-fade 100ms ease both !important;
+    animation-delay: 0ms !important;
+  }
+  .screen-leaving { animation: rm-fade-out 80ms ease both !important; }
+}
+@keyframes rm-fade     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rm-fade-out { from { opacity: 1; } to { opacity: 0; } }

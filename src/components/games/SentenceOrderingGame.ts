@@ -140,13 +140,8 @@ export class SentenceOrderingGame {
     `;
 
     const backBtn = document.createElement('button');
-    backBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-    backBtn.style.cssText = `
-      width: 30px; height: 30px; border-radius: 50%;
-      background: rgba(255,255,255,0.12); border: none;
-      color: #fff; display: grid; place-items: center;
-      cursor: pointer; flex-shrink: 0; touch-action: manipulation;
-    `;
+    backBtn.className = 'game-exit-btn';
+    backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     backBtn.addEventListener('pointerdown', () => {
       appRouter.navigate({ to: 'english-menu', subject: 'english', replace: true });
     });
@@ -516,40 +511,13 @@ export class SentenceOrderingGame {
     // 다시 도전 버튼
     const retryBtn = document.createElement('button');
     retryBtn.textContent = t('english.order.retryBtn');
-    retryBtn.style.cssText = `
-      width: 100%;
-      padding: 18px;
-      border-radius: 18px;
-      border: none;
-      font-size: 1.1rem;
-      font-weight: 800;
-      background: #fff;
-      color: #065F46;
-      cursor: pointer;
-      box-shadow: 0 6px 24px rgba(255,255,255,0.30);
-      transition: transform 100ms ease;
-      touch-action: manipulation;
-      box-sizing: border-box;
-    `;
+    retryBtn.className = 'result-btn result-btn--primary';
     retryBtn.addEventListener('pointerdown', () => this.show());
 
     // 영어 메뉴로 버튼
     const homeBtn = document.createElement('button');
     homeBtn.textContent = t('english.order.homeBtn');
-    homeBtn.style.cssText = `
-      width: 100%;
-      padding: 18px;
-      border-radius: 18px;
-      border: 1.5px solid rgba(255,255,255,0.30);
-      font-size: 1.1rem;
-      font-weight: 800;
-      background: rgba(255,255,255,0.15);
-      color: #fff;
-      cursor: pointer;
-      transition: transform 100ms ease;
-      touch-action: manipulation;
-      box-sizing: border-box;
-    `;
+    homeBtn.className = 'result-btn result-btn--ghost';
     homeBtn.addEventListener('pointerdown', () => {
       appRouter.navigate({ to: 'english-menu', subject: 'english', replace: true });
     });

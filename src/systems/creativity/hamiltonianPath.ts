@@ -159,6 +159,83 @@ export function getAvailableNeighbors(state: PathState): GridCell[] {
     });
 }
 
+/** wallPuzzle 데이터의 wall 형식으로 두 셀 사이가 막혀있는지 확인 */
+export function isWallBetween(
+  walls: Array<{x: number; y: number; dir: 'r' | 'd'}>,
+  x1: number, y1: number,
+  x2: number, y2: number,
+): boolean {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  for (const w of walls) {
+    if (dx === 1  && dy === 0 && w.dir === 'r' && w.x === x1 && w.y === y1) return true;
+    if (dx === -1 && dy === 0 && w.dir === 'r' && w.x === x2 && w.y === y2) return true;
+    if (dx === 0  && dy === 1 && w.dir === 'd' && w.x === x1 && w.y === y1) return true;
+    if (dx === 0  && dy === -1 && w.dir === 'd' && w.x === x2 && w.y === y2) return true;
+  }
+  return false;
+}
+
+const MAX_CALLS = 500_000;
+
+/** walls-aware Hamiltonian Path 가능 여부 DFS 검증 */
+export function isSolvable(params: {
+  cols: number;
+  rows: number;
+  blocked?: Array<{x: number; y: number}>;
+  walls?: Array<{x: number; y: number; dir: 'r' | 'd'}>;
+  startCell?: {x: number; y: number};
+  endCell?: {x: number; y: number};
+}): boolean {
+  const { cols, rows, blocked = [], walls = [], startCell, endCell } = params;
+  const blockedSet = new Set(blocked.map(c => `${c.x},${c.y}`));
+  const totalCells = cols * rows - blockedSet.size;
+  const dirs = [{dx:1,dy:0},{dx:-1,dy:0},{dx:0,dy:1},{dx:0,dy:-1}];
+
+  // 각 시작점마다 독립적인 호출 카운터를 사용
+  function tryFrom(sx: number, sy: number): boolean {
+    let calls = 0;
+    const sid = `${sx},${sy}`;
+    const visited = new Set([sid]);
+
+    function dfs(x: number, y: number): boolean {
+      if (++calls > MAX_CALLS) return false;
+      if (visited.size === totalCells) {
+        return endCell == null || (x === endCell.x && y === endCell.y);
+      }
+      for (const {dx, dy} of dirs) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+        const nid = `${nx},${ny}`;
+        if (blockedSet.has(nid) || visited.has(nid)) continue;
+        if (isWallBetween(walls, x, y, nx, ny)) continue;
+        visited.add(nid);
+        if (dfs(nx, ny)) return true;
+        visited.delete(nid);
+      }
+      return false;
+    }
+
+    return dfs(sx, sy);
+  }
+
+  if (startCell) {
+    const sid = `${startCell.x},${startCell.y}`;
+    if (blockedSet.has(sid)) return false;
+    return tryFrom(startCell.x, startCell.y);
+  }
+
+  // startCell 미지정: 모든 non-blocked 셀에서 시작 시도
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const sid = `${x},${y}`;
+      if (blockedSet.has(sid)) continue;
+      if (tryFrom(x, y)) return true;
+    }
+  }
+  return false;
+}
+
 /** 별 점수 계산 (시간 기반) */
 export function calcCreativityStars(timeUsed: number, timeLimit: number): number {
   const ratio = timeUsed / timeLimit;

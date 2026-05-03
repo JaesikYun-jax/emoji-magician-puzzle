@@ -181,6 +181,19 @@ export function migrateV5toV6(raw: SaveData): SaveData {
   return { ...data, version: 6 };
 }
 
+/** v6 → v7: 추리(reasoning) 종목 필드 추가 */
+export function migrateV6toV7(raw: SaveData): SaveData {
+  return {
+    ...raw,
+    version: 7,
+    reasoning: raw.reasoning ?? {
+      levelProgress: { 'reasoning-1': { stars: 0, bestScore: 0, playCount: 0, isUnlocked: true } },
+      streak: 0,
+      clearCount: 0,
+    },
+  };
+}
+
 /**
  * 저장 데이터를 최신 버전으로 단계적으로 마이그레이션한다.
  * 알 수 없는 버전이거나 이미 최신이면 그대로 반환한다.
@@ -206,6 +219,10 @@ export function runMigrations(raw: SaveData, targetVersion: number): SaveData {
 
   if (data.version < 6 && targetVersion >= 6) {
     data = migrateV5toV6(data);
+  }
+
+  if (data.version < 7 && targetVersion >= 7) {
+    data = migrateV6toV7(data);
   }
 
   return data;
