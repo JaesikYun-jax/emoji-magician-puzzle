@@ -236,6 +236,10 @@ export class EquationFillGame {
       const btn = document.createElement('button');
       btn.textContent = String(choice);
       btn.className = 'eq-choice-btn';
+      // E2E 테스트용 DEV-only 정답 마킹
+      if (import.meta.env.DEV && idx === q.correctIndex) {
+        btn.dataset['correct'] = 'true';
+      }
       btn.style.cssText = `
         display: block; width: 100%; min-height: 68px;
         background: rgba(255,255,255,0.12);
@@ -341,6 +345,9 @@ export class EquationFillGame {
     const pct     = Math.round((correct / total) * 100);
 
     const overlay = document.createElement('div');
+    overlay.dataset['gameResult'] = 'true';
+    overlay.dataset['stars'] = String(stars);
+    overlay.dataset['cleared'] = correct === total ? 'true' : 'partial';
     overlay.style.cssText = `
       position: fixed; inset: 0;
       background: rgba(3,105,161,0.90);

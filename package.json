@@ -14,7 +14,12 @@
     "test:math": "vitest run src/systems/__tests__/mathLevels",
     "test:english": "vitest run src/systems/__tests__/englishWords",
     "test:watch": "vitest watch",
-    "agents": "node agents/game-team.mjs"
+    "agents": "node agents/game-team.mjs",
+    "e2e": "playwright test --config=tests/e2e/playwright.config.ts",
+    "e2e:smoke": "playwright test --config=tests/e2e/playwright.config.ts smoke/",
+    "e2e:headed": "playwright test --config=tests/e2e/playwright.config.ts --headed",
+    "e2e:ui": "playwright test --config=tests/e2e/playwright.config.ts --ui",
+    "e2e:install": "playwright install --with-deps chromium webkit"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +29,7 @@
     "@anthropic-ai/claude-agent-sdk": "^0.2.114"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.0.0",
     "jsdom": "^29.0.2",
     "typescript": "^5.0.0",

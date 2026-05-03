@@ -125,7 +125,7 @@ export class ReasoningGame {
 
         <div style="display:flex;flex-direction:column;gap:10px;">
           ${q.choices.map((choice, i) => `
-            <button class="rg-choice" data-index="${i}" style="
+            <button class="rg-choice" data-index="${i}" ${import.meta.env.DEV && i === q.correctIndex ? 'data-correct="true"' : ''} style="
               background: rgba(255,255,255,0.15);
               border: 1.5px solid rgba(255,255,255,0.3);
               border-radius: 12px;

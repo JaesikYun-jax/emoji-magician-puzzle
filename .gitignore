@@ -12,3 +12,7 @@ dist
 *.zip
 docs 2/
 .vite/
+
+# Playwright
+playwright-report/
+test-results/

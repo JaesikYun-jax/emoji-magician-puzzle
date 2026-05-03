@@ -141,6 +141,13 @@ export class LevelIntro {
   }
 
   private runCountdown(levelId: number): void {
+    // E2E 테스트 전용 카운트다운 스킵 훅
+    if ((window as any).__E2E_SKIP_COUNTDOWN__) {
+      this.hide();
+      this.bus.emit('game:start', { levelId: String(levelId) });
+      return;
+    }
+
     const countEl = document.getElementById('intro-count');
     if (!countEl) return;
 

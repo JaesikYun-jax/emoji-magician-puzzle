@@ -20,6 +20,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Playwright E2E 테스트 파일 제외 (vitest 전용 범위)
+    exclude: ['node_modules', 'dist', 'tests/e2e/**'],
     coverage: {
       provider: 'v8',
       include: ['src/systems/**', 'src/router/**', 'src/game-data/**'],

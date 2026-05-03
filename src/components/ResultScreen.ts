@@ -175,6 +175,9 @@ export class ResultScreen {
 
     const el = document.createElement('div');
     el.id = 'result-screen';
+    el.dataset['screen'] = 'result';
+    el.dataset['stars'] = String(stars);
+    el.dataset['cleared'] = cleared ? 'true' : 'false';
     el.innerHTML = `
       ${confettiSvg}
       <div class="rs-content">

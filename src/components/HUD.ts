@@ -24,15 +24,15 @@ export class HUD {
         </div>
         <div class="hud-item">
           <span class="hud-label">⏱ ${t('hud.timeLeft')}</span>
-          <span class="hud-value" id="hud-time">60</span>
+          <span class="hud-value" id="hud-time" data-hud-time>60</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">★ ${t('hud.score')}</span>
-          <span class="hud-value" id="hud-score">0</span>
+          <span class="hud-value" id="hud-score" data-hud-score>0</span>
         </div>
         <div class="hud-item">
           <span class="hud-label">🍉 ${t('hud.pairsLeft')}</span>
-          <span class="hud-value" id="hud-pairs">10</span>
+          <span class="hud-value" id="hud-pairs" data-hud-pairs>10</span>
         </div>
       </div>
       <div id="hud-combo" class="hud-combo"></div>

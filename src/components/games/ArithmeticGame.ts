@@ -155,6 +155,10 @@ export class ArithmeticGame {
       btn.className = 'arith-choice';
       btn.type = 'button';
       btn.textContent = String(choice);
+      // E2E 테스트용 DEV-only 정답 마킹
+      if (import.meta.env.DEV && choice === q.answer) {
+        btn.dataset['correct'] = 'true';
+      }
       btn.addEventListener('pointerdown', () => this.onChoiceSelect(choice, btn, q));
       choicesEl.appendChild(btn);
     });
