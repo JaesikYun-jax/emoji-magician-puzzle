@@ -36,3 +36,28 @@ jobs:
       - name: Verify build output
         run: |
           test -f dist/index.html && echo "✓ dist/index.html exists"
+
+  e2e-smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+        name: Install Playwright browsers
+      - run: npx playwright test --config=tests/e2e/playwright.config.ts --project=iphone-14 --project=desktop tests/e2e/smoke/
+        name: Run E2E Smoke Tests
+        env:
+          CI: true
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

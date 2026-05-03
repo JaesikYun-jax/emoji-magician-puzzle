@@ -521,6 +521,12 @@ gameBus.on('ui:mainMenu', () => {
   }
 });
 
+// ── 12-z. DEV 전용 전역 노출 (E2E 테스트용, 프로덕션 빌드에서는 제거됨) ────────
+if (import.meta.env.DEV) {
+  (window as any).__gameBus = gameBus;
+  (window as any).__appRouter = appRouter;
+}
+
 // ── 13. 초기 화면 ─────────────────────────────────────────────────────────────
 // #admin 해시로 접근하면 관리자 페이지를 바로 표시
 if (window.location.hash === '#admin') {
