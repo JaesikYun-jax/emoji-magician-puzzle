@@ -12,8 +12,8 @@ import type { LogicLevelConfig } from '../systems/logic/patternJudge';
  *   L6: aabb + aaab + abba    — + 대칭(회문)
  *   L7: abcd + abba + aabbcc  — 깊이 ↑ (3종 쌍 교대 도입)
  *   L8: aabb + abba + abccba  — 깊이 ↑ (3종 회문 도입)
- *   L9: aabbcc + abccba + abcd — 가장 어려운 3종 패턴 + 4종 순환
- *   L10: 모든 8종 패턴 — 마스터 챌린지
+ *   L9: abcd + aabb — 12타일·빈칸2 입문 (period=4만, 6열에서 위상 어긋남)
+ *   L10: abcd + aabb + aaab + abba — 12타일·빈칸2 마스터 (period=4 전부)
  *
  * sequenceLength는 deprecated (각 패턴이 자체 visibleCount를 가짐).
  * 라운드/시간/별점 기준만 레벨별로 조정.
@@ -88,7 +88,7 @@ export const LOGIC_LEVELS: LogicLevelConfig[] = [
     subject: 'logic',
     totalRounds: 9,
     timeLimit: 60,
-    genParams: { types: ['aabbcc', 'abccba', 'abcd'] },
+    genParams: { types: ['abcd', 'aabb'], tileLength: 12, blankCount: 2 },
     starThresholds: [6, 8, 9],
   },
   {
@@ -96,7 +96,7 @@ export const LOGIC_LEVELS: LogicLevelConfig[] = [
     subject: 'logic',
     totalRounds: 10,
     timeLimit: 65,
-    genParams: { types: ['ab', 'abc', 'abcd', 'aabb', 'aaab', 'abba', 'aabbcc', 'abccba'] },
+    genParams: { types: ['abcd', 'aabb', 'aaab', 'abba'], tileLength: 12, blankCount: 2 },
     starThresholds: [7, 8, 10],
   },
 ];

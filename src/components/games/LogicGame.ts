@@ -6,7 +6,7 @@
  *   [HUD pill bar] 뒤로 | 시계 + 시간 | 진행바 | 라운드
  *   [카드] 9열 그리드 SVG 도형 수열 (? 칸 황금 dashed)
  *   [선택지] 3개 가로 배열, 정사각형 버튼 + 라벨 + SVG 도형
- *   [하단] 힌트 버튼 | 답 선택 버튼
+ *   [하단] 힌트 토글 버튼
  *   [결과 오버레이] 별 + 정답 수 + 다시하기/메뉴
  */
 
@@ -110,8 +110,10 @@ export class LogicGame {
   private scoreEl!: HTMLElement;
   private tilesEl!: HTMLElement;
   private choicesEl!: HTMLElement;
-  private confirmBtnEl!: HTMLButtonElement;
   private hintTextEl!: HTMLElement;
+  private hintBtnEl!: HTMLButtonElement;
+  private chipEl!: HTMLElement;
+  private graceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
@@ -262,9 +264,9 @@ export class LogicGame {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 14px;
     `;
-    const chipEl = document.createElement('span');
-    chipEl.textContent = '다음에 올 모양은?';
-    chipEl.style.cssText = `
+    this.chipEl = document.createElement('span');
+    this.chipEl.textContent = '다음에 올 모양은?';
+    this.chipEl.style.cssText = `
       background: rgba(255,255,255,0.22); color: #fff;
       border-radius: 999px; padding: 6px 14px;
       font-size: 17px; font-weight: 900; letter-spacing: -0.01em;
@@ -272,7 +274,7 @@ export class LogicGame {
     const diffEl = document.createElement('span');
     diffEl.textContent = '규칙찾기';
     diffEl.style.cssText = `font-size: 11px; font-weight: 700; opacity: 0.75; color: #fff;`;
-    cardHeader.appendChild(chipEl);
+    cardHeader.appendChild(this.chipEl);
     cardHeader.appendChild(diffEl);
     card.appendChild(cardHeader);
 
@@ -290,6 +292,7 @@ export class LogicGame {
     this.hintTextEl.style.cssText = `
       margin-top: 14px; font-size: 12px;
       color: rgba(255,255,255,0.7); text-align: center;
+      display: none;
     `;
     this.hintTextEl.innerHTML = `반복되는 <b style="color:#FDE68A;">규칙</b>을 찾아봐요`;
     card.appendChild(this.hintTextEl);
@@ -318,9 +321,10 @@ export class LogicGame {
       margin-top: 14px; margin-bottom: 30px; flex-shrink: 0;
     `;
 
-    const hintBtn = document.createElement('button');
-    hintBtn.innerHTML = '💡 힌트';
-    hintBtn.style.cssText = `
+    this.hintBtnEl = document.createElement('button');
+    this.hintBtnEl.innerHTML = '💡 힌트 보기';
+    this.hintBtnEl.setAttribute('aria-expanded', 'false');
+    this.hintBtnEl.style.cssText = `
       flex: 1;
       background: rgba(255,255,255,0.14);
       border: 1px solid rgba(255,255,255,0.30);
@@ -328,22 +332,8 @@ export class LogicGame {
       padding: 14px; font-size: 0.9rem; font-weight: 700;
       cursor: pointer; touch-action: manipulation;
     `;
-    hintBtn.addEventListener('click', () => this._showHint());
-    bottomRow.appendChild(hintBtn);
-
-    this.confirmBtnEl = document.createElement('button');
-    this.confirmBtnEl.style.cssText = `
-      flex: 1.6;
-      background: rgba(255,255,255,0.18);
-      border: 1.5px solid rgba(255,255,255,0.30);
-      border-radius: 18px; color: rgba(255,255,255,0.55);
-      padding: 14px; font-size: 0.9rem; font-weight: 800;
-      cursor: pointer; touch-action: manipulation;
-      transition: background 150ms, color 150ms, border-color 150ms;
-    `;
-    this.confirmBtnEl.textContent = '답 선택';
-    this.confirmBtnEl.addEventListener('click', () => this._onConfirm());
-    bottomRow.appendChild(this.confirmBtnEl);
+    this.hintBtnEl.addEventListener('click', () => this._toggleHint());
+    bottomRow.appendChild(this.hintBtnEl);
 
     this.el.appendChild(bottomRow);
   }
@@ -356,6 +346,10 @@ export class LogicGame {
     this.timeUsed = 0;
     this.currentSeq = null;
     this.selectedChoiceIndex = -1;
+    if (this.graceTimer !== null) {
+      clearTimeout(this.graceTimer);
+      this.graceTimer = null;
+    }
   }
 
   private _startLevel(): void {
@@ -377,28 +371,34 @@ export class LogicGame {
     this.isAnswering = false;
     this.selectedChoiceIndex = -1;
 
+    // 힌트 숨김 리셋
+    this.hintTextEl.style.display = 'none';
+    this.hintBtnEl.innerHTML = '💡 힌트 보기';
+    this.hintBtnEl.setAttribute('aria-expanded', 'false');
+
+    // 헤더 문구
+    this.chipEl.textContent = seq.blanks.length >= 2 ? '빈칸에 들어갈 모양은?' : '다음에 올 모양은?';
+
     this._renderTiles(seq);
     this.hintTextEl.innerHTML = `<b style="color:#FDE68A;">힌트:</b> ${seq.hint}`;
     this._renderChoices(seq);
     this._updateHUD();
-    this._updateConfirmBtn();
   }
 
   private _renderTiles(seq: ShapeSequence): void {
     this.tilesEl.innerHTML = '';
     const len = seq.tiles.length;
 
-    // 가시성 우선: 한 행 최대 5칸. 그 이상이면 줄바꿈하여 타일을 키움.
-    // 5 타일: 5×1, 7 타일: 4×2 (4+3), 9 타일: 5×2 (5+4)
+    // 가시성 우선: 한 행 최대 6칸까지 허용 (12타일 지원).
     let cols: number;
     if (len <= 5) cols = len;
     else if (len <= 7) cols = 4;
-    else cols = 5;
+    else if (len <= 10) cols = 5;
+    else cols = 6;
     this.tilesEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 
     // 셀 크기에 비례하여 도형 크기 결정 — 한 행 칸 수에 따라
-    // (cols=5 → 도형 36, cols=4 → 도형 44)
-    const shapeSize = cols >= 5 ? 36 : 44;
+    const shapeSize = cols >= 6 ? 30 : cols >= 5 ? 36 : 44;
 
     seq.tiles.forEach((value, i) => {
       const cell = document.createElement('div');
@@ -439,7 +439,7 @@ export class LogicGame {
     this.choicesEl.style.gridTemplateColumns = `repeat(${displayCount}, 1fr)`;
 
     for (let idx = 0; idx < displayCount; idx++) {
-      const shapeKey = seq.choices[idx];
+      const choicePair = seq.choices[idx]; // ShapeKey[]
       const label = CHOICE_LABELS[idx];
 
       const btn = document.createElement('button');
@@ -476,9 +476,13 @@ export class LogicGame {
       btn.appendChild(labelEl);
 
       const shapeWrap = document.createElement('div');
-      // 보기에서도 도형 고유 색을 사용 → 타일과 보기에서 같은 모양은 같은 색으로 보여 매칭 직관성↑
-      shapeWrap.innerHTML = renderShape(shapeKey, 32, 'auto');
-      shapeWrap.style.cssText = `pointer-events: none; display: grid; place-items: center;`;
+      shapeWrap.style.cssText = `pointer-events: none; display: flex; align-items: center; gap: 4px;`;
+      for (const shapeKey of choicePair) {
+        const shapeDiv = document.createElement('div');
+        shapeDiv.style.cssText = `display: grid; place-items: center;`;
+        shapeDiv.innerHTML = renderShape(shapeKey, 32, 'auto');
+        shapeWrap.appendChild(shapeDiv);
+      }
       btn.appendChild(shapeWrap);
 
       btn.addEventListener('pointerdown', () => this._onSelectChoice(idx));
@@ -488,9 +492,20 @@ export class LogicGame {
 
   private _onSelectChoice(choiceIndex: number): void {
     if (this.isAnswering) return;
+
+    // 150ms 그레이스: 진행 중인 타이머 취소 후 새 선택으로 재설정
+    if (this.graceTimer !== null) {
+      clearTimeout(this.graceTimer);
+      this.graceTimer = null;
+    }
+
     this.selectedChoiceIndex = choiceIndex;
     this._highlightSelectedChoice(choiceIndex);
-    this._updateConfirmBtn();
+
+    this.graceTimer = setTimeout(() => {
+      this.graceTimer = null;
+      this._onConfirm();
+    }, 150);
   }
 
   private _highlightSelectedChoice(selectedIdx: number): void {
@@ -503,7 +518,7 @@ export class LogicGame {
       const shapeWrap = btn.querySelector('div') as HTMLElement | null;
       const labelEl = btn.querySelector('span') as HTMLElement | null;
       const isSelected = idx === selectedIdx;
-      const shapeKey = this.currentSeq!.choices[idx] as ShapeKey;
+      const shapes = this.currentSeq!.choices[idx]; // ShapeKey[]
 
       if (isSelected) {
         btn.style.background = 'linear-gradient(135deg,#FDE68A,#F59E0B)';
@@ -511,34 +526,32 @@ export class LogicGame {
         btn.style.boxShadow = '0 0 0 3px #fff, 0 8px 18px rgba(251,191,36,0.55)';
         btn.style.transform = 'scale(1.04)';
         if (labelEl) labelEl.style.color = '#4338CA';
-        // 선택 시 강조: 진한 인디고 단색으로 도형을 그려 보드 색과 충돌 회피
-        if (shapeWrap) shapeWrap.innerHTML = renderShape(shapeKey, 32, '#312E81');
+        if (shapeWrap) {
+          shapeWrap.innerHTML = '';
+          for (const shapeKey of shapes) {
+            const d = document.createElement('div');
+            d.style.cssText = `display: grid; place-items: center;`;
+            d.innerHTML = renderShape(shapeKey, 32, '#312E81');
+            shapeWrap.appendChild(d);
+          }
+        }
       } else {
         btn.style.background = 'rgba(255,255,255,0.12)';
         btn.style.border = '1.5px solid rgba(255,255,255,0.30)';
         btn.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
         btn.style.transform = 'none';
         if (labelEl) labelEl.style.color = 'rgba(255,255,255,0.65)';
-        if (shapeWrap) shapeWrap.innerHTML = renderShape(shapeKey, 32, 'auto');
+        if (shapeWrap) {
+          shapeWrap.innerHTML = '';
+          for (const shapeKey of shapes) {
+            const d = document.createElement('div');
+            d.style.cssText = `display: grid; place-items: center;`;
+            d.innerHTML = renderShape(shapeKey, 32, 'auto');
+            shapeWrap.appendChild(d);
+          }
+        }
       }
     });
-  }
-
-  private _updateConfirmBtn(): void {
-    const hasSelection = this.selectedChoiceIndex >= 0;
-    if (hasSelection) {
-      this.confirmBtnEl.style.background = '#FDE68A';
-      this.confirmBtnEl.style.border = 'none';
-      this.confirmBtnEl.style.color = '#312E81';
-      this.confirmBtnEl.style.boxShadow = '0 4px 20px rgba(253,230,138,0.40)';
-      this.confirmBtnEl.textContent = `답 선택 · ${CHOICE_LABELS[this.selectedChoiceIndex]}`;
-    } else {
-      this.confirmBtnEl.style.background = 'rgba(255,255,255,0.18)';
-      this.confirmBtnEl.style.border = '1.5px solid rgba(255,255,255,0.30)';
-      this.confirmBtnEl.style.color = 'rgba(255,255,255,0.55)';
-      this.confirmBtnEl.style.boxShadow = 'none';
-      this.confirmBtnEl.textContent = '답 선택';
-    }
   }
 
   private _onConfirm(): void {
@@ -574,34 +587,21 @@ export class LogicGame {
     this.currentRound++;
     this._updateHUD();
     this.selectedChoiceIndex = -1;
-    this._updateConfirmBtn();
 
     setTimeout(() => this._renderRound(), isCorrect ? 480 : 700);
   }
 
-  private _showHint(): void {
-    if (!this.currentSeq) return;
-    this._showToast(this.currentSeq.hint);
-  }
-
-  private _showToast(msg: string): void {
-    const existing = this.el.querySelector('.lg-toast');
-    if (existing) existing.remove();
-    const toast = document.createElement('div');
-    toast.className = 'lg-toast';
-    toast.textContent = msg;
-    toast.style.cssText = `
-      position: fixed; bottom: 110px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-      padding: 10px 18px; color: #fff; font-size: 0.85rem; font-weight: 600;
-      z-index: 100; white-space: nowrap;
-      animation: lg-toast-in 2.4s ease forwards;
-      pointer-events: none;
-    `;
-    this.el.appendChild(toast);
-    setTimeout(() => toast.remove(), 2400);
+  private _toggleHint(): void {
+    const isOpen = this.hintBtnEl.getAttribute('aria-expanded') === 'true';
+    if (isOpen) {
+      this.hintTextEl.style.display = 'none';
+      this.hintBtnEl.innerHTML = '💡 힌트 보기';
+      this.hintBtnEl.setAttribute('aria-expanded', 'false');
+    } else {
+      this.hintTextEl.style.display = 'block';
+      this.hintBtnEl.innerHTML = '💡 힌트 닫기';
+      this.hintBtnEl.setAttribute('aria-expanded', 'true');
+    }
   }
 
   private _updateHUD(): void {

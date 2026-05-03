@@ -43,12 +43,15 @@ export interface LogicGenParams {
   types: ShapePatternType[];
   /** @deprecated — 패턴 종류별로 필요한 최소 가시 사이클이 결정되므로 무시됨. 하위 호환을 위해 남겨둠. */
   sequenceLength?: number;
+  tileLength?: number;  // blankCount=2일 때 총 타일 수 (기본 12)
+  blankCount?: 1 | 2;  // 빈칸 개수 (기본 1)
 }
 
 export interface ShapeSequence {
-  tiles: (ShapeKey | null)[];  // null = ? 빈칸 (항상 마지막 1개)
-  choices: ShapeKey[];         // 항상 길이 3, 모두 다른 ShapeKey, 정답 포함
-  correctIndex: number;        // choices 내 정답 위치
+  tiles: (ShapeKey | null)[];   // null = ? 빈칸 (1개 또는 인접한 2개)
+  blanks: number[];              // 빈칸 인덱스 배열 (정렬됨, 길이 1 또는 2)
+  choices: ShapeKey[][];         // 단일: [[a],[b],[c]], 다중: [[a1,a2],[b1,b2],[c1,c2]]
+  correctIndex: number;
   patternType: ShapePatternType;
   hint: string;
 }
@@ -75,15 +78,53 @@ function pickDistinct(count: number, from: ShapeKey[] = SHAPE_KEYS): ShapeKey[] 
 }
 
 /**
- * 보기 3개 생성.
+ * 보기 3개 생성 (단일 빈칸용).
  * 정답 외 나머지 3종에서 랜덤 2개 선택 → 항상 서로 다름, 정답 포함.
  * 주의: SHAPE_KEYS는 4종이므로 others는 항상 3종 — 안전.
  */
-function makeChoices(answer: ShapeKey): { choices: ShapeKey[]; correctIndex: number } {
+function makeChoices(answer: ShapeKey): { choices: ShapeKey[][]; correctIndex: number } {
   const others = SHAPE_KEYS.filter(k => k !== answer);
   const [w1, w2] = shuffle(others);
-  const choices = shuffle([answer, w1, w2]);
-  return { choices, correctIndex: choices.indexOf(answer) };
+  const rawChoices = shuffle([answer, w1, w2]);
+  const choices: ShapeKey[][] = rawChoices.map(k => [k]);
+  return { choices, correctIndex: rawChoices.indexOf(answer) };
+}
+
+function makePairChoices(
+  answer: [ShapeKey, ShapeKey],
+  _cycleShapes: ShapeKey[],
+): { choices: ShapeKey[][]; correctIndex: number } {
+  const wrongPairs: [ShapeKey, ShapeKey][] = [];
+  let attempts = 0;
+  while (wrongPairs.length < 2 && attempts < 100) {
+    attempts++;
+    const p1 = SHAPE_KEYS[Math.floor(Math.random() * SHAPE_KEYS.length)];
+    const p2 = SHAPE_KEYS[Math.floor(Math.random() * SHAPE_KEYS.length)];
+    const pair: [ShapeKey, ShapeKey] = [p1, p2];
+    const diffFromAnswer = p1 !== answer[0] || p2 !== answer[1];
+    const diffFromExisting = wrongPairs.every(w => w[0] !== p1 || w[1] !== p2);
+    if (diffFromAnswer && diffFromExisting) {
+      wrongPairs.push(pair);
+    }
+  }
+  // fallback if still not 2 wrong pairs
+  if (wrongPairs.length < 2) {
+    for (const s1 of SHAPE_KEYS) {
+      for (const s2 of SHAPE_KEYS) {
+        const pair: [ShapeKey, ShapeKey] = [s1, s2];
+        const diffFromAnswer = s1 !== answer[0] || s2 !== answer[1];
+        const diffFromExisting = wrongPairs.every(w => w[0] !== s1 || w[1] !== s2);
+        if (diffFromAnswer && diffFromExisting) {
+          wrongPairs.push(pair);
+          if (wrongPairs.length >= 2) break;
+        }
+      }
+      if (wrongPairs.length >= 2) break;
+    }
+  }
+  const allChoices = shuffle([answer, wrongPairs[0], wrongPairs[1]]);
+  const correctIndex = allChoices.findIndex(c => c[0] === answer[0] && c[1] === answer[1]);
+  return { choices: allChoices, correctIndex };
 }
 
 // ── 패턴 정의 ──────────────────────────────────────────────────
@@ -165,30 +206,49 @@ const PATTERN_DEFS: Record<ShapePatternType, PatternDef> = {
 
 // ── 패턴 생성기 ────────────────────────────────────────────────
 
-function generateForType(type: ShapePatternType): ShapeSequence {
+function generateForType(
+  type: ShapePatternType,
+  opts?: { tileLength?: number; blankCount?: 1 | 2 },
+): ShapeSequence {
   const def = PATTERN_DEFS[type];
   const shapes = pickDistinct(def.shapeCount);
   const cycle = def.buildCycle(shapes);
 
-  // 표시 타일들 (visibleCount 개)
-  const tiles: (ShapeKey | null)[] = [];
-  for (let i = 0; i < def.visibleCount; i++) {
-    tiles.push(cycle[i % def.period]);
+  const blankCount = opts?.blankCount ?? 1;
+
+  if (blankCount === 2) {
+    const tileLength = opts?.tileLength ?? 12;
+    const fullTiles: ShapeKey[] = [];
+    for (let i = 0; i < tileLength; i++) {
+      fullTiles.push(cycle[i % def.period]);
+    }
+    // 빈칸 시작 인덱스: 시작(0)/끝 회피 → [1, tileLength-3]
+    const minStart = 1;
+    const maxStart = tileLength - 3;
+    const blankStart = minStart + Math.floor(Math.random() * (maxStart - minStart + 1));
+    const blanks: number[] = [blankStart, blankStart + 1];
+
+    const answerPair: [ShapeKey, ShapeKey] = [fullTiles[blanks[0]], fullTiles[blanks[1]]];
+
+    const tiles: (ShapeKey | null)[] = [...fullTiles];
+    tiles[blanks[0]] = null;
+    tiles[blanks[1]] = null;
+
+    const { choices, correctIndex } = makePairChoices(answerPair, shapes);
+
+    return { tiles, blanks, choices, correctIndex, patternType: type, hint: def.hint };
+  } else {
+    // 단일 빈칸 — 기존 동작 유지
+    const tiles: (ShapeKey | null)[] = [];
+    for (let i = 0; i < def.visibleCount; i++) {
+      tiles.push(cycle[i % def.period]);
+    }
+    const answer = cycle[def.visibleCount % def.period];
+    tiles.push(null);
+    const blanks: number[] = [tiles.length - 1];
+    const { choices, correctIndex } = makeChoices(answer);
+    return { tiles, blanks, choices, correctIndex, patternType: type, hint: def.hint };
   }
-
-  // ? 위치는 항상 visibleCount (마지막에 빈칸 1개 추가)
-  const answer = cycle[def.visibleCount % def.period];
-  tiles.push(null);
-
-  const { choices, correctIndex } = makeChoices(answer);
-
-  return {
-    tiles,
-    choices,
-    correctIndex,
-    patternType: type,
-    hint: def.hint,
-  };
 }
 
 // ── 공개 API ───────────────────────────────────────────────────
@@ -198,7 +258,7 @@ export function generateLogicSequence(params: LogicGenParams): ShapeSequence {
     return generateForType('ab');
   }
   const type = params.types[Math.floor(Math.random() * params.types.length)];
-  return generateForType(type);
+  return generateForType(type, { tileLength: params.tileLength, blankCount: params.blankCount });
 }
 
 export function judgeLogicAnswer(seq: ShapeSequence, selectedIndex: number): { correct: boolean } {
