@@ -49,21 +49,25 @@ export function generateChoices(answer: number, spread: number): number[] {
   let attempts = 0;
   while (choices.size < 4 && attempts < 200) {
     attempts++;
-    const offset = randInt(1, 15);
-    if (offset < spread) continue;
+    // spread를 최대 offset으로 사용해 정답 근처 보기 생성
+    const offset = randInt(1, spread);
     const sign = Math.random() < 0.5 ? 1 : -1;
     const candidate = answer + sign * offset;
     if (candidate > 0 && !choices.has(candidate)) {
       choices.add(candidate);
     }
   }
-  // fallback: fill sequentially if spread is too strict
-  let filler = 1;
+  // fallback: 정답 인접 숫자로 채우기 (1,2,3... 순서 아님)
+  let fallbackOffset = 1;
   while (choices.size < 4) {
-    if (!choices.has(filler)) choices.add(filler);
-    filler++;
+    const c1 = answer + fallbackOffset;
+    const c2 = answer - fallbackOffset;
+    if (c1 > 0 && !choices.has(c1)) choices.add(c1);
+    if (choices.size < 4 && c2 > 0 && !choices.has(c2)) choices.add(c2);
+    fallbackOffset++;
   }
-  return [...choices].sort(() => Math.random() - 0.5);
+  // 오름차순 정렬
+  return [...choices].sort((a, b) => a - b);
 }
 
 export function generateArithmeticQuestion(

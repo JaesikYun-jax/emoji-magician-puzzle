@@ -108,24 +108,31 @@ function _generateNewDistractors(
     const candidate = answer + sign * delta;
     if (
       candidate !== answer &&
-      candidate >= Math.max(0, resMin - 10) &&
-      candidate <= resMax + 10 &&
+      candidate >= Math.max(0, resMin) &&
+      candidate <= resMax &&
       !distractors.has(candidate)
     ) {
       distractors.add(candidate);
     }
   }
 
-  if (mode === 'hard' && distractors.size < 3) {
-    if (answer >= 10 && answer <= 99) {
+  // fallback: resultRange 내에서 정답 인접 숫자로 채우기
+  if (distractors.size < 3) {
+    if (mode === 'hard' && answer >= 10 && answer <= 99) {
       const flipped = Math.floor(answer / 10) + (answer % 10) * 10;
-      if (flipped !== answer && !distractors.has(flipped)) {
+      if (flipped !== answer && flipped >= resMin && flipped <= resMax && !distractors.has(flipped)) {
         distractors.add(flipped);
       }
     }
-    if (distractors.size < 3) distractors.add(answer + 1);
-    if (distractors.size < 3 && answer - 1 > 0) distractors.add(answer - 1);
-    if (distractors.size < 3) distractors.add(answer + 2);
+    let fallbackOffset = 1;
+    while (distractors.size < 3) {
+      const c1 = answer + fallbackOffset;
+      const c2 = answer - fallbackOffset;
+      if (c1 <= resMax && !distractors.has(c1)) distractors.add(c1);
+      if (distractors.size < 3 && c2 >= Math.max(0, resMin) && !distractors.has(c2)) distractors.add(c2);
+      fallbackOffset++;
+      if (fallbackOffset > 100) break; // safety
+    }
   }
 
   return Array.from(distractors).slice(0, 3);
@@ -191,7 +198,8 @@ export function generateQuestionByRule(
   const displayText = `${a} ${_opSymbol(rule.op)} ${b} = ?`;
 
   const distractors = _generateNewDistractors(answer, rule, params.distractorMode);
-  const allChoices = _shuffleArray([answer, ...distractors]);
+  // 오름차순 정렬 후 정답 인덱스 재계산
+  const allChoices = [answer, ...distractors].sort((a, b) => a - b);
   const correctIndex = allChoices.indexOf(answer);
 
   return {
