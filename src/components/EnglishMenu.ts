@@ -366,9 +366,9 @@ export class EnglishMenu {
 
       <div class="em-content">
         <div class="em-info-card">
-          <div class="em-info-mark" aria-hidden="true">🔤</div>
-          <span class="em-info-title">영어 <em>단어 학습</em></span>
-          <span class="em-info-sub">${t('subject.english.sub')}<br/>입문부터 고급까지, 단계별 플래시카드</span>
+          <div class="em-info-mark" aria-hidden="true">📚</div>
+          <span class="em-info-title">영어 <em>표현 익히기</em></span>
+          <span class="em-info-sub">단어 암기에서 문장 활용까지<br/>매일 5분으로 진짜 영어 실력을 만들어요</span>
           <div class="em-info-stats">
             <div class="em-info-stat">
               <span class="em-info-stat-num">${progress.xpInCurrentLevel} XP</span>
@@ -398,6 +398,27 @@ export class EnglishMenu {
     });
 
     el.querySelector('#em-start')!.addEventListener('pointerdown', () => {
+      const gameId = this.activeGameTab ?? 'english-spelling';
+      const game = getGameById(gameId);
+      const routeId = (game?.routeId ?? 'game-english') as ScreenId;
+
+      const navigateToGame = (): void => {
+        const savedResult = this.saveService.getEnglishLevelTestResult();
+        const LABEL_TO_DIFFICULTY: Record<string, string> = {
+          '입문': 'beginner',
+          '기초': 'elementary',
+          '중급': 'intermediate',
+          '고급': 'advanced',
+        };
+        const forced = this._forcedOverrides.get(gameId);
+        let levelId = forced ?? 'beginner';
+        if (!forced && savedResult?.recommendedLevelId) {
+          const label = savedResult.recommendedLevelId.replace(/^english-/, '');
+          levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
+        }
+        this.router.navigate({ to: routeId, subject: 'english', levelId });
+      };
+
       if (!this.saveService.isPlacementDone('english')) {
         const placement = new PlacementTest(this.container, this.router, this.saveService);
         placement.show({
@@ -408,36 +429,12 @@ export class EnglishMenu {
           gradientCss: 'linear-gradient(165deg, #064E3B, #065F46, #10B981)',
           onComplete: (_score) => {
             placement.hide();
-            const savedResult = this.saveService.getEnglishLevelTestResult();
-            const LABEL_TO_DIFFICULTY: Record<string, string> = {
-              '입문': 'beginner',
-              '기초': 'elementary',
-              '중급': 'intermediate',
-              '고급': 'advanced',
-            };
-            let levelId = 'beginner';
-            if (savedResult?.recommendedLevelId) {
-              const label = savedResult.recommendedLevelId.replace(/^english-/, '');
-              levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
-            }
-            this.router.navigate({ to: 'game-english', subject: 'english', levelId });
+            navigateToGame();
           },
           onBack: () => { placement.hide(); },
         });
       } else {
-        const savedResult = this.saveService.getEnglishLevelTestResult();
-        const LABEL_TO_DIFFICULTY: Record<string, string> = {
-          '입문': 'beginner',
-          '기초': 'elementary',
-          '중급': 'intermediate',
-          '고급': 'advanced',
-        };
-        let levelId = 'beginner';
-        if (savedResult?.recommendedLevelId) {
-          const label = savedResult.recommendedLevelId.replace(/^english-/, '');
-          levelId = LABEL_TO_DIFFICULTY[label] ?? 'beginner';
-        }
-        this.router.navigate({ to: 'game-english', subject: 'english', levelId });
+        navigateToGame();
       }
     });
 
@@ -449,6 +446,9 @@ export class EnglishMenu {
 
   private _renderGameTabs(el: HTMLElement, subjectId: string): void {
     const games = getGamesBySubject(subjectId);
+    if (!this.activeGameTab && games.length > 0) {
+      this.activeGameTab = games.find(g => g.isDefault)?.id ?? games[0]?.id ?? null;
+    }
     const tabsEl = el.querySelector('.sm-tabs') as HTMLElement;
 
     tabsEl.innerHTML = games.map(g => `
