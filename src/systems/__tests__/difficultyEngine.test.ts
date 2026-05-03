@@ -232,19 +232,19 @@ describe('computeDifficultyParams', () => {
     expect(params.streakMultiplier).toBeLessThanOrEqual(2.0);
   });
 
-  it('totalAnswered ≥ 30이면 timeLimitMs가 null이 아니다', () => {
+  it('totalAnswered ≥ 10이면 timeLimitMs가 null이 아니다', () => {
     let s = createDefaultStatus();
-    // 30개 이상 답변
-    s = applyAnswers(s, Array(30).fill(true));
-    // areaHistory가 activeRuleId 기준으로 쌓였는지 확인
+    // 10개 이상 답변 (기존 30 → 10으로 발동 조건 하향)
+    s = applyAnswers(s, Array(10).fill(true));
     const params = computeDifficultyParams(s);
-    // totalAnswered >= 30이면 timeLimitMs = 8000
-    if (s.areaHistory[s.activeRuleId]?.totalAnswered >= 30) {
-      expect(params.timeLimitMs).toBe(8000);
+    // totalAnswered >= 10이면 timeLimitMs는 학년/학기 기반 양수값
+    if (s.areaHistory[s.activeRuleId]?.totalAnswered >= 10) {
+      expect(params.timeLimitMs).not.toBeNull();
+      expect(params.timeLimitMs).toBeGreaterThan(0);
     }
   });
 
-  it('totalAnswered < 30이면 timeLimitMs가 null이다', () => {
+  it('totalAnswered < 10이면 timeLimitMs가 null이다', () => {
     const s = applyAnswers(createDefaultStatus(), Array(5).fill(true));
     const params = computeDifficultyParams(s);
     expect(params.timeLimitMs).toBeNull();

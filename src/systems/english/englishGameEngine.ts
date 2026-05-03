@@ -24,16 +24,36 @@ export function shuffle<T>(arr: T[]): T[] {
 }
 
 /** pool에서 correct를 제외하고 n개 오답 선택. pool이 n개 미만이면 있는 만큼만 반환 */
-export function pickWrongOptions(pool: WordEntry[], correct: WordEntry, n: number): WordEntry[] {
+export function pickWrongOptions(
+  pool: WordEntry[],
+  correct: WordEntry,
+  n: number,
+  difficulty?: string,
+): WordEntry[] {
   const filtered = pool.filter(w => w.id !== correct.id && w.korean !== correct.korean);
+  // advanced 모드에서는 동일 카테고리 단어를 오답으로 우선 선택
+  if (difficulty === 'advanced') {
+    const sameCategory = filtered.filter(w => w.category === correct.category);
+    const otherCategory = filtered.filter(w => w.category !== correct.category);
+    const samePicked = shuffle(sameCategory).slice(0, n);
+    if (samePicked.length >= n) return samePicked;
+    // 동일 카테고리가 부족하면 나머지를 다른 카테고리에서 보충
+    const needed = n - samePicked.length;
+    return [...samePicked, ...shuffle(otherCategory).slice(0, needed)];
+  }
   return shuffle(filtered).slice(0, n);
 }
 
 /** 단어 1개 + 문제 유형으로 EnglishQuizQuestion 생성 */
-export function buildQuestion(word: WordEntry, type: QuestionType, pool: WordEntry[]): EnglishQuizQuestion {
+export function buildQuestion(
+  word: WordEntry,
+  type: QuestionType,
+  pool: WordEntry[],
+  difficulty?: string,
+): EnglishQuizQuestion {
   const maxChoices = Math.min(4, Math.max(2, pool.length));
   const wrongCount = maxChoices - 1;
-  const wrongs = pickWrongOptions(pool, word, wrongCount);
+  const wrongs = pickWrongOptions(pool, word, wrongCount, difficulty);
   const allChoices = shuffle([word, ...wrongs]);
 
   if (type === 'en-to-ko') {
@@ -59,7 +79,7 @@ export function buildQuestion(word: WordEntry, type: QuestionType, pool: WordEnt
  * - 나머지는 랜덤 방향 혼합
  * - words.length가 부족하면 가능한 범위 내에서 생성
  */
-export function buildQuizSession(words: WordEntry[], count: number): EnglishQuizSession {
+export function buildQuizSession(words: WordEntry[], count: number, difficulty?: string): EnglishQuizSession {
   if (words.length === 0) return { questions: [], totalCount: 0 };
 
   // 페어 포함 시 필요 unique 단어 수 = count - 1
@@ -77,18 +97,18 @@ export function buildQuizSession(words: WordEntry[], count: number): EnglishQuiz
     const pairWord = selected[0];
     const restWords = selected.slice(1);
 
-    questions.push(buildQuestion(pairWord, 'en-to-ko', words));
-    questions.push(buildQuestion(pairWord, 'ko-to-en', words));
+    questions.push(buildQuestion(pairWord, 'en-to-ko', words, difficulty));
+    questions.push(buildQuestion(pairWord, 'ko-to-en', words, difficulty));
 
     // 나머지 단어들은 랜덤 방향
     restWords.forEach(word => {
       const type: QuestionType = Math.random() < 0.5 ? 'en-to-ko' : 'ko-to-en';
-      questions.push(buildQuestion(word, type, words));
+      questions.push(buildQuestion(word, type, words, difficulty));
     });
   } else {
     // 페어 없이 모두 en-to-ko (단어 수 부족 등 edge case)
     selected.forEach(word => {
-      questions.push(buildQuestion(word, 'en-to-ko', words));
+      questions.push(buildQuestion(word, 'en-to-ko', words, difficulty));
     });
   }
 

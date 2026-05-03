@@ -95,7 +95,7 @@ export function generateArithmeticQuestion(
       break;
     }
     case 'mul': {
-      const mulMax = Math.min(10, rMax);
+      const mulMax = Math.min(rMax, 30);
       const mulMin = Math.max(2, rMin);
       operandA = randInt(mulMin, mulMax);
       // ensure product <= rMax

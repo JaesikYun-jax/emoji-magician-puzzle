@@ -18,5 +18,7 @@ export const ARITHMETIC_LEVELS: ArithmeticLevel[] = [
   { id: 7,  labelKey: 'arithmetic.level7.label',  operations: ['add','sub','mul'],        numRange: [2, 20],  items: ['🍕','🍔','🌮'] },
   { id: 8,  labelKey: 'arithmetic.level8.label',  operations: ['add','sub','mul'],        numRange: [2, 30],  items: ['🍣','🍜','🍱'] },
   { id: 9,  labelKey: 'arithmetic.level9.label',  operations: ['add','sub','mul'],        numRange: [5, 50],  items: ['🎈','🎁','🎀'] },
-  { id: 10, labelKey: 'arithmetic.level10.label', operations: ['add','sub','mul','div'],  numRange: [5, 100], items: ['🏆','🌟','💎'] },
+  { id: 10, labelKey: 'arithmetic.level10.label', operations: ['add','sub','mul','div'],  numRange: [5, 100],  items: ['🏆','🌟','💎'] },
+  { id: 11, labelKey: 'arithmetic.level11.label', operations: ['add','sub','mul','div'],  numRange: [10, 200], items: ['🔥','⚡','🌪️'] },
+  { id: 12, labelKey: 'arithmetic.level12.label', operations: ['add','sub','mul','div'],  numRange: [50, 500], items: ['🧙','🪄','✨'] },
 ];
