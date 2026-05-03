@@ -242,6 +242,11 @@ export const ko = {
   'reasoning.result.menu': '🏠 추리 메뉴로',
 
   // 논리 게임 내 문구
+  'logic.question.single': '다음에 올 모양은?',
+  'logic.question.multi': '빈칸에 들어갈 모양은?',
+  'logic.hint.show': '💡 힌트 보기',
+  'logic.hint.hide': '💡 힌트 닫기',
+  'logic.label.findRule': '규칙찾기',
   'logic.title': '패턴 이어가기',
   'logic.subtitle': '다음에 올 숫자를 골라요!',
   'logic.progress': '{current} / {total}',

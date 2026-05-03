@@ -31,7 +31,7 @@ function inferAndCheckUnambiguous(seq: ReturnType<typeof generateLogicSequence>,
   }
   // 정답 위치의 도형 (= choices[correctIndex]) 가 cycle 규칙대로인지
   const expectedAnswer = cycle[blankPos % period];
-  return seq.choices[seq.correctIndex] === expectedAnswer;
+  return seq.choices[seq.correctIndex][0] === expectedAnswer;
 }
 
 describe('generateLogicSequence — 공통 불변량', () => {
@@ -40,7 +40,8 @@ describe('generateLogicSequence — 공통 불변량', () => {
       for (let trial = 0; trial < 30; trial++) {
         const seq = generateLogicSequence({ types: [type] });
         expect(seq.choices).toHaveLength(3);
-        expect(new Set(seq.choices).size).toBe(3);
+        const choiceStrs = seq.choices.map(c => JSON.stringify(c));
+        expect(new Set(choiceStrs).size).toBe(3);
       }
     }
   });
@@ -50,7 +51,8 @@ describe('generateLogicSequence — 공통 불변량', () => {
       for (let trial = 0; trial < 20; trial++) {
         const seq = generateLogicSequence({ types: [type] });
         expect(seq.choices[seq.correctIndex]).toBeDefined();
-        expect(SHAPE_KEYS).toContain(seq.choices[seq.correctIndex]);
+        expect(seq.choices[seq.correctIndex].length).toBeGreaterThanOrEqual(1);
+        seq.choices[seq.correctIndex].forEach(k => expect(SHAPE_KEYS).toContain(k));
       }
     }
   });
@@ -215,5 +217,90 @@ describe('getPatternMeta', () => {
     expect(getPatternMeta('abba')).toEqual({ period: 4, shapeCount: 2, visibleCount: 6 });
     expect(getPatternMeta('aabbcc')).toEqual({ period: 6, shapeCount: 3, visibleCount: 6 });
     expect(getPatternMeta('abccba')).toEqual({ period: 6, shapeCount: 3, visibleCount: 6 });
+  });
+});
+
+describe('generateLogicSequence — blankCount: 2 (다중 빈칸)', () => {
+  const ALL_TYPES_MULTI: ShapePatternType[] = [
+    'ab', 'abc', 'abcd', 'aabb', 'aaab', 'abba', 'aabbcc', 'abccba',
+  ];
+
+  it('tiles.length === 12', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+      expect(seq.tiles.length).toBe(12);
+    }
+  });
+
+  it('null이 정확히 2개', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+      expect(seq.tiles.filter(t => t === null).length).toBe(2);
+    }
+  });
+
+  it('blanks.length === 2이고 인접 (blanks[1] === blanks[0] + 1)', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      for (let trial = 0; trial < 20; trial++) {
+        const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+        expect(seq.blanks.length).toBe(2);
+        expect(seq.blanks[1]).toBe(seq.blanks[0] + 1);
+      }
+    }
+  });
+
+  it('시작/끝 회피: blanks[0] >= 1 && blanks[1] <= 10', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      for (let trial = 0; trial < 20; trial++) {
+        const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+        expect(seq.blanks[0]).toBeGreaterThanOrEqual(1);
+        expect(seq.blanks[1]).toBeLessThanOrEqual(10);
+      }
+    }
+  });
+
+  it('choices.length === 3이고 각 choice가 길이 2 배열', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+      expect(seq.choices.length).toBe(3);
+      seq.choices.forEach(c => expect(c.length).toBe(2));
+    }
+  });
+
+  it('정답 페어가 choices[correctIndex]이고 원래 tiles 위치와 일치', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      for (let trial = 0; trial < 20; trial++) {
+        const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+        const correctPair = seq.choices[seq.correctIndex];
+        expect(correctPair.length).toBe(2);
+        // correctIndex가 유효한 index인지
+        expect(seq.correctIndex).toBeGreaterThanOrEqual(0);
+        expect(seq.correctIndex).toBeLessThan(3);
+      }
+    }
+  });
+
+  it('오답 페어가 정답 페어와 다름', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      for (let trial = 0; trial < 10; trial++) {
+        const seq = generateLogicSequence({ types: [type], tileLength: 12, blankCount: 2 });
+        const correctPair = seq.choices[seq.correctIndex];
+        seq.choices.forEach((c, i) => {
+          if (i !== seq.correctIndex) {
+            const isDiff = c[0] !== correctPair[0] || c[1] !== correctPair[1];
+            expect(isDiff).toBe(true);
+          }
+        });
+      }
+    }
+  });
+
+  it('단일 빈칸 기존 동작 유지: blanks.length === 1, tiles 마지막이 null', () => {
+    for (const type of ALL_TYPES_MULTI) {
+      const seq = generateLogicSequence({ types: [type] });
+      expect(seq.blanks.length).toBe(1);
+      expect(seq.tiles[seq.tiles.length - 1]).toBeNull();
+      expect(seq.tiles.filter(t => t === null).length).toBe(1);
+    }
   });
 });

@@ -242,6 +242,11 @@ export const en = {
   'reasoning.result.menu': '🏠 Reasoning Menu',
 
   // Logic game
+  'logic.question.single': 'What comes next?',
+  'logic.question.multi': 'What fills the blanks?',
+  'logic.hint.show': '💡 Show Hint',
+  'logic.hint.hide': '💡 Hide Hint',
+  'logic.label.findRule': 'Find the Rule',
   'logic.title': 'Pattern Sequence',
   'logic.subtitle': 'Pick the next number!',
   'logic.progress': '{current} / {total}',
