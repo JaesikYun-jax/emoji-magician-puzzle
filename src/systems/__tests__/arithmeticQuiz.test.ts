@@ -22,6 +22,25 @@ describe('generateChoices', () => {
       expect(generateChoices(3, 1).every(c => c >= 0)).toBe(true);
     }
   });
+  it('오름차순 정렬', () => {
+    for (let i = 0; i < 20; i++) {
+      const choices = generateChoices(8, 4);
+      for (let j = 1; j < choices.length; j++) {
+        expect(choices[j]).toBeGreaterThan(choices[j - 1]!);
+      }
+    }
+  });
+  it('오답 보기는 spread 이내 거리에 있다 (최대 offset = spread)', () => {
+    const spread = 4;
+    const answer = 10;
+    for (let trial = 0; trial < 30; trial++) {
+      const choices = generateChoices(answer, spread);
+      const wrongs = choices.filter(c => c !== answer);
+      wrongs.forEach(w => {
+        expect(Math.abs(w - answer)).toBeLessThanOrEqual(spread);
+      });
+    }
+  });
 });
 
 describe('generateArithmeticQuestion - Level 1 (add only)', () => {

@@ -239,6 +239,41 @@ describe('generateQuestionByRule', () => {
     }
   });
 
+  // ── choices 오름차순 정렬 ─────────────────────────────────────────────────────
+
+  it('choices는 오름차순으로 정렬되어 있다', () => {
+    const params = makeParams();
+    for (let i = 0; i < 15; i++) {
+      clearQuestionCache();
+      const q = generateQuestionByRule('g1s1-add-single-no-carry', params);
+      for (let j = 1; j < q.choices.length; j++) {
+        expect(q.choices[j]).toBeGreaterThan(q.choices[j - 1]!);
+      }
+    }
+  });
+
+  it('correctIndex는 정렬된 choices 안에서 correctAnswer를 가리킨다', () => {
+    const params = makeParams();
+    for (let i = 0; i < 15; i++) {
+      clearQuestionCache();
+      const q = generateQuestionByRule('g1s1-add-single-no-carry', params);
+      expect(q.choices[q.correctIndex]).toBe(q.correctAnswer);
+    }
+  });
+
+  it('오답 보기는 resultRange를 벗어나지 않는다 (±10 버퍼 없음)', () => {
+    const params = makeParams({ distractorMode: 'easy' });
+    for (let i = 0; i < 20; i++) {
+      clearQuestionCache();
+      const q = generateQuestionByRule('g1s1-add-single-no-carry', params);
+      // g1s1-add-single-no-carry resultRange = [2, 9]
+      q.choices.forEach(c => {
+        expect(c).toBeGreaterThanOrEqual(0);
+        expect(c).toBeLessThanOrEqual(9);
+      });
+    }
+  });
+
   // ── displayText 형식 ──────────────────────────────────────────────────────────
 
   it('displayText는 "A op B = ?" 형식을 포함한다', () => {
