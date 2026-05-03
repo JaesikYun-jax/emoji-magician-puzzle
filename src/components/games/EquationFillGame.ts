@@ -110,7 +110,7 @@ export class EquationFillGame {
     // HUD
     const hud = document.createElement('div');
     hud.style.cssText = `
-      position: sticky; top: 0;
+      position: relative;
       width: 100%; max-width: 480px;
       height: 64px;
       padding: 0 16px;
@@ -179,7 +179,7 @@ export class EquationFillGame {
     // 선택지 버튼 컨테이너
     this.choicesEl = document.createElement('div');
     this.choicesEl.style.cssText = `
-      display: flex; flex-direction: column; gap: 12px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
     `;
     card.appendChild(this.choicesEl);
 
@@ -237,11 +237,11 @@ export class EquationFillGame {
       btn.textContent = String(choice);
       btn.className = 'eq-choice-btn';
       btn.style.cssText = `
-        display: block; width: 100%; height: 58px;
+        display: block; width: 100%; min-height: 68px;
         background: rgba(255,255,255,0.12);
         border: 1.5px solid rgba(255,255,255,0.25);
-        border-radius: 16px;
-        color: #fff; font-size: 1.5rem; font-weight: 700;
+        border-radius: 18px;
+        color: #fff; font-size: 1.55rem; font-weight: 800;
         cursor: pointer;
         transition: background 120ms, border-color 120ms;
         touch-action: manipulation;

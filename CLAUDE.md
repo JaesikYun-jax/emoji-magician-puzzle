@@ -92,6 +92,45 @@ node agents/game-team.mjs "{사용자 요청 그대로}"
 @keyframes star-pop { 0%{transform:scale(0)rotate(-30deg)} 70%{transform:scale(1.2)} 100%{transform:scale(1)} }
 ```
 
+### 화면 트랜지션 시스템 — `.screen-root` 마커 클래스
+
+모든 메뉴/허브 화면은 root element 에 **반드시 `screen-root` 클래스를 부여**해야 한다.
+이 클래스가 entry/exit/자식 stagger 애니메이션을 일괄 트리거한다.
+
+**신규 화면 컴포넌트 추가 시 체크리스트 (4가지 모두 필수):**
+
+1. `show()` 의 `document.createElement('div')` 직후 `el.classList.add('screen-root')` 추가
+2. `hide()` 에서 `this.el.remove()` 대신 `fadeOutAndRemove(this.el)` 사용 (`src/utils/fadeOutAndRemove.ts` import)
+3. `src/components/__tests__/screenTransitions.test.ts` 의 `FACTORIES` 배열에 1줄 등록
+4. AppRouter 에 등록되는 ShowHideable 컴포넌트라면 자동으로 위 시스템에 편입됨 (별도 CSS 작성 불요)
+
+```typescript
+// 신규 메뉴 컴포넌트 show() 패턴 — screen-root 클래스 + fadeOutAndRemove
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
+
+show(): void {
+  this.hide();
+  const el = document.createElement('div');
+  el.classList.add('screen-root');     // ← 필수
+  el.id = 'my-new-menu';
+  el.innerHTML = `...`;
+  this.container.appendChild(el);
+  this.el = el;
+}
+hide(): void {
+  if (this.el) { fadeOutAndRemove(this.el); this.el = null; }   // ← 필수
+}
+```
+
+**적용 범위:**
+
+- ✅ 메뉴/허브 화면 (`*Menu`, `BrandHome`, `HomeB`, `ProfileSetup`, `SubjectSelect`, `LevelTest*`, `AdminPage`)
+- ❌ 게임 컨테이너 (`#g1-container` 등) — `LevelIntro` 카운트다운이 트랜지션 역할
+- ❌ 오버레이 컴포넌트 (`HUD`, `LevelIntro`, `ResultScreen`) — 자체 애니메이션 보유
+
+CSS 정의 위치: [src/style.css](src/style.css) 말미 `===== 화면 트랜지션 =====` 섹션.
+`prefers-reduced-motion` 시 100ms opacity-only fade 로 자동 단순화.
+
 ---
 
 ## 개발 및 테스트 지침

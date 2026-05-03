@@ -54,16 +54,15 @@ export class ArithmeticGame {
   private render(): void {
     this.el.innerHTML = `
       <div class="arith-hud">
-        <button class="arith-hud__back" type="button" style="
-          width:36px; height:36px; border-radius:50%;
-          background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3);
-          color:#fff; display:grid; place-items:center; cursor:pointer; flex-shrink:0;
-        " aria-label="뒤로가기">${BACK_SVG}</button>
+        <button class="game-exit-btn arith-hud__back" type="button" aria-label="뒤로가기">${BACK_SVG}</button>
         <div class="arith-hud__progress" id="arith-progress">문제 1/${QUESTIONS_PER_SET}</div>
-        <div style="width:36px"></div>
-      </div>
-      <div class="arith-timer-track">
-        <div class="arith-timer-bar" id="arith-timer-bar" style="width:100%"></div>
+        <div id="arith-timer-pill" style="
+          background:rgba(255,255,255,0.15);
+          border:1.5px solid rgba(255,255,255,0.3);
+          border-radius:20px; padding:4px 12px;
+          color:#fff; font-size:0.9rem; font-weight:700;
+          flex-shrink:0;
+        ">⏱ ${this.diff.timePerQuestion}초</div>
       </div>
       <div class="arith-question-card" id="arith-question-area"></div>
       <div class="arith-choices" id="arith-choices"></div>
@@ -163,15 +162,17 @@ export class ArithmeticGame {
 
   private startTimer(): void {
     this.timeRemaining = this.diff.timePerQuestion;
-    this.updateTimerBar();
+    this.updateTimerPill();
     this.timerId = setInterval(() => {
-      this.timeRemaining--;
-      this.updateTimerBar();
+      this.timeRemaining -= 0.1;
+      this.updateTimerPill();
       if (this.timeRemaining <= 0) {
         this.stopTimer();
+        this.timeRemaining = 0;
+        this.updateTimerPill();
         this.onTimeout();
       }
-    }, 1000);
+    }, 100);
   }
 
   private stopTimer(): void {
@@ -181,17 +182,15 @@ export class ArithmeticGame {
     }
   }
 
-  private updateTimerBar(): void {
-    const bar = this.el.querySelector('#arith-timer-bar') as HTMLElement | null;
-    if (!bar) return;
-    const pct = Math.max(0, (this.timeRemaining / this.diff.timePerQuestion) * 100);
-    bar.style.width = `${pct}%`;
-    bar.classList.remove('arith-timer-bar--warn', 'arith-timer-bar--danger');
-    if (pct < 30) {
-      bar.classList.add('arith-timer-bar--danger');
-    } else if (pct < 50) {
-      bar.classList.add('arith-timer-bar--warn');
-    }
+  private updateTimerPill(): void {
+    const pill = this.el.querySelector('#arith-timer-pill') as HTMLElement | null;
+    if (!pill) return;
+    const secs = Math.ceil(this.timeRemaining);
+    pill.textContent = `⏱ ${secs}초`;
+    pill.style.color = secs <= 5 ? 'var(--arith-timer-danger, #EF4444)' : '#fff';
+    pill.style.borderColor = secs <= 5
+      ? 'rgba(239,68,68,0.5)'
+      : 'rgba(255,255,255,0.3)';
   }
 
   private onChoiceSelect(chosen: number, btn: HTMLButtonElement, q: ArithmeticQuestion): void {

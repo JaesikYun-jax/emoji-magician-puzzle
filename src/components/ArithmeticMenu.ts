@@ -3,6 +3,7 @@ import { arithmeticSaveService } from '../services/ArithmeticSaveService';
 import { DifficultySheet } from './DifficultySheet';
 import type { AppRouter } from '../router/AppRouter';
 import { t } from '../i18n';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const BACK_SVG = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 4L6 10l6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -23,7 +24,8 @@ export class ArithmeticMenu {
     this.hide();
 
     const el = document.createElement('div');
-    el.className = 'arith-menu';
+    el.classList.add('screen-root');
+    el.className = 'arith-menu screen-root';
 
     el.innerHTML = `
       <div class="arith-menu__header">
@@ -50,7 +52,7 @@ export class ArithmeticMenu {
   }
 
   hide(): void {
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
   }
 
   private renderGrid(): void {

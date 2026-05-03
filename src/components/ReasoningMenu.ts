@@ -7,6 +7,7 @@ import type { SaveService } from '../services/SaveService';
 import { t } from '../i18n';
 import { getGamesBySubject, getGameById } from '../game-data/gamesCatalog';
 import { buildSubjectProgress } from '../systems/progression/xpEngine';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 const REASONING_HOME_STYLE = `
 #reasoning-home {
@@ -214,6 +215,7 @@ export class ReasoningMenu {
     const pct = progress.levelProgressPercent;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'reasoning-home';
     el.innerHTML = `
       <span class="rh-decor rh-decor--1" aria-hidden="true">?</span>
@@ -409,6 +411,6 @@ export class ReasoningMenu {
   }
 
   hide(): void {
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
   }
 }

@@ -2,6 +2,7 @@ import type { AppRouter } from '../router/AppRouter';
 import type { AgeGroup, ChildProfile } from '../game-data/subjectConfig';
 import type { SaveService } from '../services/SaveService';
 import { t } from '../i18n';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 // ── 스타일 ────────────────────────────────────────────────────────────────────
 
@@ -257,6 +258,7 @@ export class ProfileSetup {
     this.selectedGrade = null;
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'profile-setup';
     el.innerHTML = `
       <div class="ps-inner">
@@ -347,7 +349,7 @@ export class ProfileSetup {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
     this.nicknameInput = null;

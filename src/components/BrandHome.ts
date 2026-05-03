@@ -1,5 +1,6 @@
 import type { AppRouter } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 /* =========================================================================
    BrandHome — Sabak "사교육비 박살" HomeA
@@ -646,6 +647,7 @@ export class BrandHome {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'brand-home';
     el.innerHTML = this.renderMarkup();
 
@@ -658,7 +660,7 @@ export class BrandHome {
 
   hide(): void {
     if (this.frenzyTimer) { clearTimeout(this.frenzyTimer); this.frenzyTimer = null; }
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
     this.mascotEl = null;
     this.tapTimes = [];
   }

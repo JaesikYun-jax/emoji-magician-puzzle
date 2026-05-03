@@ -1,6 +1,7 @@
 import type { AppRouter } from '../router/AppRouter';
 import type { SaveService } from '../services/SaveService';
 import { t } from '../i18n';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 // ── 스타일 ────────────────────────────────────────────────────────────────────
 
@@ -323,6 +324,7 @@ export class HomeB {
     const initial  = nickname.charAt(0).toUpperCase();
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'home-b';
     el.innerHTML = `
       <div class="hb-glow-1"></div>
@@ -377,7 +379,7 @@ export class HomeB {
 
   hide(): void {
     if (this.el) {
-      this.el.remove();
+      fadeOutAndRemove(this.el);
       this.el = null;
     }
     if (this.toastTimer !== null) {

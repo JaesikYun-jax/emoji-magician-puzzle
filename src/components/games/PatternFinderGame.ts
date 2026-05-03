@@ -70,7 +70,6 @@ export class PatternFinderGame {
   private timerEl!: HTMLElement;
   private tilesEl!: HTMLElement;
   private choicesEl!: HTMLElement;
-  private _sortedMap: number[] = [];
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
@@ -345,25 +344,18 @@ export class PatternFinderGame {
   private _renderChoices(seq: PatternSequence): void {
     this.choicesEl.innerHTML = '';
 
-    // 원본 인덱스를 유지하며 오름차순 정렬
-    const sortedEntries = seq.choices
-      .map((val, origIdx) => ({ val, origIdx }))
-      .sort((a, b) => a.val - b.val);
-
-    // DOM 위치 → 원본 인덱스 맵 저장
-    this._sortedMap = sortedEntries.map(e => e.origIdx);
-
-    sortedEntries.forEach(({ val, origIdx }, domPos) => {
+    // 시스템 레이어에서 이미 오름차순으로 반환되므로 그대로 렌더링
+    seq.choices.forEach((val, idx) => {
       const btn = document.createElement('button');
       btn.className = 'pf-choice-btn';
       btn.style.cssText = `
         position: relative;
         display: flex; align-items: center; justify-content: center;
-        width: 100%; height: 72px;
+        width: 100%; min-height: 68px;
         background: rgba(255,255,255,0.12);
         border: 1.5px solid rgba(255,255,255,0.25);
-        border-radius: 20px;
-        color: #fff; font-size: 1.6rem; font-weight: 800;
+        border-radius: 18px;
+        color: #fff; font-size: 1.55rem; font-weight: 800;
         cursor: pointer;
         transition: background 120ms, border-color 120ms;
         touch-action: manipulation;
@@ -372,13 +364,13 @@ export class PatternFinderGame {
 
       // 번호 배지 (좌상단, 1-based)
       const badge = document.createElement('span');
-      badge.textContent = String(domPos + 1);
+      badge.textContent = String(idx + 1);
       badge.style.cssText = `
         position: absolute; top: 7px; left: 10px;
         font-size: 0.68rem; font-weight: 700;
         color: rgba(255,255,255,0.45);
         line-height: 1;
-        animation: pf-num-badge-in 200ms ${domPos * 80}ms both ease;
+        animation: pf-num-badge-in 200ms ${idx * 80}ms both ease;
       `;
       btn.appendChild(badge);
 
@@ -387,8 +379,7 @@ export class PatternFinderGame {
       labelSpan.textContent = String(val);
       btn.appendChild(labelSpan);
 
-      // 클릭 시 원본 인덱스 전달
-      btn.addEventListener('pointerdown', () => this._onAnswer(origIdx));
+      btn.addEventListener('pointerdown', () => this._onAnswer(idx));
       this.choicesEl.appendChild(btn);
     });
   }
@@ -406,15 +397,14 @@ export class PatternFinderGame {
       this.choicesEl.querySelectorAll('.pf-choice-btn'),
     ) as HTMLButtonElement[];
 
-    buttons.forEach((btn, domIdx) => {
+    buttons.forEach((btn, idx) => {
       btn.style.pointerEvents = 'none';
-      const origIdx = this._sortedMap[domIdx] ?? domIdx;
-      if (origIdx === seq.correctIndex) {
+      if (idx === seq.correctIndex) {
         btn.style.background = 'rgba(16,185,129,0.50)';
         btn.style.borderColor = '#10B981';
         btn.style.boxShadow = '0 0 20px rgba(16,185,129,0.55)';
         btn.style.animation = 'pf-correct-pop 300ms ease';
-      } else if (origIdx === choiceIndex && !isCorrect) {
+      } else if (idx === choiceIndex && !isCorrect) {
         btn.style.background = 'rgba(239,68,68,0.45)';
         btn.style.borderColor = '#EF4444';
         btn.style.animation = 'pf-shake 280ms ease';

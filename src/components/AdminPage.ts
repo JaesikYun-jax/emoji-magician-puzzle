@@ -16,6 +16,7 @@
 import type { AppRouter } from '../router/AppRouter';
 import { REASONING_BANK } from '../game-data/banks/reasoningBank';
 import type { ReasoningDifficulty } from '../game-data/banks/reasoningBank';
+import { fadeOutAndRemove } from '../utils/fadeOutAndRemove';
 
 type BankTab = 'reasoning';
 
@@ -168,6 +169,7 @@ export class AdminPage {
     }
 
     const el = document.createElement('div');
+    el.classList.add('screen-root');
     el.id = 'admin-page';
     el.innerHTML = `
       <div class="adm-header">
@@ -204,7 +206,7 @@ export class AdminPage {
   }
 
   hide(): void {
-    if (this.el) { this.el.remove(); this.el = null; }
+    if (this.el) { fadeOutAndRemove(this.el); this.el = null; }
   }
 
   private _renderContent(el: HTMLElement): void {
