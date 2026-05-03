@@ -29,7 +29,7 @@ export type ScreenId =
   | 'game-arithmetic'
   | 'game-matrix-reasoning'
   | 'game-odd-one-out'
-  | 'game-sentence-order'
+  | 'game-fill-blank'
   | 'reasoning-menu'
   | 'game-reasoning'
   | 'admin';

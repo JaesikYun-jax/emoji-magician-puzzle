@@ -29,7 +29,7 @@ import { ArithmeticGame } from './components/games/ArithmeticGame';
 import { ArithmeticMenu } from './components/ArithmeticMenu';
 import { MatrixReasoningGame } from './components/games/MatrixReasoningGame';
 import { OddOneOutGame } from './components/games/OddOneOutGame';
-import { SentenceOrderingGame } from './components/games/SentenceOrderingGame';
+import { FillInBlankGame } from './components/games/FillInBlankGame';
 import { AdminPage } from './components/AdminPage';
 import { getMatrixLevel, getFirstMatrixLevelId } from './game-data/matrixReasoningLevels';
 import { getOddOneOutLevel, getFirstOddLevelId } from './game-data/oddOneOutLevels';
@@ -95,9 +95,9 @@ const koreanContainer = document.createElement('div');
 koreanContainer.id = 'korean-game-container';
 app.appendChild(koreanContainer);
 
-const sentenceOrderContainer = document.createElement('div');
-sentenceOrderContainer.id = 'sentence-order-container';
-app.appendChild(sentenceOrderContainer);
+const fillBlankContainer = document.createElement('div');
+fillBlankContainer.id = 'fill-blank-container';
+app.appendChild(fillBlankContainer);
 
 
 // ── 3. 게임 컴포넌트 ─────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ const reasoningGame = new ReasoningGame(reasoningContainer, appRouter, saveServi
 const englishGame = new EnglishGame(englishContainer);
 const koreanGame = new KoreanGame(koreanContainer);
 const arithmeticGame = new ArithmeticGame(app);
-const sentenceOrderingGame = new SentenceOrderingGame(sentenceOrderContainer);
+const fillInBlankGame = new FillInBlankGame(fillBlankContainer);
 
 // ── 4. UI 레이어 컴포넌트 ────────────────────────────────────────────────────
 const brandHome      = new BrandHome(app, appRouter, saveService);
@@ -342,10 +342,14 @@ appRouter.register('game-matrix-reasoning', {
   hide() { matrixGame.hide(); },
 });
 
-// ── 8-j. game-sentence-order 화면 ────────────────────────────────────────────
-appRouter.register('game-sentence-order', {
-  show() { sentenceOrderingGame.show(); },
-  hide() { sentenceOrderingGame.hide(); },
+// ── 8-j. game-fill-blank 화면 ────────────────────────────────────────────────
+appRouter.register('game-fill-blank', {
+  show() {
+    const state = appRouter.getState();
+    const difficulty = state.levelId ?? 'beginner';
+    fillInBlankGame.show(difficulty);
+  },
+  hide() { fillInBlankGame.hide(); },
 });
 
 // ── 8-i. game-odd-one-out 화면 ───────────────────────────────────────────────
@@ -543,7 +547,7 @@ const GAME_SCREENS = new Set([
   'game-arithmetic',
   'game-matrix-reasoning',
   'game-odd-one-out',
-  'game-sentence-order',
+  'game-fill-blank',
   'game-reasoning',
   'level-intro', // 수박 게임 카운트다운 포함
 ]);

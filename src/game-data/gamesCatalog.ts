@@ -111,15 +111,26 @@ export const GAMES_CATALOG: GameDefinition[] = [
     },
   },
   {
-    id: 'english-sentence-order',
+    id: 'english-fill-blank',
     subjectId: 'english',
-    labelKo: '어순 맞추기',
-    labelEn: 'Sentence Ordering',
-    descriptionKo: '단어 카드를 올바른 순서로 탭하세요',
-    descriptionEn: 'Tap word cards in the correct order',
-    icon: '📝',
-    routeId: 'game-sentence-order',
+    labelKo: '빈칸 채우기',
+    labelEn: 'Fill in the Blank',
+    descriptionKo: '한국어 의미를 보고 문장의 빈칸을 채워요',
+    descriptionEn: 'Read the Korean meaning and fill in the English blanks',
+    icon: '✏️',
+    routeId: 'game-fill-blank',
     isDefault: false,
+    difficultySettings: {
+      paramKey: 'levelId',
+      panelLabel: '난이도 선택',
+      options: [
+        { id: 'beginner',     label: '입문' },
+        { id: 'elementary',   label: '기초' },
+        { id: 'intermediate', label: '중급' },
+        { id: 'advanced',     label: '고급' },
+        { id: 'expert',       label: '심화' },
+      ],
+    },
   },
   // logic 분야
   {
