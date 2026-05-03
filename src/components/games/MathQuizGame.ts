@@ -17,6 +17,7 @@ export class MathQuizGame {
   private currentQuestion: NewMathQuestion | null = null;
   private isAnswering = false;
   private timerId: ReturnType<typeof setInterval> | null = null;
+  private pendingTimers: ReturnType<typeof setTimeout>[] = [];
   private timeRemaining = 0;
   private totalTimerMs = 0;
 
@@ -136,6 +137,10 @@ export class MathQuizGame {
   }
 
   show(): void {
+    // 이전 세션의 pending setTimeout을 모두 취소한 뒤 초기화
+    this.clearPendingTimers();
+    this.isAnswering = false;
+    this.currentQuestion = null;
     this.el.style.display = 'flex';
     clearQuestionCache();
     this.nextQuestion();
@@ -144,6 +149,14 @@ export class MathQuizGame {
   hide(): void {
     this.el.style.display = 'none';
     this.stopTimer();
+    // 이전 세션의 pending setTimeout 취소 (isAnswering 오염 방지)
+    this.clearPendingTimers();
+    this.isAnswering = false;
+  }
+
+  private clearPendingTimers(): void {
+    this.pendingTimers.forEach(id => clearTimeout(id));
+    this.pendingTimers = [];
   }
 
   private exitToMenu(): void {
@@ -246,7 +259,8 @@ export class MathQuizGame {
     this.updateHUD();
 
     const delay = isCorrect ? 500 : 700;
-    setTimeout(() => this.nextQuestion(), delay);
+    const timerId = setTimeout(() => this.nextQuestion(), delay);
+    this.pendingTimers.push(timerId);
   }
 
   private checkRuleProgression(status: ReturnType<typeof userMathStatusService.get>): void {

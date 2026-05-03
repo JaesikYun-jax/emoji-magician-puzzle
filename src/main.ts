@@ -174,10 +174,7 @@ appRouter.register('game-arithmetic', {
     arithmeticGame.hide();
   },
 });
-appRouter.register('math-quiz-game', {
-  show() { mathQuizGame.show(); },
-  hide() { mathQuizGame.hide(); },
-});
+// 'math-quiz-game'은 레거시 ScreenId — 런타임 미사용, 등록 제거 (game-math-quiz로 통합)
 
 // ── 6. 상태 ──────────────────────────────────────────────────────────────────
 const unlockedLevels = new Set<number>([1]);
@@ -297,10 +294,13 @@ appRouter.register('game-math-quiz', {
 appRouter.register('game-eq-fill', {
   show() {
     const state   = appRouter.getState();
-    const levelId = state.levelId ?? 'eq-fill-1';
+    // 다른 게임에서 남은 stale levelId가 eq-fill 형식이 아니면 기본값 사용
+    const rawId   = state.levelId;
+    const levelId = rawId?.startsWith('eq-fill-') ? rawId : 'eq-fill-1';
     const cfg     = getEqFillLevel(levelId);
     if (!cfg) {
-      appRouter.navigate({ to: 'math-menu', subject: 'math' });
+      // replace: true — game-eq-fill을 히스토리 스택에 남기지 않고 복귀
+      appRouter.navigate({ to: 'math-menu', subject: 'math', replace: true });
       return;
     }
     equationFillGame.show(cfg);
@@ -314,10 +314,11 @@ appRouter.register('game-eq-fill', {
 appRouter.register('game-logic', {
   show() {
     const state   = appRouter.getState();
-    const levelId = state.levelId ?? 'logic-1';
+    const rawId   = state.levelId;
+    const levelId = rawId?.startsWith('logic-') ? rawId : 'logic-1';
     const cfg     = getLogicLevel(levelId);
     if (!cfg) {
-      appRouter.navigate({ to: 'logic-menu', subject: 'logic' });
+      appRouter.navigate({ to: 'logic-menu', subject: 'logic', replace: true });
       return;
     }
     logicGame.show(cfg);
@@ -331,10 +332,11 @@ appRouter.register('game-logic', {
 appRouter.register('game-matrix-reasoning', {
   show() {
     const state = appRouter.getState();
-    const levelId = state.levelId ?? getFirstMatrixLevelId();
+    const rawId = state.levelId;
+    const levelId = rawId?.startsWith('matrix-') ? rawId : getFirstMatrixLevelId();
     const cfg = getMatrixLevel(levelId);
     if (!cfg) {
-      appRouter.navigate({ to: 'logic-menu', subject: 'logic' });
+      appRouter.navigate({ to: 'logic-menu', subject: 'logic', replace: true });
       return;
     }
     matrixGame.show(cfg);
@@ -356,10 +358,11 @@ appRouter.register('game-fill-blank', {
 appRouter.register('game-odd-one-out', {
   show() {
     const state = appRouter.getState();
-    const levelId = state.levelId ?? getFirstOddLevelId();
+    const rawId = state.levelId;
+    const levelId = rawId?.startsWith('odd-') ? rawId : getFirstOddLevelId();
     const cfg = getOddOneOutLevel(levelId);
     if (!cfg) {
-      appRouter.navigate({ to: 'logic-menu', subject: 'logic' });
+      appRouter.navigate({ to: 'logic-menu', subject: 'logic', replace: true });
       return;
     }
     oddOneOutGame.show(cfg);
@@ -391,10 +394,11 @@ appRouter.register('game-creativity', {
 appRouter.register('game-pattern-finder', {
   show() {
     const state   = appRouter.getState();
-    const levelId = state.levelId ?? 'pat-find-1';
+    const rawId   = state.levelId;
+    const levelId = rawId?.startsWith('pat-find-') ? rawId : 'pat-find-1';
     const cfg     = getPatternLevel(levelId);
     if (!cfg) {
-      appRouter.navigate({ to: 'math-menu', subject: 'math' });
+      appRouter.navigate({ to: 'math-menu', subject: 'math', replace: true });
       return;
     }
     patternFinderGame.show(cfg);
@@ -547,7 +551,7 @@ window.history.pushState({}, '', '/');
 // 게임 진행 중으로 간주할 화면 ID 집합 (뒤로가기 시 confirmExit 표시)
 const GAME_SCREENS = new Set([
   'game-english', 'game-korean',
-  'game-math-quiz', 'math-quiz-game',
+  'game-math-quiz',
   'game-eq-fill', 'game-pattern-finder',
   'game-logic', 'game-creativity',
   'game-arithmetic',
@@ -557,6 +561,8 @@ const GAME_SCREENS = new Set([
   'game-reasoning',
   'level-intro', // 수박 게임 카운트다운 포함
 ]);
+
+let confirmExitBlocked = false;
 
 window.addEventListener('popstate', () => {
   const current = appRouter.getState().current;
@@ -571,16 +577,23 @@ window.addEventListener('popstate', () => {
   // 다음 뒤로가기도 잡을 수 있도록 synthetic 항목 재push
   window.history.pushState({}, '', '/');
 
-  // confirmExit 모달이 이미 열려 있으면 중복 방지
-  if (document.getElementById('confirm-exit-overlay')) {
+  // confirmExit 모달이 이미 열려 있으면 중복 방지 (DOM 체크 + 플래그 이중 방어)
+  if (confirmExitBlocked || document.getElementById('confirm-exit-overlay')) {
     return;
   }
 
   // 게임 화면이면 먼저 종료 확인 모달 표시
   if (GAME_SCREENS.has(current)) {
-    confirmExit(() => {
-      appRouter.back();
-    });
+    confirmExitBlocked = true;
+    confirmExit(
+      () => {
+        confirmExitBlocked = false;
+        appRouter.back();
+      },
+      () => {
+        confirmExitBlocked = false;
+      },
+    );
     return;
   }
 

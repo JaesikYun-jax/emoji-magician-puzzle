@@ -418,7 +418,9 @@ export class LevelTestMath {
     body.querySelector('#ltm-confirm')!.addEventListener('click', () => {
       const status = this.finalStatus!;
       userMathStatusService.update(status);
-      appRouter.navigate({ to: 'game-math-quiz', subject: 'math' });
+      // replace: true — level-test-math를 히스토리 스택에 남기지 않아
+      // 게임에서 back()으로 돌아올 때 math-menu로 직접 복귀
+      appRouter.navigate({ to: 'game-math-quiz', subject: 'math', replace: true });
     });
 
     body.querySelector('#ltm-back-menu')!.addEventListener('click', () => {

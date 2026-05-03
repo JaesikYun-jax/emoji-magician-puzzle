@@ -23,6 +23,8 @@ export class ArithmeticGame {
   private timerId: ReturnType<typeof setInterval> | null = null;
   private isAnswering: boolean = false;
   private onBackFn: (() => void) | null = null;
+  private _backBtn: HTMLElement | null = null;
+  private _backHandler: (() => void) | null = null;
 
   constructor(private container: HTMLElement) {
     this.el = document.createElement('div');
@@ -68,10 +70,16 @@ export class ArithmeticGame {
       <div class="arith-choices" id="arith-choices"></div>
     `;
 
-    this.el.querySelector('.arith-hud__back')!.addEventListener('click', () => {
+    // 기존 리스너 해제 후 재등록 (render() 재호출 시 누적 방지)
+    if (this._backBtn && this._backHandler) {
+      this._backBtn.removeEventListener('click', this._backHandler);
+    }
+    this._backHandler = () => {
       this.stopTimer();
       if (this.onBackFn) this.onBackFn();
-    });
+    };
+    this._backBtn = this.el.querySelector('.arith-hud__back')!;
+    this._backBtn.addEventListener('click', this._backHandler);
   }
 
   private showQuestion(): void {
@@ -262,6 +270,11 @@ export class ArithmeticGame {
 
   hide(): void {
     this.stopTimer();
+    if (this._backBtn && this._backHandler) {
+      this._backBtn.removeEventListener('click', this._backHandler);
+      this._backBtn = null;
+      this._backHandler = null;
+    }
     this.el.style.display = 'none';
   }
 }
