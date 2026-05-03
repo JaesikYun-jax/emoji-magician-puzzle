@@ -114,6 +114,7 @@ export class LogicGame {
   private hintBtnEl!: HTMLButtonElement;
   private chipEl!: HTMLElement;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
+  private _pendingTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(container: HTMLElement) {
     this.el = document.createElement('div');
@@ -579,7 +580,10 @@ export class LogicGame {
     this._updateHUD();
     this.selectedChoiceIndex = -1;
 
-    setTimeout(() => this._renderRound(), isCorrect ? 480 : 700);
+    this._pendingTimer = setTimeout(() => {
+      this._pendingTimer = null;
+      this._renderRound();
+    }, isCorrect ? 480 : 700);
   }
 
   private _toggleHint(): void {
@@ -639,6 +643,10 @@ export class LogicGame {
     if (this.timerId) {
       clearInterval(this.timerId);
       this.timerId = null;
+    }
+    if (this._pendingTimer !== null) {
+      clearTimeout(this._pendingTimer);
+      this._pendingTimer = null;
     }
   }
 

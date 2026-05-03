@@ -7,6 +7,8 @@ export class HUD {
   private pairsEl: HTMLElement | null = null;
   private comboEl: HTMLElement | null = null;
   private comboTimeout: ReturnType<typeof setTimeout> | null = null;
+  private exitBtn: HTMLElement | null = null;
+  private exitHandler: (() => void) | null = null;
 
   constructor(private container: HTMLElement) {}
 
@@ -46,8 +48,9 @@ export class HUD {
     this.comboEl = document.getElementById('hud-combo');
 
     if (onExit) {
-      el.querySelector<HTMLButtonElement>('.hud-exit-btn')!
-        .addEventListener('click', onExit);
+      this.exitHandler = onExit;
+      this.exitBtn = el.querySelector<HTMLButtonElement>('.hud-exit-btn')!;
+      this.exitBtn.addEventListener('click', this.exitHandler);
     }
   }
 
@@ -89,6 +92,11 @@ export class HUD {
     if (this.comboTimeout !== null) {
       clearTimeout(this.comboTimeout);
       this.comboTimeout = null;
+    }
+    if (this.exitBtn && this.exitHandler) {
+      this.exitBtn.removeEventListener('click', this.exitHandler);
+      this.exitBtn = null;
+      this.exitHandler = null;
     }
     if (this.el) {
       this.el.remove();

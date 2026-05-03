@@ -1,4 +1,5 @@
 import { appRouter } from '../../router/AppRouter';
+import { confirmExit } from '../../utils/confirmExit';
 import { ENGLISH_WORDS, getWordsByDifficulty } from '../../game-data/englishWords';
 import { buildQuizSession } from '../../systems/english/englishGameEngine';
 import type { EnglishQuizSession, EnglishQuizQuestion, QuestionType } from '../../systems/english/englishGameEngine';
@@ -194,7 +195,9 @@ export class EnglishGame {
     const backBtn = document.createElement('button');
     backBtn.className = 'game-exit-btn';
     backBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10l6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    backBtn.addEventListener('pointerdown', () => appRouter.back());
+    backBtn.addEventListener('pointerdown', () => {
+      confirmExit(() => appRouter.back());
+    });
     pill.appendChild(backBtn);
 
     const progressTrackEl = document.createElement('div');

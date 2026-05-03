@@ -56,6 +56,7 @@ export class EquationFillGame {
   private correctCount = 0;
   private isAnswering = false;
   private timerId: ReturnType<typeof setInterval> | null = null;
+  private pendingTimeout: ReturnType<typeof setTimeout> | null = null;
   private timeRemaining = 0;
 
   // DOM refs
@@ -85,6 +86,11 @@ export class EquationFillGame {
   // ── 공개 API ───────────────────────────────────────────────────────────────
 
   show(levelConfig: EqFillLevelConfig): void {
+    // 이전 세션의 pending setTimeout 취소 (상태 오염 방지)
+    if (this.pendingTimeout !== null) {
+      clearTimeout(this.pendingTimeout);
+      this.pendingTimeout = null;
+    }
     this.levelConfig = levelConfig;
     this.el.style.display = 'flex';
     this._reset(levelConfig);
@@ -94,6 +100,11 @@ export class EquationFillGame {
   hide(): void {
     this.el.style.display = 'none';
     this._stopTimer();
+    // 이전 세션의 pending setTimeout 취소
+    if (this.pendingTimeout !== null) {
+      clearTimeout(this.pendingTimeout);
+      this.pendingTimeout = null;
+    }
   }
 
   // ── 초기화 ────────────────────────────────────────────────────────────────
@@ -281,7 +292,11 @@ export class EquationFillGame {
     this.currentIndex++;
     this._updateHUD();
 
-    setTimeout(() => this._loadNextQuestion(), isCorrect ? 480 : 700);
+    if (this.pendingTimeout !== null) clearTimeout(this.pendingTimeout);
+    this.pendingTimeout = setTimeout(() => {
+      this.pendingTimeout = null;
+      this._loadNextQuestion();
+    }, isCorrect ? 480 : 700);
   }
 
   // ── HUD ────────────────────────────────────────────────────────────────────
