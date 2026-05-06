@@ -1,4 +1,4 @@
-import type { MatrixShape, MatrixColor, MatrixSize, MatrixFill, MatrixRotation } from './matrixReasoningTypes';
+import type { MatrixShape, MatrixColor, MatrixSize, MatrixFill, MatrixRotation } from './legacyShapeTypes';
 
 export type ChiralityVariant = 'normal' | 'mirrored';
 export type OddReason = 'color' | 'shape' | 'size' | 'fill' | 'rotation' | 'chirality' | 'compound';

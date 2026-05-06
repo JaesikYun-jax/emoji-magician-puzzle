@@ -381,8 +381,14 @@ export const ko = {
 
   // 행렬 추론
   'matrix.title': '행렬 추론',
-  'matrix.subtitle': '빈 칸에 올 도형을 골라요',
+  'matrix.subtitle': '빈 칸에 올 답을 골라요',
+  'matrix.subtitle.emoji':   '빈 칸에 올 그림을 골라요',
+  'matrix.subtitle.number':  '빈 칸에 올 숫자를 골라요',
+  'matrix.subtitle.setcard': '색·모양·개수 규칙을 찾아 골라요',
   'matrix.hint': '행과 열의 규칙을 찾아봐요',
+  'matrix.hint.emoji':       '같은 종류끼리 묶이는 규칙을 찾아봐요',
+  'matrix.hint.number':      '행과 열의 계산 규칙을 찾아봐요',
+  'matrix.hint.setcard':     '세 속성이 모두 같거나 모두 달라야 해요',
   'matrix.result.perfect': '🎊 멘사 천재!',
   'matrix.result.great': '⭐ 훌륭해요!',
   'matrix.result.good': '👍 잘했어요!',
