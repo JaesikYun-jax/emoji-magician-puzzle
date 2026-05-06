@@ -25,6 +25,7 @@ export type ScreenId =
   | 'game-logic'
   | 'game-creativity'
   | 'game-korean'
+  | 'game-korean-spelling'
   | 'arithmetic-menu'
   | 'game-arithmetic'
   | 'game-matrix-reasoning'

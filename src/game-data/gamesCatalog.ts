@@ -239,6 +239,39 @@ export const GAMES_CATALOG: GameDefinition[] = [
       ],
     },
   },
+  // korean 분야
+  {
+    id: 'korean-spelling',
+    subjectId: 'korean',
+    labelKo: '맞춤법',
+    labelEn: 'Spelling',
+    descriptionKo: '두 표기 중 올바른 것을 골라요',
+    descriptionEn: 'Choose the correct spelling from two options',
+    icon: '✏️',
+    routeId: 'game-korean-spelling',
+    isDefault: true,
+    difficultySettings: {
+      paramKey: 'levelId',
+      panelLabel: '난이도 선택',
+      options: [
+        { id: 'beginner',     label: '입문' },
+        { id: 'elementary',   label: '기초' },
+        { id: 'intermediate', label: '중급' },
+        { id: 'advanced',     label: '고급' },
+      ],
+    },
+  },
+  {
+    id: 'korean-syllable',
+    subjectId: 'korean',
+    labelKo: '자모 조합',
+    labelEn: 'Syllable',
+    descriptionKo: '자음과 모음을 조합해 글자를 완성해요',
+    descriptionEn: 'Combine consonants and vowels to complete syllables',
+    icon: '🧩',
+    routeId: 'game-korean',
+    isDefault: false,
+  },
   // reasoning 분야
   {
     id: 'reasoning-five',

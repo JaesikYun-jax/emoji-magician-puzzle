@@ -44,9 +44,9 @@ describe('SUBJECTS', () => {
     expect(english.isAvailable).toBe(true);
   });
 
-  it('korean is NOT available', () => {
+  it('korean is available (국어 맞춤법 게임 오픈)', () => {
     const korean = SUBJECTS.find((s) => s.id === 'korean') as SubjectConfig;
     expect(korean).toBeDefined();
-    expect(korean.isAvailable).toBe(false);
+    expect(korean.isAvailable).toBe(true);
   });
 });

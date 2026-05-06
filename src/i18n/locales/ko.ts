@@ -421,7 +421,7 @@ export const ko = {
   'oddone.wrong': '아쉬워요...',
   'oddone.noTimer': '천천히 생각해봐요 🧐',
 
-  // 국어 게임 인라인 문구 (KoreanGame)
+  // 국어 게임 인라인 문구 (KoreanGame — 자모 조합)
   'korean.game.chipLabel': '소리를 만들어 봐',
   'korean.game.finalScore': '국어 결과',
   'korean.game.resultMsg.great': '훌륭해요! 🎉',
@@ -429,6 +429,27 @@ export const ko = {
   'korean.game.resultMsg.keep': '더 연습해봐요! 💪',
   'korean.game.retryBtn': '다시 하기',
   'korean.game.backBtn': '국어 메뉴로',
+
+  // 국어 맞춤법 게임 (KoreanSpellingGame)
+  'korean.spelling.title': '맞춤법',
+  'korean.spelling.hint': '💡 힌트',
+  'korean.spelling.explanation': '📖 풀이',
+  'korean.spelling.result.title': '맞춤법 결과',
+  'korean.spelling.result.great': '훌륭해요! 🎉',
+  'korean.spelling.result.good': '잘 했어요! 👍',
+  'korean.spelling.result.keep': '더 연습해봐요! 💪',
+  'korean.spelling.retryBtn': '다시 도전하기',
+  'korean.spelling.homeBtn': '국어 메뉴로 돌아가기',
+  'korean.spelling.wrongReview': '틀린 문제 복습',
+  'korean.spelling.cat.phoneme': '자모/받침',
+  'korean.spelling.cat.common-word': '헷갈리는 단어',
+  'korean.spelling.cat.spacing': '띄어쓰기',
+  'korean.spelling.cat.grammar': '어법',
+  'korean.spelling.cat.sai-siot': '사이시옷',
+
+  // 국어 메뉴
+  'korean.menu.infoTitle': '국어 학습',
+  'korean.menu.infoSub': '맞춤법·자모 조합으로 국어 실력 UP',
 
   // ── 탐험가 랭크 (XP 기반, xpEngine.computeRank) ──────────────────────────────
   'rank.explorer.1': '골목 탐험가',
