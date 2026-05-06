@@ -194,6 +194,15 @@ export function migrateV6toV7(raw: SaveData): SaveData {
   };
 }
 
+/** v7 → v8: 국어(korean) 종목 필드 추가 */
+export function migrateV7toV8(raw: SaveData): SaveData {
+  return {
+    ...raw,
+    version: 8,
+    korean: raw.korean ?? { levelProgress: {} },
+  };
+}
+
 /**
  * 저장 데이터를 최신 버전으로 단계적으로 마이그레이션한다.
  * 알 수 없는 버전이거나 이미 최신이면 그대로 반환한다.
@@ -223,6 +232,10 @@ export function runMigrations(raw: SaveData, targetVersion: number): SaveData {
 
   if (data.version < 7 && targetVersion >= 7) {
     data = migrateV6toV7(data);
+  }
+
+  if (data.version < 8 && targetVersion >= 8) {
+    data = migrateV7toV8(data);
   }
 
   return data;

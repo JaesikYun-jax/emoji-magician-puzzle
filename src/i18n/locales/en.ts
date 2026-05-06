@@ -415,7 +415,7 @@ export const en = {
   'oddone.wrong': 'Not quite...',
   'oddone.noTimer': 'Take your time 🧐',
 
-  // Korean game inline strings (KoreanGame)
+  // Korean game inline strings (KoreanGame — Syllable)
   'korean.game.chipLabel': 'Build the Sound',
   'korean.game.finalScore': 'Korean Score',
   'korean.game.resultMsg.great': 'Excellent! 🎉',
@@ -423,6 +423,27 @@ export const en = {
   'korean.game.resultMsg.keep': 'Keep practicing! 💪',
   'korean.game.retryBtn': 'Try Again',
   'korean.game.backBtn': 'Back to Korean Menu',
+
+  // Korean Spelling Game (KoreanSpellingGame)
+  'korean.spelling.title': 'Spelling',
+  'korean.spelling.hint': '💡 Hint',
+  'korean.spelling.explanation': '📖 Explanation',
+  'korean.spelling.result.title': 'Spelling Result',
+  'korean.spelling.result.great': 'Excellent! 🎉',
+  'korean.spelling.result.good': 'Well done! 👍',
+  'korean.spelling.result.keep': 'Keep practicing! 💪',
+  'korean.spelling.retryBtn': 'Try Again',
+  'korean.spelling.homeBtn': 'Back to Korean Menu',
+  'korean.spelling.wrongReview': 'Review Wrong Answers',
+  'korean.spelling.cat.phoneme': 'Phoneme',
+  'korean.spelling.cat.common-word': 'Common Words',
+  'korean.spelling.cat.spacing': 'Spacing',
+  'korean.spelling.cat.grammar': 'Grammar',
+  'korean.spelling.cat.sai-siot': 'Sai-siot',
+
+  // Korean Menu
+  'korean.menu.infoTitle': 'Korean Study',
+  'korean.menu.infoSub': 'Spelling, syllables — boost your Korean!',
 
   // ── Explorer Ranks (XP-based, xpEngine.computeRank) ─────────────────────────
   'rank.explorer.1': 'Alley Explorer',

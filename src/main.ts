@@ -25,6 +25,7 @@ import { LogicGame } from './components/games/LogicGame';
 import { CreativityGame } from './components/games/CreativityGame';
 import { EnglishGame } from './components/games/EnglishGame';
 import { KoreanGame } from './components/games/KoreanGame';
+import { KoreanSpellingGame } from './components/games/KoreanSpellingGame';
 import { ArithmeticGame } from './components/games/ArithmeticGame';
 import { ArithmeticMenu } from './components/ArithmeticMenu';
 import { MatrixReasoningGame } from './components/games/MatrixReasoningGame';
@@ -95,6 +96,10 @@ const koreanContainer = document.createElement('div');
 koreanContainer.id = 'korean-game-container';
 app.appendChild(koreanContainer);
 
+const koreanSpellingContainer = document.createElement('div');
+koreanSpellingContainer.id = 'korean-spelling-container';
+app.appendChild(koreanSpellingContainer);
+
 const fillBlankContainer = document.createElement('div');
 fillBlankContainer.id = 'fill-blank-container';
 app.appendChild(fillBlankContainer);
@@ -112,6 +117,7 @@ const creativityGame = new CreativityGame(creativityContainer);
 const reasoningGame = new ReasoningGame(reasoningContainer, appRouter, saveService);
 const englishGame = new EnglishGame(englishContainer);
 const koreanGame = new KoreanGame(koreanContainer);
+const koreanSpellingGame = new KoreanSpellingGame(koreanSpellingContainer);
 const arithmeticGame = new ArithmeticGame(app);
 const fillInBlankGame = new FillInBlankGame(fillBlankContainer);
 
@@ -121,7 +127,7 @@ const profileSetup   = new ProfileSetup(app, appRouter, saveService);
 const homeB          = new HomeB(app, appRouter, saveService);
 const subjectSelect  = new SubjectSelect(app, appRouter);
 const mathMenu       = new MathMenu(app, appRouter, saveService);
-const koreanMenu     = new KoreanMenu(app, appRouter);
+const koreanMenu     = new KoreanMenu(app, appRouter, saveService);
 const englishMenu    = new EnglishMenu(app, appRouter, saveService);
 const logicMenu = new LogicMenu(app, appRouter, saveService);
 const creativityMenu = new CreativityMenu(app, appRouter, saveService);
@@ -277,10 +283,22 @@ appRouter.register('game-english', {
   },
 });
 
-// ── 8-b2. game-korean 화면 ────────────────────────────────────────────────────
+// ── 8-b2. game-korean 화면 (자모 조합) ────────────────────────────────────────
 appRouter.register('game-korean', {
   show() { koreanGame.show(); },
   hide() { koreanGame.hide(); },
+});
+
+// ── 8-b3. game-korean-spelling 화면 (맞춤법) ──────────────────────────────────
+appRouter.register('game-korean-spelling', {
+  show() {
+    const state = appRouter.getState();
+    const difficulty = (state.levelId ?? 'beginner') as import('./systems/korean/spellingEngine').SpellingDifficulty;
+    koreanSpellingGame.show(difficulty);
+  },
+  hide() {
+    koreanSpellingGame.hide();
+  },
 });
 
 // ── 8-c. game-math-quiz 화면 ─────────────────────────────────────────────────

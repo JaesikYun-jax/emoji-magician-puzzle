@@ -140,6 +140,8 @@ export interface SaveData {
   };
   /** v7+ : 추리 종목 저장 */
   reasoning?: { levelProgress: Record<string, LevelProgress>; streak?: number; clearCount?: number; progress?: SubjectProgressData };
+  /** v8+ : 국어 종목 저장 */
+  korean?: { levelProgress: Record<string, LevelProgress>; progress?: SubjectProgressData };
 }
 
 export const SUBJECTS: SubjectConfig[] = [
@@ -168,7 +170,7 @@ export const SUBJECTS: SubjectConfig[] = [
     iconPath: '/src/assets/svg/icon-korean.svg',
     colorPrimary: '#F43F5E',
     colorLight: '#FFE4E6',
-    isAvailable: false,
+    isAvailable: true,
   },
   {
     id: 'logic',
