@@ -37,7 +37,7 @@ test('S6: 새로고침 후 save 데이터 보존', async ({ page }) => {
   // save 데이터가 보존됐는지 확인
   const save = await readSave(page);
   expect(save).toMatchObject({
-    version: 7,
+    version: 8,
     profile: expect.objectContaining({ nickname: 'TestKid' }),
   });
 
