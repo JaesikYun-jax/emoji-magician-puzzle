@@ -1,68 +1,78 @@
 /**
  * MatrixReasoningGame.ts
  * 행렬 추론 게임 — CSS/DOM 구현 (canvas 절대 금지)
- * 기술스택: 순수 TypeScript + CSS @keyframes
+ * 셀 종류별 렌더: emoji / number / setcard
  */
 
 import { appRouter } from '../../router/AppRouter';
 import { t } from '../../i18n';
-import type { MatrixLevelConfig, MatrixProblem, MatrixCell } from '../../systems/logic/matrixReasoningTypes';
+import type {
+  MatrixLevelConfig,
+  MatrixProblem,
+  MatrixCell,
+  EmojiCell,
+  NumberCell,
+  SetCardCell,
+  CellKind,
+} from '../../systems/logic/matrixReasoningTypes';
 import { generateMatrixProblem, calcMatrixStars } from '../../systems/logic/matrixReasoningGenerator';
 import { saveService } from '../../services/SaveService';
 import { confirmExit } from '../../utils/confirmExit';
 
-// ── 색상/크기 맵 ──────────────────────────────────────────────────
-const COLOR_MAP: Record<string, string> = {
-  violet:  '#8B5CF6',
-  sky:     '#38BDF8',
-  rose:    '#F43F5E',
-  amber:   '#F59E0B',
-  emerald: '#10B981',
+// ── SetCard 색상 (식별성 검증된 명도 차이) ────────────────────────
+const SETCARD_COLOR: Record<string, string> = {
+  red:   '#DC2626',
+  green: '#16A34A',
+  blue:  '#2563EB',
 };
 
-// ── 도형 CSS clip-path / 스타일 ────────────────────────────────────
-function renderShapeDiv(cell: MatrixCell, sizePx: number): string {
-  const color = COLOR_MAP[cell.color] ?? '#8B5CF6';
-  const sizeMap: Record<string, number> = { sm: sizePx * 0.45, md: sizePx * 0.6, lg: sizePx * 0.75 };
-  const dim = sizeMap[cell.size] ?? sizePx * 0.6;
-  const rotation = cell.rotation ?? 0;
-  const transform = `transform: rotate(${rotation}deg)`;
+// ── 셀 렌더링 — 종류별 분기 ──────────────────────────────────────
 
-  let shapeStyle = '';
-  switch (cell.shape) {
-    case 'circle':
-      shapeStyle = 'border-radius: 50%;';
-      break;
-    case 'triangle':
-      shapeStyle = 'clip-path: polygon(50% 0%, 0% 100%, 100% 100%);';
-      break;
-    case 'square':
-      shapeStyle = 'border-radius: 4px;';
-      break;
-    case 'diamond':
-      shapeStyle = 'clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);';
-      break;
-    case 'pentagon':
-      shapeStyle = 'clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);';
-      break;
-    case 'star':
-      shapeStyle = 'clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);';
-      break;
-    default:
-      shapeStyle = 'border-radius: 4px;';
+function renderEmojiCell(cell: EmojiCell, sizePx: number): string {
+  const fontSize = Math.round(sizePx * 0.55);
+  const count = cell.count ?? 1;
+  if (count === 1) {
+    return `<div class="mr-cell-emoji" style="font-size:${fontSize}px;">${cell.emoji}</div>`;
   }
+  const items = Array.from({ length: count }, () => cell.emoji).join('');
+  const smallFont = Math.round(sizePx * 0.32);
+  return `<div class="mr-cell-emoji" style="font-size:${smallFont}px;display:flex;gap:4px;flex-wrap:wrap;justify-content:center;align-items:center;">${items}</div>`;
+}
 
-  const fillStyle = cell.fill === 'filled'
-    ? `background: ${color};`
-    : `background: transparent; box-shadow: inset 0 0 0 3px ${color};`;
+function renderNumberCell(cell: NumberCell, sizePx: number): string {
+  const fontSize = Math.round(sizePx * 0.5);
+  return `<div class="mr-cell-number" style="font-size:${fontSize}px;">${cell.value}</div>`;
+}
 
-  return `<div style="
-    width: ${dim}px; height: ${dim}px;
-    ${shapeStyle}
-    ${fillStyle}
-    ${transform};
-    flex-shrink: 0;
-  "></div>`;
+function renderSetCardCell(cell: SetCardCell, sizePx: number): string {
+  const color = SETCARD_COLOR[cell.color];
+  const shapeSize = Math.max(14, Math.round(sizePx * 0.22));
+  const shapeStyle = (() => {
+    switch (cell.shape) {
+      case 'circle':   return `background:${color};border-radius:50%;`;
+      case 'square':   return `background:${color};border-radius:3px;`;
+      case 'triangle': return `background:${color};clip-path:polygon(50% 0%, 0% 100%, 100% 100%);`;
+    }
+  })();
+  const items = Array.from({ length: cell.count }, () =>
+    `<div style="width:${shapeSize}px;height:${shapeSize}px;${shapeStyle}flex-shrink:0;"></div>`
+  ).join('');
+  return `<div class="mr-cell-setcard">${items}</div>`;
+}
+
+function renderCell(cell: MatrixCell, sizePx: number): string {
+  switch (cell.kind) {
+    case 'emoji':   return renderEmojiCell(cell, sizePx);
+    case 'number':  return renderNumberCell(cell, sizePx);
+    case 'setcard': return renderSetCardCell(cell, sizePx);
+  }
+}
+
+function getCellSize(cellKind: CellKind, gridSize: 2 | 3): number {
+  if (gridSize === 2) return 120;
+  if (cellKind === 'setcard') return 96;
+  if (cellKind === 'number')  return 88;
+  return 80;
 }
 
 // ── 스타일 ────────────────────────────────────────────────────────
@@ -112,6 +122,7 @@ const MR_STYLES = `
   background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
   border-radius: 14px; display: flex; align-items: center; justify-content: center;
   animation: mr-cell-in 240ms ease calc(var(--ci, 0) * 60ms) both;
+  overflow: hidden;
 }
 #matrix-reasoning-game .mr-cell--blank {
   background: rgba(167,139,250,0.22); border: 1.5px solid rgba(167,139,250,0.60);
@@ -122,15 +133,34 @@ const MR_STYLES = `
   animation: mr-complete-flash 600ms ease forwards;
 }
 
+#matrix-reasoning-game .mr-cell-emoji {
+  font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif;
+  line-height: 1;
+}
+#matrix-reasoning-game .mr-cell-number {
+  font-family: var(--f-display);
+  font-weight: 800; color: #FFF;
+  text-shadow: 0 2px 8px rgba(167,139,250,0.4);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+#matrix-reasoning-game .mr-cell-setcard {
+  background: #FFF; border-radius: 10px; padding: 6px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  width: 80%; height: 80%;
+}
+
 #matrix-reasoning-game .mr-choices {
   padding: 12px 20px 20px; display: grid;
   grid-template-columns: 1fr 1fr; gap: 10px;
 }
 #matrix-reasoning-game .mr-choice-btn {
   background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.20);
-  border-radius: 18px; height: 80px;
+  border-radius: 18px; min-height: 88px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 6px; cursor: pointer; transition: all 150ms; touch-action: manipulation;
+  padding: 8px;
 }
 #matrix-reasoning-game .mr-choice-btn:active { transform: scale(0.94); }
 #matrix-reasoning-game .mr-choice-btn.correct {
@@ -246,6 +276,13 @@ export class MatrixReasoningGame {
     document.head.appendChild(style);
   }
 
+  private _subtitleKey(): 'matrix.subtitle.emoji' | 'matrix.subtitle.number' | 'matrix.subtitle.setcard' {
+    const k = this.levelConfig?.cellKind ?? 'emoji';
+    if (k === 'number') return 'matrix.subtitle.number';
+    if (k === 'setcard') return 'matrix.subtitle.setcard';
+    return 'matrix.subtitle.emoji';
+  }
+
   private _render(): void {
     if (!this.el || !this.levelConfig) return;
     const cfg = this.levelConfig;
@@ -262,7 +299,7 @@ export class MatrixReasoningGame {
       </div>
       <div class="mr-title-area">
         <div class="mr-title">${t('matrix.title')}</div>
-        <div class="mr-subtitle">${t('matrix.subtitle')}</div>
+        <div class="mr-subtitle">${t(this._subtitleKey())}</div>
       </div>
       <div class="mr-grid-wrap">
         <div class="mr-grid-card">
@@ -307,8 +344,8 @@ export class MatrixReasoningGame {
     const gridEl = this.el?.querySelector('#mr-grid') as HTMLElement | null;
     if (!gridEl) return;
 
-    const { gridSize, cells } = problem;
-    const cellSize = gridSize === 2 ? 120 : 80;
+    const { gridSize, cells, cellKind } = problem;
+    const cellSize = getCellSize(cellKind, gridSize);
 
     gridEl.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
 
@@ -321,10 +358,10 @@ export class MatrixReasoningGame {
 
       if (cell === null) {
         div.className = 'mr-cell mr-cell--blank';
-        div.innerHTML = `<span style="font-size:22px;font-weight:900;color:#A78BFA;">?</span>`;
+        div.innerHTML = `<span style="font-size:34px;font-weight:900;color:#A78BFA;">?</span>`;
       } else {
         div.className = 'mr-cell';
-        div.innerHTML = renderShapeDiv(cell, cellSize);
+        div.innerHTML = renderCell(cell, cellSize);
       }
       gridEl.appendChild(div);
     });
@@ -337,13 +374,17 @@ export class MatrixReasoningGame {
     const count = problem.choices.length;
     choicesEl.style.gridTemplateColumns = count <= 3 ? '1fr 1fr 1fr' : '1fr 1fr';
 
+    // 선택지 도형 크기는 셀보다 약간 작게
+    const choiceSize = problem.cellKind === 'setcard' ? 80 : 64;
+
     choicesEl.innerHTML = '';
     problem.choices.forEach((cell, i) => {
       const btn = document.createElement('button');
       btn.className = 'mr-choice-btn';
       btn.dataset.idx = String(i);
+      if (i === problem.correctIndex) btn.dataset.correct = 'true';
       btn.innerHTML = `
-        ${renderShapeDiv(cell, 60)}
+        ${renderCell(cell, choiceSize)}
         <span class="mr-choice-label">${CHOICE_LABELS[i]}</span>
       `;
       btn.addEventListener('pointerdown', () => this._onChoiceSelected(i, problem));
@@ -365,7 +406,6 @@ export class MatrixReasoningGame {
       (btn as HTMLButtonElement).disabled = true;
     });
 
-    // 정답 셀 flash
     const blankCell = this.el?.querySelector('.mr-cell--blank') as HTMLElement | null;
 
     if (isCorrect) {

@@ -10,7 +10,7 @@ import type {
   MatrixSize,
   MatrixFill,
   MatrixRotation,
-} from './matrixReasoningTypes';
+} from './legacyShapeTypes';
 
 const SHAPES: MatrixShape[] = ['circle', 'triangle', 'square', 'diamond', 'pentagon', 'star'];
 const COLORS: MatrixColor[] = ['violet', 'sky', 'rose', 'amber', 'emerald'];

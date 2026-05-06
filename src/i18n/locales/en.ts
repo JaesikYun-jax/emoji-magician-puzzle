@@ -381,8 +381,14 @@ export const en = {
 
   // Matrix Reasoning
   'matrix.title': 'Matrix Reasoning',
-  'matrix.subtitle': 'Choose the shape for the blank',
+  'matrix.subtitle': 'Choose the answer for the blank',
+  'matrix.subtitle.emoji':   'Choose the picture for the blank',
+  'matrix.subtitle.number':  'Choose the number for the blank',
+  'matrix.subtitle.setcard': 'Find the color · shape · count rule',
   'matrix.hint': 'Look for patterns in rows and columns',
+  'matrix.hint.emoji':       'Find the rule that groups similar items',
+  'matrix.hint.number':      'Find the arithmetic rule across rows and columns',
+  'matrix.hint.setcard':     'All three attributes must be all-same or all-different',
   'matrix.result.perfect': '🎊 Mensa Genius!',
   'matrix.result.great': '⭐ Excellent!',
   'matrix.result.good': '👍 Good job!',
